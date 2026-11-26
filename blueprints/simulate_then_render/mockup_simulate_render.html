@@ -1,0 +1,1020 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NOIR Studio — Familiar Front, Emergent Back (Simulate-Then-Render Mockup)</title>
+  <style>
+    :root {
+      --bg-void: #0B0E14;
+      --bg-obsidian: #151922;
+      --bg-panel: #1B2130;
+      --border-slate: #2B3548;
+      --ink-light: #F1F5F9;
+      --ink-muted: #94A3B8;
+      --parchment: #F7F4EC;
+      --parchment-mat: #E9DEC9;
+      --ink-paper: #16181D;
+      --ink-paper-muted: #5C5248;
+      --cyan: #38BDF8;
+      --cyan-hi: #5CE1E6;
+      --gold: #F5A623;
+      --gold-hi: #FFB830;
+      --emerald: #10B981;
+      --emerald-hi: #2DD4BF;
+      --crimson: #FF4D4F;
+      --coral: #FF6B35;
+      --violet: #A855F7;
+      --font-sans: 'Segoe UI', Inter, system-ui, sans-serif;
+      --font-prose: 'Newsreader', Georgia, 'Times New Roman', serif;
+      --font-mono: 'Cascadia Code', 'JetBrains Mono', Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: var(--bg-void);
+      color: var(--ink-light);
+      font: 13px/1.45 var(--font-sans);
+      display: grid;
+      grid-template-rows: 52px minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 16px;
+      background: #0F131C;
+      border-bottom: 2px solid var(--gold);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+    }
+    .brand-mark {
+      padding: 3px 8px;
+      background: linear-gradient(135deg, var(--gold), var(--coral));
+      color: #0B0E14;
+      clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+    .pdg-strip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+    .pdg-chip {
+      padding: 3px 8px;
+      border-radius: 3px;
+      border: 1px solid #2A3448;
+      background: #141A26;
+      color: var(--ink-muted);
+    }
+    .pdg-chip.is-hit { border-color: rgba(16, 185, 129, 0.55); color: var(--emerald-hi); background: rgba(16, 185, 129, 0.12); }
+    .pdg-chip.is-dirty { border-color: var(--gold-hi); color: var(--gold-hi); background: rgba(245, 166, 35, 0.18); }
+    .pdg-chip.is-recomp { border-color: var(--cyan); color: var(--cyan-hi); background: rgba(56, 189, 248, 0.18); }
+
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+    .pill-status {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.14);
+      border: 1px solid var(--emerald);
+      color: var(--emerald-hi);
+      font: 700 11px/1.2 var(--font-mono);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 7fr) minmax(380px, 3fr);
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .composer-pane {
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      background: var(--parchment-mat);
+      overflow: hidden;
+      border-right: 2px solid var(--border-slate);
+    }
+    .composer-subbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 18px;
+      background: #141923;
+      color: var(--ink-light);
+      border-bottom: 1px solid var(--border-slate);
+    }
+    .composer-subbar-left { display: flex; align-items: center; gap: 10px; }
+    .episode-title { font-weight: 800; font-size: 14px; color: #F8FAFC; }
+    .branch-pill {
+      padding: 3px 9px;
+      border-radius: 3px;
+      font: 700 11px/1.2 var(--font-mono);
+      background: rgba(245, 166, 35, 0.18);
+      border: 1px solid var(--gold);
+      color: var(--gold-hi);
+    }
+    .canon-take-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 18px;
+      background: #1B2130;
+      border-bottom: 1px solid #2A3448;
+      overflow-x: auto;
+    }
+    .canon-take-bar small {
+      color: var(--ink-muted);
+      font: 700 10px/1 var(--font-mono);
+      text-transform: uppercase;
+      margin-right: 4px;
+    }
+    .take-chip {
+      padding: 4px 9px;
+      border-radius: 4px;
+      border: 1px solid #334155;
+      background: #0F131C;
+      color: #CBD5E1;
+      font: 600 11px/1.2 var(--font-mono);
+      cursor: pointer;
+    }
+    .take-chip.is-active {
+      border-color: var(--cyan-hi);
+      color: var(--cyan-hi);
+      background: rgba(56, 189, 248, 0.16);
+    }
+    .take-tag {
+      margin-left: 4px;
+      padding: 1px 5px;
+      border-radius: 2px;
+      font-size: 9.5px;
+      text-transform: uppercase;
+    }
+    .take-tag.is-canon { background: rgba(16, 185, 129, 0.22); color: #6EE7B7; }
+    .take-tag.is-non_canon { background: rgba(148, 163, 184, 0.22); color: #CBD5E1; }
+    .take-tag.is-alternate_canon { background: rgba(245, 166, 35, 0.24); color: #FCD34D; }
+    .take-tag.is-time_travel_canon { background: rgba(168, 85, 247, 0.28); color: #E879F9; }
+
+    .parchment-scroll { overflow-y: auto; padding: 18px 28px 28px; }
+    .parchment-sheet {
+      max-width: 860px;
+      margin: 0 auto;
+      background: var(--parchment);
+      color: var(--ink-paper);
+      border: 1px solid #D3C1A5;
+      border-radius: 6px;
+      box-shadow: 0 12px 32px rgba(15, 19, 28, 0.22);
+      padding: 20px 24px 26px;
+      display: grid;
+      gap: 14px;
+    }
+    .sheet-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      border-bottom: 1px solid #DDD0BA;
+      padding-bottom: 10px;
+    }
+    .sheet-head h1 { margin: 0; font-size: 18px; color: #12151C; }
+    .sheet-head span { font: 600 11px/1.2 var(--font-mono); color: var(--ink-paper-muted); }
+
+    .script-block {
+      display: grid;
+      gap: 6px;
+      padding: 10px 12px;
+      border-radius: 5px;
+      border: 1px solid #E3D6C0;
+      background: #FCF9F2;
+      transition: box-shadow 200ms ease, border-color 200ms ease;
+    }
+    .script-block.is-updated {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.28);
+    }
+    .block-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .speaker-tag {
+      padding: 2px 8px;
+      clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+      background: #151922;
+      color: #F8FAFC;
+      font: 800 10.5px/1.2 var(--font-mono);
+      letter-spacing: 0.04em;
+    }
+    .speaker-tag.is-stage { background: #2D1E12; color: var(--gold-hi); }
+    .speaker-tag.is-char { background: #0E2922; color: var(--emerald-hi); }
+    .node-link-pill {
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: #1B2432;
+      color: var(--cyan-hi);
+      font: 700 10px/1.2 var(--font-mono);
+    }
+    .uplift-group { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; }
+    .uplift-pill {
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid #CBD5E1;
+      background: #FFFFFF;
+      color: #475569;
+      font: 700 10px/1.1 var(--font-mono);
+      cursor: pointer;
+    }
+    .uplift-pill.is-active[data-pct="25"] { background: #E0F2FE; border-color: #38BDF8; color: #075985; }
+    .uplift-pill.is-active[data-pct="50"] { background: #FEF3C7; border-color: #F5A623; color: #92400E; }
+    .uplift-pill.is-active[data-pct="75"] { background: #FFEDD5; border-color: #FF6B35; color: #9A3412; }
+    .uplift-pill.is-active[data-pct="100"] { background: #F3E8FF; border-color: #A855F7; color: #6B21A8; }
+
+    .block-grid { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: start; }
+    .line-num {
+      font: 600 11px/1.7 var(--font-mono);
+      color: #8C7A65;
+      text-align: right;
+      border-right: 1px solid #DFD2BC;
+      padding-right: 8px;
+      user-select: none;
+    }
+    .prose-text { font: 15.5px/1.62 var(--font-prose); color: #16181D; }
+    .prose-text.is-stage { font-style: italic; color: #3B332B; }
+    .locked-span {
+      display: inline;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: #D7F3DF;
+      border-bottom: 2px solid #10B981;
+      color: #064E3B;
+      cursor: pointer;
+    }
+    .locked-span.is-unlocked { background: #FEF3C7; border-bottom-color: #F5A623; color: #78350F; }
+    .lock-tag {
+      font: 800 9.5px/1 var(--font-mono);
+      padding: 1px 4px;
+      margin-right: 4px;
+      border-radius: 2px;
+      background: #065F46;
+      color: #ECFDF5;
+      vertical-align: 1px;
+    }
+    .locked-span.is-unlocked .lock-tag { background: #92400E; color: #FEF3C7; }
+
+    .verify-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 18px;
+      background: #10141D;
+      border-top: 1px solid var(--border-slate);
+      font: 600 11px/1.2 var(--font-mono);
+      color: var(--ink-muted);
+    }
+    .verify-footer strong { color: var(--emerald-hi); }
+
+    .dock {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      background: var(--bg-obsidian);
+      overflow: hidden;
+    }
+    .dock-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      background: #0E121B;
+      border-bottom: 1px solid var(--border-slate);
+    }
+    .dock-tab {
+      padding: 10px 8px;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: var(--ink-muted);
+      font: 700 11px/1.2 var(--font-mono);
+      cursor: pointer;
+    }
+    .dock-tab.is-active {
+      color: var(--gold-hi);
+      border-bottom-color: var(--gold-hi);
+      background: rgba(245, 166, 35, 0.08);
+    }
+    .dock-body { overflow-y: auto; padding: 14px; display: grid; gap: 12px; align-content: start; }
+    .dock-card {
+      padding: 11px 12px;
+      border-radius: 5px;
+      border: 1px solid var(--border-slate);
+      background: var(--bg-panel);
+      display: grid;
+      gap: 8px;
+    }
+    .dock-card h3 {
+      margin: 0;
+      font: 800 11px/1.2 var(--font-mono);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--cyan-hi);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .lineage-crumb {
+      font: 600 11px/1.3 var(--font-mono);
+      color: #CBD5E1;
+      padding: 6px 8px;
+      border-radius: 4px;
+      background: #101520;
+      border: 1px solid #263144;
+    }
+    .lineage-crumb b { color: var(--gold-hi); }
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .btn {
+      padding: 7px 10px;
+      border-radius: 4px;
+      border: 1px solid #344156;
+      background: #121722;
+      color: #E2E8F0;
+      font: 700 11.5px/1.2 var(--font-sans);
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn:hover { border-color: var(--cyan); }
+    .btn.is-selected { border-color: var(--gold-hi); background: rgba(245, 166, 35, 0.16); color: #FEF3C7; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--cyan), var(--cyan-hi));
+      color: #06131C;
+      border-color: #86ECFA;
+      font-weight: 800;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold), var(--gold-hi));
+      color: #141008;
+      border-color: #FDE68A;
+      font-weight: 800;
+    }
+    .slider-row { display: grid; gap: 3px; }
+    .slider-label { display: flex; justify-content: space-between; font: 600 11px/1.2 var(--font-mono); color: #CBD5E1; }
+    .slider-label strong { color: var(--gold-hi); }
+    input[type="range"] { width: 100%; accent-color: var(--cyan); }
+
+    textarea.bridge-input, select.dock-select {
+      width: 100%;
+      padding: 7px 8px;
+      border-radius: 4px;
+      border: 1px solid #334155;
+      background: #0D1119;
+      color: #F1F5F9;
+      font: 12px/1.4 var(--font-sans);
+      resize: vertical;
+    }
+    .pin-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px;
+      border-radius: 4px;
+      background: #101520;
+      border: 1px solid rgba(255, 107, 53, 0.5);
+      font: 700 11px/1.2 var(--font-mono);
+      color: #FED7AA;
+    }
+    .agenda-item {
+      padding: 8px 9px;
+      border-radius: 4px;
+      background: #101520;
+      border-left: 3px solid var(--emerald);
+      font-size: 12px;
+      display: grid;
+      gap: 3px;
+    }
+    .agenda-item.is-trio { border-left-color: var(--violet); }
+    .agenda-item.is-peter { border-left-color: var(--coral); }
+    .agenda-item.is-gm { border-left-color: var(--gold-hi); background: #1A160D; }
+    .agenda-item strong { font: 800 11px/1.2 var(--font-mono); color: #F8FAFC; }
+    .agenda-item small { color: #CBD5E1; }
+
+    .rel-matrix { display: grid; gap: 6px; }
+    .rel-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 9px;
+      border-radius: 4px;
+      border: 1px solid #2A3448;
+      background: #111622;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .rel-row.is-active { border-color: var(--emerald-hi); background: rgba(16, 185, 129, 0.12); }
+    .rel-badge {
+      padding: 2px 6px;
+      border-radius: 2px;
+      font: 700 9.5px/1 var(--font-mono);
+      background: #1E293B;
+      color: #94A3B8;
+    }
+    .rel-row.is-active .rel-badge { background: var(--emerald); color: #052E16; }
+    .edge-card {
+      padding: 9px 10px;
+      border-radius: 4px;
+      border: 1px solid #334155;
+      background: #0F141F;
+      display: grid;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .edge-card-head {
+      display: flex;
+      justify-content: space-between;
+      font: 800 11px/1.2 var(--font-mono);
+      color: var(--cyan-hi);
+    }
+    .drop-zone {
+      padding: 10px;
+      border-radius: 4px;
+      border: 1.5px dashed var(--cyan);
+      background: rgba(56, 189, 248, 0.08);
+      text-align: center;
+      font: 600 11px/1.3 var(--font-mono);
+      color: var(--cyan-hi);
+    }
+    .drop-zone.is-over { background: rgba(16, 185, 129, 0.22); border-color: var(--emerald-hi); color: #ECFDF5; }
+    .chip-tray { display: flex; flex-wrap: wrap; gap: 6px; }
+    .drag-chip {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--coral);
+      background: #281611;
+      color: #FED7AA;
+      font: 700 10.5px/1.2 var(--font-mono);
+      cursor: grab;
+    }
+    .pinned-list { display: grid; gap: 4px; }
+    .pinned-chip {
+      padding: 5px 7px;
+      border-radius: 3px;
+      background: #141C2B;
+      border-left: 3px solid var(--emerald-hi);
+      font: 600 10.5px/1.3 var(--font-mono);
+      color: #E2E8F0;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">NOIR SIM v5</span>
+      <span>FAMILIAR FRONT · EMERGENT BACK</span>
+    </div>
+    <div class="pdg-strip" id="pdgStrip">
+      <span class="pdg-chip is-hit">B01 · CACHE HIT</span>
+      <span class="pdg-chip is-hit">B02 · CACHE HIT</span>
+      <span class="pdg-chip is-hit">B03 · CACHE HIT</span>
+      <span class="pdg-chip is-recomp" id="pdgB04">B04 · RECOMPUTED</span>
+      <span class="pdg-chip" id="pdgB05">B05 · READY</span>
+    </div>
+    <div class="topbar-right">
+      <span class="pill-status" id="lockIntegrityBadge">0% LOCK INTEGRITY: 2/2 VERBATIM</span>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="composer-pane" aria-label="Sequential Parchment Composer">
+      <div class="composer-subbar">
+        <div class="composer-subbar-left">
+          <span class="episode-title">Spring Break · Beat 04 (Kitchen Island Confrontation)</span>
+          <span class="branch-pill" id="activeBranchBadge">Branch B · Three Little Bitches</span>
+        </div>
+        <span style="font:600 11px/1 var(--font-mono); color:#5CE1E6;">DLSS-5 Uplift Scale: 0% LOCK → 100% WILD</span>
+      </div>
+
+      <div class="canon-take-bar" id="canonTakeBar">
+        <small>Saved Takes:</small>
+      </div>
+
+      <div class="parchment-scroll">
+        <article class="parchment-sheet" id="parchmentSheet"></article>
+      </div>
+
+      <footer class="verify-footer">
+        <span id="hashReadout">PDG Hash: sha256:b04_init</span>
+        <span>Frozen Spans Verified: <strong id="footerLockCount">100% Bit-Exact (0 bytes mutated)</strong></span>
+      </footer>
+    </section>
+
+    <aside class="dock" aria-label="Emergent Weather & Relationships Dock">
+      <nav class="dock-tabs" role="tablist">
+        <button type="button" class="dock-tab is-active" data-tab="weather" role="tab">⚡ Weather (S1)</button>
+        <button type="button" class="dock-tab" data-tab="relationships" role="tab">◇ Relations</button>
+        <button type="button" class="dock-tab" data-tab="render" role="tab">✎ Render (S2)</button>
+      </nav>
+
+      <div class="dock-body">
+        <div id="tab-weather" class="tab-panel" style="display:grid; gap:12px;">
+          <div class="dock-card">
+            <h3>Transformation Lineage &amp; Active Fork <span>STAGE 1</span></h3>
+            <div class="lineage-crumb">
+              Rainee (Base) → Rainee (Big Butt) → <b id="lineageLeaf">Branch B: Three Little Bitches</b>
+            </div>
+            <div class="btn-row">
+              <button type="button" class="btn" id="btnBranchA" data-branch="A">Branch A · Big Booty Peter</button>
+              <button type="button" class="btn is-selected" id="btnBranchB" data-branch="B">Branch B · Three Little Bitches</button>
+            </div>
+          </div>
+
+          <div class="dock-card">
+            <h3>Atmospheric &amp; Relationship Pressures</h3>
+            <div class="slider-row">
+              <div class="slider-label"><span>Francine Patience</span><strong id="patienceVal">25%</strong></div>
+              <input type="range" id="patienceSlider" min="0" max="100" value="25">
+            </div>
+            <div class="slider-row">
+              <div class="slider-label"><span>Comedic Friction</span><strong id="frictionVal">92%</strong></div>
+              <input type="range" id="frictionSlider" min="0" max="100" value="92">
+            </div>
+            <label class="pin-toggle">
+              <span>🔥 pretty_girls_farting.mp4 (catalyst_trigger)</span>
+              <input type="checkbox" id="catalystToggle" checked>
+            </label>
+            <textarea id="bridgingDirection" class="bridge-input" rows="3">Perfume-scented extreme blast bloats Rainee into Big Booty Peter Griffin in Branch A or splits her into three grumpy Mean Girls personas in Branch B; Francine reacts per active spousal variant.</textarea>
+            <button type="button" class="btn btn-primary" id="btnSimulateS1">⚡ Simulate Stage 1 (Update Agendas &amp; PDG)</button>
+          </div>
+
+          <div class="dock-card">
+            <h3>Colliding Agendas &amp; GM Arbitration <span id="worldLawChip" style="color:#6EE7B7;">NO FATHER · PASS</span></h3>
+            <div id="agendaTraceList" style="display:grid; gap:7px;"></div>
+          </div>
+        </div>
+
+        <div id="tab-relationships" class="tab-panel hidden" style="display:grid; gap:12px;">
+          <div class="dock-card">
+            <h3>Variant Relationship Matrix <span>HYBRID LIST</span></h3>
+            <div class="rel-matrix" id="relMatrix"></div>
+          </div>
+
+          <div class="dock-card">
+            <h3>Directed Variant Edges <span>ASYMMETRIC</span></h3>
+            <div class="edge-card" id="edgeForward"></div>
+            <div class="edge-card" id="edgeReverse"></div>
+          </div>
+
+          <div class="dock-card">
+            <h3>Edge Typed Media Pin Drop (Zero Regex Block)</h3>
+            <select id="pinRoleSelect" class="dock-select" aria-label="Pin role">
+              <option value="catalyst_trigger" selected>Pin Role: catalyst_trigger (requires Stage Note)</option>
+              <option value="relationship_chemistry">Pin Role: relationship_chemistry</option>
+              <option value="rhythm_timing">Pin Role: rhythm_timing</option>
+              <option value="personality_mind">Pin Role: personality_mind</option>
+            </select>
+            <div class="chip-tray">
+              <span class="drag-chip" draggable="true" data-clip="pretty_girls_farting.mp4">🔥 pretty_girls_farting.mp4</span>
+              <span class="drag-chip" draggable="true" data-clip="mean_girls_roast.mp4">🎬 mean_girls_roast.mp4</span>
+              <span class="drag-chip" draggable="true" data-clip="tuberose_scent_cue.wav">🎵 tuberose_scent_cue.wav</span>
+            </div>
+            <div class="drop-zone" id="edgeDropZone">Drop clip here (or click a chip) to attach to active Francine ↔ Rainee edge</div>
+            <div class="pinned-list" id="pinnedList"></div>
+          </div>
+        </div>
+
+        <div id="tab-render" class="tab-panel hidden" style="display:grid; gap:12px;">
+          <div class="dock-card">
+            <h3>Stage 2 · DLSS-5 Masked Neural Render</h3>
+            <p style="margin:0; font-size:12px; color:#CBD5E1;">
+              Re-renders ONLY unfrozen spans according to each block's <b>25% / 50% / 75% / 100%</b> uplift policy while locking every emerald <b>0% LOCK</b> quote verbatim.
+            </p>
+            <button type="button" class="btn btn-gold" id="btnRenderS2">✎ Render Unfrozen Spans (Stage 2)</button>
+            <div id="renderReceipt" style="font:600 11px/1.4 var(--font-mono); color:#6EE7B7;">Ready to render from Stage 1 BeatDiscoursePlan.</div>
+          </div>
+
+          <div class="dock-card">
+            <h3>Multi-Draft Canon Tagging</h3>
+            <select id="canonModeSelect" class="dock-select" aria-label="Canon Mode">
+              <option value="canon">Canon (Mainline Continuity)</option>
+              <option value="non_canon">Non-Canon (Isolated Sandbox)</option>
+              <option value="alternate_canon" selected>Alternate Canon (Copy-on-Write Fork)</option>
+              <option value="time_travel_canon">Time-Travel Canon (Scoped Carrier Bridge)</option>
+            </select>
+            <div id="ttCarrierWrap" class="hidden">
+              <label style="font:600 10.5px/1.2 var(--font-mono); color:#E879F9; display:block; margin-bottom:4px;">Time-Travel Memory Carrier (carrier_character_id):</label>
+              <select id="ttCarrierSelect" class="dock-select">
+                <option value="rainee">rainee (Carries Ep 6 -> Ep 2 memory)</option>
+                <option value="francine">francine (Carries Ep 6 -> Ep 2 memory)</option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-primary" id="btnSaveTake">+ Save Current Draft as Tagged Take</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const FROZEN_LINE_1 = '"You are NOT taking the red sedan like this!"';
+    const FROZEN_LINE_2 = '"Nobody asked for a three-woman HOA meeting in my kitchen!"';
+
+    const state = {
+      branch: 'B',
+      patience: 25,
+      friction: 92,
+      catalystOn: true,
+      bridgingNote: document.getElementById('bridgingDirection').value,
+      dirty: false,
+      renderCount: 0,
+      blockUplift: { b1: 50, b2: 75, b3: 50, b4: 100 },
+      locks: { lock1: true, lock2: true },
+      pinnedClips: [
+        { clip: 'pretty_girls_farting.mp4', role: 'catalyst_trigger', note: 'Perfume-fume split catalyst -> irritable trio' },
+      ],
+      simulation: null,
+      renderedTexts: null,
+      takes: [
+        { id: 't1', label: 'Draft #1 · Baseline', mode: 'canon', branch: 'A', patience: 65, catalystOn: false },
+        { id: 't2', label: 'Draft #2 · 3-Bitches Fork', mode: 'alternate_canon', branch: 'B', patience: 25, catalystOn: true },
+      ],
+      activeTakeId: 't2',
+    };
+
+    function simpleHash(str) {
+      let h = 2166136261;
+      for (let i = 0; i < str.length; i += 1) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return 'sha256:' + (h >>> 0).toString(16).padStart(8, '0') + '_b04';
+    }
+
+    function simulateStage1() {
+      const isA = state.branch === 'A';
+      const lowPatience = state.patience < 45;
+      const hash = simpleHash(`${state.branch}|${state.patience}|${state.friction}|${state.catalystOn}|${state.bridgingNote}`);
+      const activeForm = isA ? 'Big Booty Peter Griffin' : 'Three Little Bitches (Sade / Becky / Clarie)';
+      const edgeLabel = isA ? 'Francine ↔ Big Booty Peter Griffin' : 'Francine ↔ Three Little Bitches';
+
+      const francineProposal = lowPatience
+        ? (isA
+          ? 'Snatch the red sedan fob off the counter and demand Peter-Rainee drop the sitcom swagger before leaving.'
+          : 'Slam the wooden spoon on the granite island and refuse to hand over the keys while all three clones bicker.')
+        : (isA
+          ? 'Tease Peter-Rainee with raised-eyebrow affection while nudging her toward the hallway.'
+          : 'Calmly negotiate truce rules with Sade and Becky so they can still hit the highway.');
+
+      const raineeProposal = isA
+        ? (state.catalystOn
+          ? 'Lean into the perfume-cloud bloat with unapologetic Big Booty Peter confidence and blame the lasagna.'
+          : 'Strut across the kitchen tiles insisting the transformation is an upgrade.')
+        : (state.catalystOn
+          ? 'Perfume-fume irritation spikes: Sade orders a boycott, Becky cites kitchen bylaws, Clarie snatches the overnight bag.'
+          : 'Trio coordinates a dramatic Mean Girls walkout toward the driveway.');
+
+      const gmDecision = isA
+        ? `COLLISION RESOLVED (${edgeLabel}): Peter-Rainee's swagger collides with Francine's ${state.patience}% patience; Francine holds the sedan keys while keeping 0% frozen dialogue intact.`
+        : `COLLISION RESOLVED (${edgeLabel}): Perfume-fume catalyst fractures trio discipline (${state.friction}% friction); Francine overrides the trio's Mean Girls deflection while respecting World Law [NO FATHER].`;
+
+      state.simulation = { hash, activeForm, edgeLabel, francineProposal, raineeProposal, gmDecision };
+      state.dirty = false;
+      renderAll();
+    }
+
+    function buildRenderedTexts() {
+      const isA = state.branch === 'A';
+      const lowPatience = state.patience < 45;
+      const cat = state.catalystOn;
+      const u1 = state.blockUplift.b1;
+      const u2 = state.blockUplift.b2;
+      const u3 = state.blockUplift.b3;
+      const u4 = state.blockUplift.b4;
+
+      const stageText = isA
+        ? (cat
+          ? `[STAGE · ${u1}% UPLIFT] A lingering wave of tuberose-and-sandalwood perfume hangs over the kitchen tiles as Rainee finishes bloating into Big Booty Peter Griffin, sneakers squeaking against the linoleum.`
+          : `[STAGE · ${u1}% UPLIFT] Big Booty Peter Griffin adjusts a tight polo collar beside the kitchen island, filling half the doorway.`)
+        : (cat
+          ? `[STAGE · ${u1}% UPLIFT] The ironic tuberose perfume cloud still clings to the cabinets as Rainee's split forms—Sade, Becky, and Clarie—fan their faces in synchronized irritation.`
+          : `[STAGE · ${u1}% UPLIFT] Three Little Bitches form a razor-sharp V-formation beside the kitchen table, overnight bags locked under their arms.`);
+
+      const narratorText = isA
+        ? (lowPatience
+          ? `[${u2}% UPLIFT] Francine's jaw tightens at ${state.patience}% patience; she plants one four-inch pink stiletto on the floorboard and snatches the red sedan fob before Peter-Rainee can reach it.`
+          : `[${u2}% UPLIFT] Francine hides an amused smirk behind her porcelain mug, watching her newly Peter-shaped wife try to negotiate the narrow island aisle.`)
+        : (lowPatience
+          ? `[${u2}% UPLIFT] With Francine's patience bottomed out at ${state.patience}%, she drops the lasagna spoon onto the granite counter with a metallic crack and hooks the red sedan keys on one manicured finger.`
+          : `[${u2}% UPLIFT] Francine lets out a controlled sigh, holding the sedan keys just out of Sade's reach while Becky flips through imaginary bylaws.`);
+
+      const raineeAfter = isA
+        ? (u3 >= 75
+          ? `"Relax, Franny—it smells like a Sephora counter in here, and frankly these curves deserve highway mileage."`
+          : `"Hey, Franny, don't blame me—the perfume cloud was practically a spa treatment."`)
+        : (u3 >= 75
+          ? `Sade narrows her eyes while Becky ticks two fingers fast: "First of all, the fume cloud is an environmental hazard, and second, Clarie already called shotgun."`
+          : `Becky glances at Sade and Clarie: "If the kitchen smells like tuberose, we are legally entitled to the red sedan."`);
+
+      const francineAfter = lowPatience
+        ? (u4 >= 75
+          ? `She clicks the key fob once behind her back, silencing the room before anyone touches the door latch.`
+          : `She raises one eyebrow and keeps the key fob firmly in her palm.`)
+        : `She laughs under her breath and tosses the fob twice, waiting for an apology.`;
+
+      state.renderedTexts = { stageText, narratorText, raineeAfter, francineAfter };
+      state.renderCount += 1;
+      renderAll(true);
+    }
+
+    function renderAll(flashUpdated = false) {
+      if (!state.simulation) simulateStage1();
+      const sim = state.simulation;
+      const isA = state.branch === 'A';
+      const txt = state.renderedTexts || {
+        stageText: isA
+          ? '[STAGE] Perfume haze settles as Rainee swells into Big Booty Peter Griffin beside the counter.'
+          : '[STAGE] Tuberose perfume haze lingers as Rainee splits into Sade, Becky, and Clarie—all visibly irritable.',
+        narratorText: 'Francine plants a pink stiletto on the tile and lifts the red sedan keys off the granite island.',
+        raineeAfter: isA
+          ? '"Come on, Franny, you have to admit this look commands the room."'
+          : 'Becky crosses her arms while Sade glares past the perfume mist: "We are not riding in the back."',
+        francineAfter: 'Francine tilts her head, waiting to see who blinks first.',
+      };
+
+      document.getElementById('activeBranchBadge').textContent = isA
+        ? 'Branch A · My Wife Is a Big Booty Peter Griffin!'
+        : 'Branch B · Three Little Bitches';
+      document.getElementById('lineageLeaf').textContent = isA
+        ? 'Branch A: Big Booty Peter Griffin'
+        : 'Branch B: Three Little Bitches';
+      document.getElementById('btnBranchA').classList.toggle('is-selected', isA);
+      document.getElementById('btnBranchB').classList.toggle('is-selected', !isA);
+      document.getElementById('patienceVal').textContent = `${state.patience}%`;
+      document.getElementById('frictionVal').textContent = `${state.friction}%`;
+
+      const pdgB04 = document.getElementById('pdgB04');
+      pdgB04.className = `pdg-chip ${state.dirty ? 'is-dirty' : 'is-recomp'}`;
+      pdgB04.textContent = state.dirty ? 'B04 · DIRTY (RE-SIM)' : 'B04 · RECOMPUTED';
+      document.getElementById('hashReadout').textContent = `PDG Hash: ${sim.hash} · Stage 2 Renders: ${state.renderCount}`;
+
+      const lockCount = (state.locks.lock1 ? 1 : 0) + (state.locks.lock2 ? 1 : 0);
+      document.getElementById('lockIntegrityBadge').textContent = `0% LOCK INTEGRITY: ${lockCount}/2 VERBATIM`;
+      document.getElementById('footerLockCount').textContent = `${lockCount}/2 Frozen Spans Bit-Exact (0 bytes mutated)`;
+
+      const takeBar = document.getElementById('canonTakeBar');
+      takeBar.innerHTML = '<small>Saved Takes:</small>' + state.takes.map((t) => `
+        <button type="button" class="take-chip ${t.id === state.activeTakeId ? 'is-active' : ''}" data-take-id="${t.id}">
+          ${t.label} <span class="take-tag is-${t.mode}">${t.mode.replaceAll('_', ' ')}</span>
+        </button>
+      `).join('');
+      takeBar.querySelectorAll('[data-take-id]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const t = state.takes.find((x) => x.id === btn.dataset.takeId);
+          if (!t) return;
+          state.activeTakeId = t.id;
+          state.branch = t.branch;
+          state.patience = t.patience;
+          state.catalystOn = t.catalystOn;
+          document.getElementById('patienceSlider').value = String(t.patience);
+          document.getElementById('catalystToggle').checked = t.catalystOn;
+          simulateStage1();
+          buildRenderedTexts();
+        });
+      });
+
+      const upliftPills = (blockKey) => [25, 50, 75, 100].map((pct) => `
+        <button type="button" class="uplift-pill ${state.blockUplift[blockKey] === pct ? 'is-active' : ''}" data-block-uplift="${blockKey}" data-pct="${pct}">${pct}%</button>
+      `).join('');
+
+      document.getElementById('parchmentSheet').innerHTML = `
+        <div class="sheet-head">
+          <h1>SCENE 4: KITCHEN ISLAND CONFRONTATION</h1>
+          <span>Active Edge: ${sim.edgeLabel}</span>
+        </div>
+
+        <div class="script-block ${flashUpdated ? 'is-updated' : ''}">
+          <div class="block-meta">
+            <span class="speaker-tag is-stage">STAGE DIRECTION</span>
+            <span class="node-link-pill">◈ B04 · CATALYST</span>
+            <div class="uplift-group">${upliftPills('b1')}</div>
+          </div>
+          <div class="block-grid">
+            <div class="line-num">001</div>
+            <div class="prose-text is-stage">${txt.stageText}</div>
+          </div>
+        </div>
+
+        <div class="script-block ${flashUpdated ? 'is-updated' : ''}">
+          <div class="block-meta">
+            <span class="speaker-tag">NARRATOR</span>
+            <span class="node-link-pill">◇ ${sim.edgeLabel}</span>
+            <div class="uplift-group">${upliftPills('b2')}</div>
+          </div>
+          <div class="block-grid">
+            <div class="line-num">002</div>
+            <div class="prose-text">${txt.narratorText}</div>
+          </div>
+        </div>
+
+        <div class="script-block ${flashUpdated ? 'is-updated' : ''}">
+          <div class="block-meta">
+            <span class="speaker-tag is-char">FRANCINE</span>
+            <span class="node-link-pill">🔒 0% LOCKED QUOTE + ${state.blockUplift.b4}% ACTION</span>
+            <div class="uplift-group">${upliftPills('b4')}</div>
+          </div>
+          <div class="block-grid">
+            <div class="line-num">003</div>
+            <div class="prose-text">
+              <span class="locked-span ${state.locks.lock1 ? '' : 'is-unlocked'}" data-toggle-lock="lock1" title="Click to toggle 0% LOCK">
+                <span class="lock-tag">${state.locks.lock1 ? '0% LOCK' : 'UNLOCKED'}</span>${FROZEN_LINE_1}
+              </span>
+              ${txt.francineAfter}
+            </div>
+          </div>
+        </div>
+
+        <div class="script-block ${flashUpdated ? 'is-updated' : ''}">
+          <div class="block-meta">
+            <span class="speaker-tag is-char">${isA ? 'RAINEE · BIG BOOTY PETER' : 'RAINEE · THREE LITTLE BITCHES'}</span>
+            <span class="node-link-pill">◇ FORM VARIANT ACTIVE</span>
+            <div class="uplift-group">${upliftPills('b3')}</div>
+          </div>
+          <div class="block-grid">
+            <div class="line-num">004</div>
+            <div class="prose-text">${txt.raineeAfter}</div>
+          </div>
+        </div>
+
+        <div class="script-block">
+          <div class="block-meta">
+            <span class="speaker-tag is-char">FRANCINE</span>
+            <span class="node-link-pill">🔒 0% LOCK ANCHOR</span>
+          </div>
+          <div class="block-grid">
+            <div class="line-num">005</div>
+            <div class="prose-text">
+              <span class="locked-span ${state.locks.lock2 ? '' : 'is-unlocked'}" data-toggle-lock="lock2" title="Click to toggle 0% LOCK">
+                <span class="lock-tag">${state.locks.lock2 ? '0% LOCK' : 'UNLOCKED'}</span>${FROZEN_LINE_2}
+              </span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.querySelectorAll('[data-block-uplift]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.blockUplift[btn.dataset.blockUplift] = Number(btn.dataset.pct);
+          renderAll();
+        });
+      });
+      document.querySelectorAll('[data-toggle-lock]').forEach((el) => {
+        el.addEventListener('click', () => {
+          const k = el.dataset.toggleLock;
+          state.locks[k] = !state.locks[k];
+          renderAll();
+        });
+      });
+
+      document.getElementById('agendaTraceList').innerHTML = `
+        <div class="agenda-item">
+          <strong>AGENT · FRANCINE (Patience ${state.patience}%)</strong>
+          <small>${sim.francineProposal}</small>
+        </div>
+        <div class="agenda-item ${isA ? 'is-peter' : 'is-trio'}">
+          <strong>AGENT · ${sim.activeForm.toUpperCase()}</strong>
+          <small>${sim.raineeProposal}</small>
+        </div>
+        <div class="agenda-item is-gm">
+          <strong>GAME-MASTER ARBITRATION · D_t LOCKED</strong>
+          <small>${sim.gmDecision}</small>
+        </div>
+      `;
+
+      document.getElementById('relMatrix').innerHTML = [
+        { key: 'base', label: 'Francine ↔ Rainee (Super Butt Wife)', tag: 'BASE INHERITED', active: false },
+        { key: 'A', label: 'Francine ↔ Big Booty Peter Griffin', tag: isA ? 'ACTIVE (BRANCH A)' : 'STANDBY', active: isA },
+        { key: 'B', label: 'Francine ↔ Three Little Bitches', tag: !isA ? 'ACTIVE (BRANCH B)' : 'STANDBY', active: !isA },
+      ].map((r) => `
+        <div class="rel-row ${r.active ? 'is-active' : ''}" data-rel-branch="${r.key}">
+          <span>${r.label}</span>
+          <span class="rel-badge">${r.tag}</span>
+        </div>
+      `).join('');
+      document.querySelectorAll('[data-rel-branch]').forEach((row) => {
+        row.addEventListener('click', () => {
+          const b = row.dataset.relBranch;
+          if (b === 'A' || b === 'B') {
+            state.branch = b;
+            state.dirty = true;
+            simulateStage1();
+          }
+        });
+      });
+
+      document.getElementById('edgeForward').innerHTML = `
+        <div class="edge-card-head"><span>FRANCINE → ${isA ? 'BIG BOOTY PETER' : 'THREE LITTLE BITCHES'}</span><span>PATIENCE ${state.patience}%</span></div>
+        <div>${isA
+          ? 'Subjective view: Shocked disbelief ("My Wife Is a Big Booty Peter Griffin!"), fiercely protective yet irritated by sitcom swagger.'
+          : 'Subjective view: Still loves her wife, exhausted wrangling three perfume-fume-irritated Mean Girls personas.'}</div>
+      `;
+      document.getElementById('edgeReverse').innerHTML = `
+        <div class="edge-card-head"><span>${isA ? 'BIG BOOTY PETER' : 'THREE LITTLE BITCHES'} → FRANCINE</span><span>FRICTION ${state.friction}%</span></div>
+        <div>${isA
+          ? 'Subjective view: Confident spouse expecting Francine to admire the dramatic transformation.'
+          : 'Subjective view: Irritable from the perfume blast; deflecting blame onto Haley while expecting Francine to back them up.'}</div>
+      `;
+
+      document.getElementById('pinnedList').innerHTML = state.pinnedClips.map((p) => `
+        <div class="pinned-chip">✓ ${p.clip} [${p.role}] · ${p.note}</div>
+      `).join('');
+
+      if (flashUpdated) {
+        document.getElementById('renderReceipt').textContent =
+          `Stage 2 Render #${state.renderCount} OK · 0% Lock Spans preserved verbatim (0 bytes mutated); unfrozen slots rendered for ${sim.activeForm}.`;
+      }
+    }
+
+    document.querySelectorAll('.dock-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.dock-tab').forEach((t) => t.classList.remove('is-active'));
+        tab.classList.add('is-active');
+        document.querySelectorAll('.tab-panel').forEach((p) => p.classList.add('hidden'));
+        document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden');
+      });
+    });
+
+    document.getElementById('btnBranchA').addEventListener('click', () => { state.branch = 'A'; state.dirty = true; renderAll(); });
+    document.getElementById('btnBranchB').addEventListener('click', () => { state.branch = 'B'; state.dirty = true; renderAll(); });
+    document.getElementById('patienceSlider').addEventListener('input', (e) => { state.patience = Number(e.target.value); state.dirty = true; renderAll(); });
+    document.getElementById('frictionSlider').addEventListener('input', (e) => { state.friction = Number(e.target.value); state.dirty = true; renderAll(); });
+    document.getElementById('catalystToggle').addEventListener('change', (e) => { state.catalystOn = e.target.checked; state.dirty = true; renderAll(); });
+    document.getElementById('bridgingDirection').addEventListener('input', (e) => { state.bridgingNote = e.target.value; state.dirty = true; renderAll(); });
+    document.getElementById('btnSimulateS1').addEventListener('click', () => simulateStage1());
+
+    const attachClip = (clipName) => {
+      const role = document.getElementById('pinRoleSelect').value;
+      const note = document.getElementById('bridgingDirection').value.slice(0, 62) || 'Bridging stage direction attached';
+      if (!state.pinnedClips.some((x) => x.clip === clipName && x.role === role)) {
+        state.pinnedClips.push({ clip: clipName, role, note });
+      }
+      state.dirty = true;
+      renderAll();
+    };
+    document.querySelectorAll('.drag-chip').forEach((chip) => {
+      chip.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', chip.dataset.clip));
+      chip.addEventListener('click', () => attachClip(chip.dataset.clip));
+    });
+    const dz = document.getElementById('edgeDropZone');
+    dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('is-over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('is-over'));
+    dz.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dz.classList.remove('is-over');
+      const clip = e.dataTransfer.getData('text/plain') || (e.dataTransfer.files?.[0]?.name) || 'dropped_clip.mp4';
+      attachClip(clip);
+    });
+
+    document.getElementById('btnRenderS2').addEventListener('click', () => buildRenderedTexts());
+    document.getElementById('canonModeSelect').addEventListener('change', (e) => {
+      document.getElementById('ttCarrierWrap').classList.toggle('hidden', e.target.value !== 'time_travel_canon');
+    });
+    document.getElementById('btnSaveTake').addEventListener('click', () => {
+      const mode = document.getElementById('canonModeSelect').value;
+      const carrier = document.getElementById('ttCarrierSelect').value;
+      const id = `t${Date.now()}`;
+      const suffix = mode === 'time_travel_canon' ? ` (${carrier})` : '';
+      state.takes.push({
+        id,
+        label: `Draft #${state.takes.length + 1} · ${state.branch === 'A' ? 'Peter' : '3-Bitches'}${suffix}`,
+        mode,
+        branch: state.branch,
+        patience: state.patience,
+        catalystOn: state.catalystOn,
+      });
+      state.activeTakeId = id;
+      renderAll();
+    });
+
+    const q = new URLSearchParams(location.search);
+    if (q.get('branch') === 'A') state.branch = 'A';
+    simulateStage1();
+    if (q.get('render') === '1') buildRenderedTexts();
+    if (q.get('tab')) {
+      document.querySelector(`.dock-tab[data-tab="${q.get('tab')}"]`)?.click();
+    }
+    import('/assets/v2/sound.js').then((snd) => {
+      document.addEventListener('click', (e) => {
+        const btn = e.target?.closest?.('button');
+        if (!btn) return;
+        const id = btn.id || '';
+        if (/sim|run/i.test(id)) snd.playCue?.('SFX_SIM_LAUNCH_IGNITION');
+        else if (/render|complete/i.test(id)) snd.playCue?.('SFX_FINISH_TRIUMPH_SLAM');
+        else if (/law|block|violat/i.test(id)) snd.playCue?.('SFX_IMPACT_ENERGY_HIT');
+        else snd.playTick?.();
+      }, { passive: true });
+    }).catch(() => {});
+  </script>
+</body>
+</html>

@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>World laws and counterfactuals · NOIR Studio simulation</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0e14;--panel:#151b26;--raised:#1c2432;--line:#333f51;--ink:#f5f0eb;--muted:#aab4c6;--amber:#ffc368;--cyan:#a2dce9;--red:#ffb9b2;--green:#a6e2bf;--paper:#f5ede0;--dark:#261f19}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 85% 0,#232432 0,transparent 48%),var(--bg);color:var(--ink);font:14px/1.5 "Segoe UI",sans-serif}h1,h2,h3,p{margin:0}h1{font-size:clamp(31px,4vw,51px);font-weight:750;line-height:1.05;letter-spacing:-.055em}h2{font-size:18px}h3{font-size:15px}
+header{border-bottom:1px solid var(--line);background:#0c1119}.frame{max-width:1450px;padding-inline:clamp(15px,4vw,55px);margin:auto}.brand{display:flex;justify-content:space-between;gap:10px;padding-block:15px}.brand strong{letter-spacing:.13em}.brand span{color:var(--amber)}.brand small,.muted{color:var(--muted)}main{padding-block:31px 40px}
+.intro{margin-bottom:20px}.intro p{color:var(--muted);margin-top:8px}.bar{display:flex;align-items:end;flex-wrap:wrap;gap:10px;padding:12px 15px;background:var(--panel);border:1px solid var(--line);border-radius:11px}.branch-note{margin-left:auto;color:var(--muted);font-size:13px}
+.columns{display:grid;grid-template-columns:minmax(235px,.82fr) minmax(340px,1.45fr) minmax(255px,1fr);gap:12px;margin-top:12px;align-items:start}.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}.head{padding:13px 15px;border-bottom:1px solid var(--line)}.head p{color:var(--muted);font-size:13px;margin-top:3px}.body{padding:13px 15px}.stack{display:grid;gap:9px}.row{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}.section{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+label{display:grid;gap:4px;font-size:12px;color:var(--muted);min-width:0}.tick{display:flex;gap:6px;align-items:center}.tick input{min-height:0}button,input,select{font:inherit;color:inherit;border:1px solid var(--line);border-radius:7px;background:var(--raised);min-width:0}button,input,select{padding:7px 9px;min-height:36px}button{cursor:pointer}button:hover:not(:disabled){border-color:var(--cyan)}button:disabled{opacity:.45;cursor:default}.primary{background:var(--amber);color:#251708;border-color:var(--amber);font-weight:700}:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}input::placeholder{color:#8994a6}
+.entry{background:#151d2a;border:1px solid var(--line);border-radius:8px;padding:8px 10px;text-align:left;overflow-wrap:anywhere}.entry strong,.entry span{display:block}.entry span,.badge{color:var(--muted);font-size:12px}.entry[aria-pressed=true]{background:#223443;border-color:var(--cyan)}.law-id{color:var(--cyan);font:12px/1.5 Consolas,monospace}.notice{min-height:22px;color:var(--cyan);font-size:13px;margin:7px 0 2px}
+.preview{background:var(--paper);color:var(--dark);color-scheme:light}.preview .head,.preview .section{border-color:#d6c9b5}.preview .head p,.preview .muted{color:#5e5144}.result{border-left:3px solid #587c64;padding:7px 10px;background:#e8e2d1;border-radius:4px;overflow-wrap:anywhere}.result[data-valid=false]{border-left-color:#9d4634;background:#eed7ca}.result p,.result small{margin-top:4px;display:block;font-size:13px}.preview button,.preview select{color:var(--dark);background:#f1e3c9;border-color:#baaa8f}.preview button:hover{border-color:#715946}.preview label{color:#5e5144}details summary{cursor:pointer}pre{font:12px/1.5 Consolas,monospace;background:#e9decb;padding:9px;border-radius:5px;white-space:pre-wrap;overflow-wrap:anywhere}.footer{margin-top:13px;color:var(--muted);font-size:13px}
+[hidden]{display:none}@media(max-width:1040px){.columns{grid-template-columns:minmax(230px,.8fr) minmax(320px,1.2fr)}.preview{grid-column:1/-1}}@media(max-width:640px){.columns,.two{grid-template-columns:1fr}.preview{grid-column:auto}.branch-note{width:100%;margin:0}.bar label{flex:1}}
+</style>
+</head>
+<body>
+<header><div class="frame brand"><strong>NOIR <span>STUDIO</span></strong><small>Sprint 4 · UI simulation</small></div></header>
+<main class="frame">
+  <div class="intro"><h1>World laws &amp; counterfactuals</h1><p>Define a rule, preview an edit, and compare the saved world on different branches.</p></div>
+  <div class="bar" aria-label="Branch controls">
+    <label>Active branch<select id="branch"></select></label>
+    <label>New branch name<input id="branch-name" maxlength="40" placeholder="Alternate path"></label>
+    <button type="button" id="fork">Fork from selected beat</button>
+    <span class="branch-note" id="fork-base"></span>
+  </div>
+  <p class="notice" id="notice" role="status"></p>
+  <div class="columns">
+    <section class="panel" aria-labelledby="law-heading">
+      <div class="head"><h2 id="law-heading">World laws</h2><p>Rules apply across branches in this project.</p></div>
+      <div class="body stack">
+        <form id="law-form" class="stack">
+          <label>Rule ID<input id="law-id" required maxlength="32" pattern="[a-zA-Z0-9_\-]+" placeholder="vault-access"></label>
+          <label>Action<input id="law-action" required maxlength="48" placeholder="Open vault"></label>
+          <label>Required fact<input id="law-fact" required maxlength="60" placeholder="Key recovered"></label>
+          <label>Check<select id="law-scope"><option value="world">Fact exists in the world</option><option value="knowledge">Actor knows the fact</option></select></label>
+          <button type="submit">Add law</button>
+        </form>
+        <div id="laws" class="stack section"></div>
+      </div>
+    </section>
+    <section class="panel" aria-labelledby="beat-heading">
+      <div class="head"><h2 id="beat-heading">Branch timeline</h2><p>Select a saved beat as a fork point or open it for editing.</p></div>
+      <div class="body stack">
+        <p class="muted" id="empty">This project has no saved beats.</p>
+        <div id="timeline" class="stack"></div>
+        <div class="row"><button type="button" id="new" class="primary">New beat</button><button type="button" id="edit" disabled>Edit selected beat</button></div>
+        <form id="beat-form" class="stack section" hidden>
+          <h3 id="editor-title">New beat</h3>
+          <label>Beat title<input id="title" required maxlength="65" placeholder="At the vault"></label>
+          <div class="two"><label>Actor<input id="actor" maxlength="40" placeholder="Mara"></label><label>Attempted action<input id="action" maxlength="48" placeholder="Open vault"></label></div>
+          <label>Fact established after this beat<input id="fact" maxlength="60" placeholder="Key recovered"></label>
+          <div class="two"><label>Witness<input id="witness" maxlength="40" placeholder="Mara"></label><label>Evidence channel<select id="channel"><option value="sight">Sight</option><option value="audio">Audio</option></select></label></div>
+          <label class="tick"><input type="checkbox" id="gate" checked>Channel open to witness</label>
+          <div id="setup-list" class="stack"></div>
+          <div class="row"><button type="submit" class="primary" id="commit">Save beat</button><button type="button" id="discard">Discard edit</button></div>
+        </form>
+      </div>
+    </section>
+    <section class="panel preview" aria-labelledby="preview-heading">
+      <div class="head"><h2 id="preview-heading">Validation preview</h2><p id="preview-caption">Saved branch state</p></div>
+      <div class="body stack">
+        <div id="validation" class="stack" aria-live="polite"></div>
+        <div class="section stack"><h3 id="world-heading">Known world facts</h3><p id="facts" class="muted"></p>
+          <label>Point of view<select id="viewpoint"></select></label><p id="knowledge" class="muted"></p>
+        </div>
+        <details><summary>View replay payload</summary><pre id="payload"></pre></details>
+      </div>
+    </section>
+  </div>
+  <p class="footer">Standalone simulation. Rules, branches, and beats are saved in this browser.</p>
+</main>
+<script>
+'use strict';
+const el = id => document.getElementById(id);
+const storageKey = 'noir-s4-world-law-mockup-v1';
+const key = value => value.trim().replace(/\s+/g,' ').toLowerCase();
+const id = () => crypto.randomUUID();
+const fields = ['title','actor','action','fact','witness','channel'];
+function blankProject() {
+  return {laws:[], branches:[{id:'main',name:'Main',parent:null,forkTitle:null,prefix:[],beats:[]}], active:'main'};
+}
+let storageAvailable = true;
+let project;
+try { project = JSON.parse(localStorage.getItem(storageKey) || 'null') || blankProject(); }
+catch { project = blankProject(); storageAvailable = false; }
+let selected = null;
+let draft = null;
+let viewpoint = '';
+let notice = '';
+
+function activeBranch() {
+  return project.branches.find(branch => branch.id === project.active);
+}
+function branchBeats(branch) {
+  return [...branch.prefix,...branch.beats];
+}
+function save() {
+  try { localStorage.setItem(storageKey,JSON.stringify(project)); }
+  catch { storageAvailable = false; }
+}
+function element(tag, content, className) {
+  const node = document.createElement(tag);
+  node.textContent = content;
+  if (className) node.className = className;
+  return node;
+}
+function button(label, action) {
+  const node = element('button',label);
+  node.type = 'button';
+  node.addEventListener('click',action);
+  return node;
+}
+function editingBeat() {
+  const values = Object.fromEntries(fields.map(name => [name,el(name).value.trim()]));
+  return {...values,id:draft.id,gate:el('gate').checked};
+}
+function proposedBeats(branch) {
+  const beats = branchBeats(branch);
+  if (!draft) return beats;
+  const index = draft.edit
+    ? beats.findIndex(beat => beat.id === draft.id) : beats.length;
+  beats.splice(index,draft.edit ? 1 : 0,...draft.setup,editingBeat());
+  return beats;
+}
+function replay(beats, laws=project.laws) {
+  const facts = new Map();
+  const seen = new Map();
+  const people = new Map();
+  const findings = [];
+  for (const [index,beat] of beats.entries()) {
+    const actor = key(beat.actor);
+    const witness = key(beat.witness);
+    if (actor) people.set(actor,beat.actor);
+    if (witness) people.set(witness,beat.witness);
+    for (const law of laws) {
+      if (key(beat.action) !== law.action) continue;
+      const fact = key(law.fact);
+      const present = law.scope === 'world' ? facts.has(fact) : seen.get(actor)?.has(fact);
+      if (!present) findings.push({
+        rule_id:law.id,severity:'blocking',scope:law.scope,beat_id:beat.id,
+        beat_title:beat.title || 'Untitled beat',index,actor:beat.actor,fact:law.fact,
+        message:law.scope === 'world' ? 'Required world fact is missing.' :
+          (beat.actor ? beat.actor + ' has not learned the required fact.' : 'Assign an actor to check what they know.'),
+        remedy:law.scope === 'world' ? 'Establish the fact in an earlier beat.' :
+          'Add an earlier observation with an open channel for the actor.'
+      });
+    }
+    if (!beat.fact || findings.some(finding => finding.beat_id === beat.id)) continue;
+    const fact = key(beat.fact);
+    facts.set(fact,beat.fact);
+    if (witness && beat.gate) {
+      if (!seen.has(witness)) seen.set(witness,new Map());
+      seen.get(witness).set(fact,beat.fact);
+    }
+  }
+  return {facts,seen,people,findings};
+}
+function syncSelect(select, options, choice) {
+  select.replaceChildren(...options.map(([value,label]) => new Option(label,value)));
+  select.value = choice;
+}
+function render() {
+  const branch = activeBranch();
+  const beats = branchBeats(branch);
+  const chosen = beats.find(beat => beat.id === selected);
+  const inherited = branch.prefix.some(beat => beat.id === selected);
+  const proposed = proposedBeats(branch);
+  const result = replay(proposed);
+  el('notice').textContent = [notice, storageAvailable ? '' : 'Browser storage is unavailable. Reload persistence is disabled.'].filter(Boolean).join(' ');
+  syncSelect(el('branch'),project.branches.map(item => [item.id,item.name]),branch.id);
+  el('branch').disabled = Boolean(draft);
+  el('fork').disabled = Boolean(draft);
+  el('branch-name').disabled = Boolean(draft);
+  el('fork-base').textContent = (branch.forkTitle ? 'Forked at ' + branch.forkTitle + ' · ' : '') +
+    (chosen ? 'Selected: ' + chosen.title : 'Fork point: project start');
+  el('new').disabled = Boolean(draft);
+  el('edit').disabled = !chosen || inherited || Boolean(draft);
+  el('empty').hidden = beats.length > 0;
+  el('timeline').replaceChildren(...beats.map((beat,index) => {
+    const row = button('',() => {
+      selected = beat.id;
+      render();
+      el('timeline').querySelectorAll('button')[index]?.focus();
+    });
+    row.id = 'beat-' + beat.id;
+    row.className = 'entry';
+    row.setAttribute('aria-pressed',String(selected === beat.id));
+    row.append(element('strong',beat.title),element('span',[
+      index < branch.prefix.length ? 'Inherited' : 'Saved',beat.action,beat.fact
+    ].filter(Boolean).join(' · ')));
+    return row;
+  }));
+  el('laws').replaceChildren(...project.laws.map(law => {
+    const row = element('div','','entry');
+    row.append(element('code',law.id,'law-id'),element('span',law.action + ' requires ' +
+      law.fact + (law.scope === 'knowledge' ? ' in the actor’s knowledge.' : ' in the world.')));
+    return row;
+  }));
+  el('laws').hidden = !project.laws.length;
+  Array.from(el('law-form').elements).forEach(control => { control.disabled = Boolean(draft); });
+  el('beat-form').hidden = !draft;
+  el('commit').disabled = !draft || !el('title').value.trim() || Boolean(result.findings.length);
+  el('preview-caption').textContent = draft ? 'Proposed edit · Unsaved' : 'Saved branch state';
+  el('world-heading').textContent = draft && result.findings.length ? 'Facts from replayable beats' : 'Known world facts';
+  el('validation').replaceChildren();
+  if (!result.findings.length) {
+    const valid = element('div',draft ? 'No blocking violations' : 'Saved branch passes validation','result');
+    valid.dataset.valid = 'true';
+    el('validation').append(valid);
+  }
+  for (const finding of result.findings) {
+    const card = element('div','','result stack');
+    card.dataset.valid = 'false';
+    const actions = element('div','','row');
+    actions.append(button('Jump to beat',() => {
+      if (draft?.id === finding.beat_id) el('action').focus();
+      else if (draft?.setup.some(beat => beat.id === finding.beat_id)) el('setup-list').focus();
+      else document.getElementById('beat-' + finding.beat_id)?.focus();
+    }));
+    if (draft && finding.beat_id === draft.id && (finding.scope === 'world' || finding.actor)) {
+      actions.append(button('Stage prerequisite',() => stage(finding)));
+    }
+    card.append(element('strong',finding.rule_id + ' · Blocking'),
+      element('p',finding.beat_title + ' — ' + finding.message),
+      element('small',finding.remedy),actions);
+    el('validation').append(card);
+  }
+  el('setup-list').replaceChildren(...(draft?.setup || []).map(beat => {
+    const row = element('div','','entry');
+    row.append(element('strong',beat.title),element('span',beat.witness ? 'Observed by ' + beat.witness : 'World fact'));
+    return row;
+  }));
+  el('setup-list').hidden = !draft?.setup.length;
+  const people = [...result.people.entries()];
+  if (!result.people.has(viewpoint)) viewpoint = people[0]?.[0] || '';
+  syncSelect(el('viewpoint'),people.length ? people : [['','No viewpoint yet']],viewpoint);
+  el('facts').textContent = [...result.facts.values()].join(' · ') || 'No world facts yet.';
+  const known = [...(result.seen.get(viewpoint)?.values() || [])];
+  el('knowledge').textContent = known.join(' · ') || 'No witnessed facts.';
+  el('payload').textContent = JSON.stringify({branch:branch.name,mode:draft ? 'preview' : 'saved',
+    world_facts:[...result.facts.values()],viewpoint:result.people.get(viewpoint) || null,known,violations:result.findings},null,2);
+}
+function stage(finding) {
+  draft.setup.push({id:id(),title:'Establish ' + finding.fact,actor:'',action:'',fact:finding.fact,
+    witness:finding.scope === 'knowledge' ? finding.actor : '',channel:'sight',gate:true});
+  notice = 'Prerequisite staged before the edited beat.';
+  render();
+  el('commit').focus();
+}
+function openEditor(beat) {
+  draft = {id:beat?.id || id(),edit:Boolean(beat),setup:[]};
+  for (const name of fields) el(name).value = beat?.[name] || (name === 'channel' ? 'sight' : '');
+  el('gate').checked = beat?.gate ?? true;
+  el('editor-title').textContent = beat ? 'Edit beat' : 'New beat';
+  notice = '';
+  render();
+  el('title').focus();
+}
+el('new').addEventListener('click',() => openEditor());
+el('edit').addEventListener('click',() => openEditor(activeBranch().beats.find(beat => beat.id === selected)));
+el('discard').addEventListener('click',() => { draft = null; notice = 'Unsaved edits discarded.'; render(); el('new').focus(); });
+el('beat-form').addEventListener('input',render);
+el('beat-form').addEventListener('submit',event => {
+  event.preventDefault();
+  const branch = activeBranch();
+  const proposed = proposedBeats(branch);
+  if (!editingBeat().title || replay(proposed).findings.length) return;
+  branch.beats = proposed.slice(branch.prefix.length);
+  selected = draft.id;
+  draft = null;
+  notice = 'Beat saved to ' + branch.name + '.';
+  save();
+  render();
+  document.getElementById('beat-' + selected)?.focus();
+});
+el('law-form').addEventListener('submit',event => {
+  event.preventDefault();
+  const ruleId = key(el('law-id').value);
+  const action = key(el('law-action').value);
+  const fact = el('law-fact').value.trim();
+  if (!ruleId || !action || !fact) return;
+  if (project.laws.some(law => law.id === ruleId)) {
+    notice = 'That rule ID already exists.';
+  } else {
+    const law = {id:ruleId,action,fact,scope:el('law-scope').value};
+    const next = [...project.laws,law];
+    const conflict = project.branches.find(branch => replay(branchBeats(branch),next).findings.length);
+    if (conflict) notice = 'Rule would invalidate saved beats on ' + conflict.name + '. Revise the rule or beats first.';
+    else {
+      project.laws.push(law);
+      notice = 'Added world law ' + ruleId + '.';
+      el('law-form').reset();
+      save();
+    }
+  }
+  render();
+});
+el('branch').addEventListener('change',() => {
+  project.active = el('branch').value;
+  selected = null;
+  notice = '';
+  save();
+  render();
+});
+el('fork').addEventListener('click',() => {
+  const parent = activeBranch();
+  const name = el('branch-name').value.trim();
+  if (!name || project.branches.some(branch => key(branch.name) === key(name))) {
+    notice = 'Enter a unique branch name.';
+    render();
+    el('branch-name').focus();
+    return;
+  }
+  const beats = branchBeats(parent);
+  const index = beats.findIndex(beat => beat.id === selected);
+  const title = beats[index]?.title || 'Project start';
+  const branch = {id:id(),name,parent:parent.id,forkTitle:title,prefix:structuredClone(beats.slice(0,index+1)),beats:[]};
+  project.branches.push(branch);
+  project.active = branch.id;
+  el('branch-name').value = '';
+  selected = null;
+  notice = 'Fork created from ' + title + '.';
+  save();
+  render();
+});
+el('viewpoint').addEventListener('change',() => { viewpoint = el('viewpoint').value; render(); el('viewpoint').focus(); });
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,2082 @@
+{
+  "schema_version": 1,
+  "status": "CONFIGURED_CURRENT_BEHAVIOR",
+  "commands": [
+    {
+      "id": "studio.project_history",
+      "purpose": "Replay committed Studio changes in one workspace-wide order.",
+      "owning_module": "prose_engine",
+      "input_schema": {
+        "action": "history.open | history.undo | history.redo",
+        "revision": "required integer for undo or redo",
+        "tx_id": "required ID from the current undo or redo entry",
+        "project": "optional project ID",
+        "universe": "optional universe ID"
+      },
+      "preconditions": [
+        "Selected timeline workspace and matching scope.",
+        "Replay requires the current journal revision, transaction ID and native editor state."
+      ],
+      "state_changes": [
+        "Records new Studio Timeline, Story DAG, form graph, notebook and act-structure changes.",
+        "Undo or redo updates the native editor and journal together.",
+        "A new edit discards the project redo sequence."
+      ],
+      "result_schema": {
+        "revision": "integer",
+        "next_undo": "transaction or null",
+        "next_redo": "transaction or null",
+        "changed": "transaction returned by a successful step"
+      },
+      "error_cases": [
+        "Stale journal or editor revision, unavailable workspace data, or unsafe cross-file journal mode."
+      ],
+      "undo_policy": "Append or replay native revisions using the recorded patch references. Existing dedicated editor histories remain available.",
+      "persistence_policy": "SQLite project order and immutable patch references. Forms and timeline use an attached transaction in rollback-journal mode.",
+      "cancellation_policy": "Any replay failure rolls back the transaction.",
+      "test_ids": [
+        "tests.test_workspace_history",
+        "tests.test_e2e_cdp_v2"
+      ],
+      "ui_binding": "Studio header Undo and Redo, Ctrl+Z and Ctrl+Shift+Z. Editable fields retain text shortcuts.",
+      "automation_binding": "POST /api/episode-command with the history action and payload.",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "noir.service.v1",
+      "purpose": "Use a scoped Noir workspace and its shared reference readers from another local process.",
+      "owning_module": "prose_engine",
+      "input_schema": {"type": "object", "required": ["action", "request"], "properties": {"action": {"type": "string"}, "request": {"type": "object"}}},
+      "preconditions": ["Selected existing timeline and local library; trusted private v1 ticket bound to the workspace and port.", "Writing start requires an explicitly enabled writer, stable request ID and hard attempt and byte ceilings."],
+      "state_changes": ["Read commands and previews never spend writer attempts.", "Run start or explicit resume uses the native run store and the shared durable budget; generated variants stay separate from the manuscript.", "Draft apply, notebook history, Timeline changes, and source intake use revision-checked episode commands."],
+      "result_schema": {"type": "object"},
+      "error_cases": ["403 unauthenticated or cross-origin", "404 unlisted action or protocol", "400 stale revisions, unconfigured writer or invalid limits", "503 unavailable service or workspace"],
+      "undo_policy": "Proposal generation does not edit the manuscript; notebook.undo and notebook.redo reverse a saved application through EpisodeCommands.",
+      "persistence_policy": "SQLite stores run and draft revisions and durable per-ticket call counts. Reconnecting never starts a run.",
+      "cancellation_policy": "Explicit run.cancel; an unresolved send remains counted and is not retried or redirected to another session.",
+      "test_ids": ["tests.test_noir_service", "tests.test_primary_sessions", "tests.test_episode_writing_runs", "tests.test_fa04_shared_commands", "tests.test_episode_intake"],
+      "ui_binding": "Native Timeline, variant Full Graph and the Studio Processing dock. Connected Noir Workbench uses the shared service; standalone Workbench uses file histories.",
+      "automation_binding": "tools.noir_client:NoirClient; /v1/status, /v1/episodes, /v1/open, /v1/command, /v1/cover, /v1/intake and /v1/scope.",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "story_graph.transition",
+      "owning_module": "story_graph",
+      "purpose": "Validate and apply a typed action to canonical in-memory state.",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "transaction"
+        ],
+        "properties": {
+          "transaction": {
+            "type": "object"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "result"
+        ],
+        "properties": {
+          "result": {
+            "type": "object"
+          }
+        }
+      },
+      "implementation": "story_graph/world_state.py:StoryWorldState.execute",
+      "preconditions": [
+        "Transaction references configured entities and action type; action preconditions come from current world state."
+      ],
+      "state_changes": [
+        "Only a valid transaction updates the corresponding character, room, portal, prop or posture fluents."
+      ],
+      "error_cases": [
+        "Unknown entity or action; locked/unreachable route; unavailable prop; invalid affordance."
+      ],
+      "undo_policy": "Use the graph snapshot/replay workflow for recovery; no general end-user undo command.",
+      "persistence_policy": "In-memory operation; callers own persistence.",
+      "cancellation_policy": "Synchronous; cancel before invoking.",
+      "revision_precondition": "No external revision check; caller supplies current state.",
+      "idempotency_policy": "Stateful action; do not automatically retry.",
+      "test_ids": [
+        "tests.test_story_graph_world_state.TestStoryGraphWorldState.test_legal_drop_and_move",
+        "tests.test_story_graph_world_state.TestStoryGraphWorldState.test_lock_and_illegal_traversal_blocking",
+        "tests.test_story_graph_world_state.TestStoryGraphWorldState.test_snapshot_and_rollback"
+      ],
+      "ui_binding": "No direct Studio transition binding asserted.",
+      "automation_binding": "Python engine and scenario sequencer",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "story_graph.compile_beat",
+      "owning_module": "story_graph",
+      "purpose": "Project an executed story beat into a typed BeatPacket.",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "beat_record"
+        ],
+        "properties": {
+          "beat_record": {
+            "type": "object"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "beat_packet"
+        ],
+        "properties": {
+          "beat_packet": {
+            "type": "object"
+          }
+        }
+      },
+      "implementation": "story_graph/compiler.py:BeatPacketCompiler.compile",
+      "preconditions": [
+        "Executed beat record and matching snapshot for historical compilation."
+      ],
+      "state_changes": [
+        "Compilation does not advance the story. Explicit export writes only the chosen artifact."
+      ],
+      "error_cases": [
+        "Missing or malformed beat record; export destination I/O error."
+      ],
+      "undo_policy": "Recompile from retained input; keep prior export as a separate artifact.",
+      "persistence_policy": "Packet in memory unless an explicit export runs.",
+      "cancellation_policy": "Synchronous; cancel before export.",
+      "test_ids": [
+        "tests.test_story_graph_compiler.TestStoryGraphCompiler.test_compile_single_beat_packet",
+        "tests.test_story_graph_compiler.TestStoryGraphCompiler.test_full_scenario_manifest_and_raw_script",
+        "tests.test_mo2_execution"
+      ],
+      "ui_binding": "Studio graph display is not proof that live Compute compiles this packet.",
+      "automation_binding": "Python API, hybrid pipeline and dedicated tools/check_mo2.py replay.",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "prose.condition",
+      "owning_module": "prose_engine",
+      "purpose": "Generate review proposals, or apply an explicitly reviewed request to the revision store.",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "source",
+          "provider",
+          "out"
+        ],
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "out": {
+            "type": "string"
+          },
+          "apply": {
+            "type": "boolean"
+          },
+          "allow_dialogue": {
+            "type": "boolean"
+          },
+          "allow_book_references": {
+            "type": "boolean"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "proposals",
+          "report"
+        ],
+        "properties": {
+          "proposals": {
+            "type": "array"
+          },
+          "report": {
+            "type": "object"
+          },
+          "conditioned_copy": {
+            "type": "string"
+          }
+        }
+      },
+      "implementation": "prose_engine/conditioner.py:run_conditioning",
+      "preconditions": [
+        "Input is readable, provider is configured, and protected dialogue stays frozen by default.",
+        "Use a separate output directory; external data transfer follows project permissions."
+      ],
+      "state_changes": [
+        "Without --apply writes proposal artifacts. With --apply, checks the original source and dispatches an explicit reviewed request."
+      ],
+      "error_cases": [
+        "Provider failure or rejected candidate; known gap: CLI writes before reporting document-wide issues.",
+        "A reference preflight failure returns a rejected proposal without calling a provider; a post-response scoring error retains a rejected candidate."
+      ],
+      "undo_policy": "Discard the generated copy and use the original; no revision-level undo.",
+      "persistence_policy": "Local artifacts and telemetry; no approved master update.",
+      "cancellation_policy": "No persisted cancel/restart contract. Treat interrupted output as incomplete.",
+      "revision_precondition": "Uses current invocation input; no persisted apply compare-and-swap.",
+      "idempotency_policy": "Do not retry automatically; output and telemetry can be rewritten/appended.",
+      "test_ids": [
+        "tests.test_m1_correction.CutFirstTests.test_dialogue_frozen_by_default",
+        "tests.test_m1_correction.CutFirstTests.test_deletion_proposal_applies",
+        "tests.test_m1_correction.CutFirstTests.test_invented_entity_rejected",
+        "tests.test_luar_conditioner.LuarConditionerTests.test_actual_conditioner_scores_with_allowed_index_and_no_luar_threshold",
+        "tests.test_luar_conditioner.LuarConditionerTests.test_score_failure_after_response_keeps_candidate_and_rejects_it",
+        "tests.test_nr03_shared_enforcement"
+      ],
+      "ui_binding": "Workbench and Studio do not use the same validated apply service yet.",
+      "automation_binding": "python -m prose_engine condition",
+      "status": "VERIFIED",
+      "nr03_change": "Scoped Studio, Workbench timeline mode and CLI share operation dispatch; standalone routes are labeled unscoped. Three direct reference tools now use shared purpose/influence policy. Scoped CLI accepts --form-store and sibling character-forms.sqlite; standalone routes and local scoring gaps remain."
+    },
+    {
+      "id": "prose.vary",
+      "owning_module": "prose_engine",
+      "purpose": "Generate and rank alternative treatments of an author-directed beat.",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "source",
+          "paragraph",
+          "direction"
+        ],
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "paragraph": {
+            "type": "integer"
+          },
+          "direction": {
+            "type": "string"
+          },
+          "n": {
+            "type": "integer"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "takes",
+          "survivors"
+        ],
+        "properties": {
+          "takes": {
+            "type": "array"
+          },
+          "survivors": {
+            "type": "integer"
+          }
+        }
+      },
+      "implementation": "prose_engine/voice/vary.py:run",
+      "preconditions": [
+        "Valid action paragraph; dialogue frozen; configured provider and author direction."
+      ],
+      "state_changes": [
+        "Returns proposal alternatives; optional report only. No author-approved state change."
+      ],
+      "error_cases": [
+        "Bad paragraph or locked dialogue; budget/provider error; staging and embedding fallback gaps tracked separately."
+      ],
+      "undo_policy": "Discard the proposals.",
+      "persistence_policy": "Optional variation report; no manuscript write.",
+      "cancellation_policy": "Provider budget may stop generation; persistent cancellation is not implemented.",
+      "test_ids": [],
+      "coverage_note": "tests.test_voice_variations covers legacy treatment and deduplication behavior; exact voice vary failure paths need separate fixtures.",
+      "ui_binding": "Workbench variation uses a separate path.",
+      "automation_binding": "python -m prose_engine voice vary",
+      "status": "IMPLEMENTED_WITH_GAPS"
+    },
+    {
+      "id": "studio.compute",
+      "owning_module": "tools",
+      "purpose": "Preview Studio's current demo transformations on supplied blocks.",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "blocks"
+        ],
+        "properties": {
+          "blocks": {
+            "type": "array"
+          },
+          "nodes": {
+            "type": "array"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "blocks",
+          "burstiness",
+          "accepted",
+          "rejected"
+        ],
+        "properties": {
+          "blocks": {
+            "type": "array"
+          },
+          "burstiness": {
+            "type": "number"
+          },
+          "accepted": {
+            "type": "integer"
+          },
+          "rejected": {
+            "type": "integer"
+          }
+        }
+      },
+      "implementation": "tools/studio_ui.py:StudioRequestHandler.do_POST",
+      "preconditions": [
+        "Local Studio; valid JSON block payload."
+      ],
+      "state_changes": [
+        "Returns unchanged blocks and diagnostic score; no proposals are generated or committed."
+      ],
+      "error_cases": [
+        "Legacy analyzer does not perform reviewed editing; use the reviewed editorial route."
+      ],
+      "undo_policy": "Dismiss or reset the preview.",
+      "persistence_policy": "No on-disk commit by this endpoint.",
+      "cancellation_policy": "No server-side cancel contract.",
+      "test_ids": [
+        "tests.test_studio_ui.TestStudioUI.test_post_api_compute"
+      ],
+      "ui_binding": "Studio Compute button",
+      "automation_binding": "POST /api/compute (loopback demo only)",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "workbench.save_copy",
+      "owning_module": "tools",
+      "purpose": "Preview, commit or undo explicit reviewed changes to a configured revision store.",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "edits",
+          "out"
+        ],
+        "properties": {
+          "edits": {
+            "type": "object"
+          },
+          "out": {
+            "type": "string"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "saved"
+        ],
+        "properties": {
+          "saved": {
+            "type": "boolean"
+          },
+          "path": {
+            "type": "string"
+          }
+        }
+      },
+      "implementation": "tools/workbench.py:Workbench.save",
+      "preconditions": [
+        "Workbench has accepted edits and a separate writable output directory."
+      ],
+      "state_changes": [
+        "Preview is read-only. Apply and undo use the shared revision store."
+      ],
+      "error_cases": [
+        "No edits means no save; two separate writes can partially succeed; no stale-input or whole-document commit check."
+      ],
+      "undo_policy": "Keep the original and discard the incomplete or unwanted exports.",
+      "persistence_policy": "Local files only; does not establish named author acceptance.",
+      "cancellation_policy": "Synchronous; cancel before save.",
+      "test_ids": [],
+      "coverage_note": "Revision, stale edit and partial write behavior remain unverified.",
+      "ui_binding": "Workbench Preview changes, Accept and apply, Undo revision",
+      "automation_binding": "Workbench.save",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "corpus.ingest",
+      "owning_module": "tools",
+      "purpose": "Extract a permitted local book and update its text and manifest entry.",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "source",
+          "books_dir"
+        ],
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "books_dir": {
+            "type": "string"
+          },
+          "force": {
+            "type": "boolean"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "manifest"
+        ],
+        "properties": {
+          "manifest": {
+            "type": "object"
+          }
+        }
+      },
+      "implementation": "tools/book_ingest.py",
+      "preconditions": [
+        "Readable supported text/PDF/EPUB source; permissions permit local ingestion."
+      ],
+      "state_changes": [
+        "Writes text and manifest; index rebuild is a separate operation."
+      ],
+      "error_cases": [
+        "Unsupported/empty input or extraction failure; write interruption can leave text and manifest out of sync."
+      ],
+      "undo_policy": "Recover prior text and manifest from a verified checkpoint; do not delete the source.",
+      "persistence_policy": "Local extracted text and manifest. No automatic remote upload.",
+      "cancellation_policy": "No atomic batch cancellation; inspect partial results.",
+      "test_ids": [
+        "tests.test_book_expansion.TestBookExpansion.test_ingest_updates_manifest",
+        "tests.test_book_expansion.TestBookExpansion.test_ingest_epub"
+      ],
+      "ui_binding": "No Studio ingest binding verified.",
+      "automation_binding": "tools/book_ingest.py and tools/book_finder.py ingest",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "verification.core",
+      "owning_module": "tools",
+      "purpose": "Run the declared static architecture check and established local fixture suite.",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "core"
+        ],
+        "properties": {
+          "core": {
+            "type": "boolean"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "exit_code",
+          "checks"
+        ],
+        "properties": {
+          "exit_code": {
+            "type": "integer"
+          },
+          "checks": {
+            "type": "array"
+          }
+        }
+      },
+      "implementation": "tools/ci.py --core",
+      "preconditions": [
+        "Python project dependencies available; loopback allowed and Studio fixture port 8795 free."
+      ],
+      "state_changes": [
+        "No intentional project asset writes; fixtures use temporary work and a loopback test server."
+      ],
+      "error_cases": [
+        "Undeclared static import, bad map or source parse, fixture failure, baseline below 78, timeout."
+      ],
+      "undo_policy": "Not applicable to a read-only project check.",
+      "persistence_policy": "Console results; attach reviewed output and working-tree fingerprint to the task. No auto-acceptance.",
+      "cancellation_policy": "CI limits architecture to 120 seconds and core fixtures to 240 seconds; interrupted results do not pass.",
+      "test_ids": [
+        "tests.test_architecture_check",
+        "tests.test_m1_correction",
+        "tests.test_studio_ui"
+      ],
+      "ui_binding": "None",
+      "automation_binding": "python -B tools/ci.py --core",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "prose.preview",
+      "purpose": "Validate candidate edits in memory for author review.",
+      "owning_module": "prose_engine",
+      "implementation": "prose_engine/editorial_service.py:preview",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "text",
+          "base_revision",
+          "edits",
+          "frozen",
+          "world"
+        ]
+      },
+      "preconditions": [
+        "Caller supplies exact Unicode code-point ranges, frozen spans and a loaded world state."
+      ],
+      "state_changes": [],
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "status",
+          "original",
+          "candidate",
+          "baseline_issues",
+          "new_issues",
+          "author_decision"
+        ]
+      },
+      "error_cases": [
+        "Stale revision, invalid or overlapping range, frozen span, new canon occurrence."
+      ],
+      "undo_policy": "No state is committed.",
+      "persistence_policy": "No file or telemetry writes.",
+      "cancellation_policy": "Synchronous in-memory evaluation.",
+      "test_ids": [
+        "tests.test_editorial_preview"
+      ],
+      "ui_binding": "UNWIRED (U3)",
+      "automation_binding": "Python API",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "prose.reviewed_apply",
+      "purpose": "Commit explicitly reviewed and revalidated edits to a separate transactional revision store.",
+      "owning_module": "prose_engine",
+      "implementation": "prose_engine/editorial_revisions.py:RevisionStore",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "operation_id",
+          "base_revision",
+          "edits",
+          "reviewer",
+          "reviewed_candidate_hash",
+          "reviewed_world_hash",
+          "world"
+        ]
+      },
+      "preconditions": [
+        "Store was explicitly created at a new local path; caller supplies the protected ranges and records a named review."
+      ],
+      "state_changes": [
+        "One atomic database transaction commits text, decision, and revision head."
+      ],
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "revision_number"
+        ]
+      },
+      "error_cases": [
+        "Stale revision, changed world or candidate, frozen text, new canon issue, reused operation ID with different data, failed storage."
+      ],
+      "undo_policy": "Undo records an inverse revision restoring the prior text and protected ranges.",
+      "persistence_policy": "Separate SQLite database; exclusive creation. No original manuscript write. Export creates a new file without overwriting.",
+      "cancellation_policy": "Uncommitted transactions roll back; retries with the same ID and payload return the recorded result.",
+      "test_ids": [
+        "tests.test_editorial_revisions"
+      ],
+      "ui_binding": "Studio Reviewed edits when launched with --review-store",
+      "automation_binding": "Python API and python -m prose_engine editorial",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "story_graph.check_mo2",
+      "owning_module": "story_graph",
+      "purpose": "Replay the source-anchored 20-beat graph and validate structured claims against a beat snapshot.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "manifest": {
+            "type": "string"
+          },
+          "claims": {
+            "type": "string"
+          },
+          "form_store": {
+            "type": "string"
+          }
+        }
+      },
+      "preconditions": [
+        "Local source and scenario definitions; claims must match the recorded world snapshot."
+      ],
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "beats",
+          "final_tick",
+          "claim_violations"
+        ]
+      },
+      "implementation": "tools/check_mo2.py:main",
+      "state_changes": [
+        "Read-only replay. An explicit manifest destination creates a new file."
+      ],
+      "error_cases": [
+        "Invalid or stale claim, illegal transition, inaccessible store, or existing output."
+      ],
+      "undo_policy": "Replay from the retained scenario; retain earlier manifests.",
+      "persistence_policy": "Explicit export only; source and manuscript are read-only.",
+      "cancellation_policy": "Cancel before creating an output file.",
+      "test_ids": [
+        "tests.test_mo2_execution",
+        "tests.test_foxy_mo2_dag"
+      ],
+      "ui_binding": "Studio story view uses the same replayed form availability.",
+      "automation_binding": "python -B tools/check_mo2.py",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "studio.form_graph",
+      "owning_module": "tools",
+      "purpose": "Save separate appearance boards, connect typed Mind data, stage episode forms, and edit directed relationship cues.",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "revision",
+          "action"
+        ],
+        "properties": {
+          "revision": {
+            "type": "integer"
+          },
+          "action": {
+            "enum": [
+              "set_link",
+              "stage_form",
+              "set_relationship",
+              "create_mind_link",
+              "add_node",
+              "add_stella_stage",
+              "add_character",
+              "set_image",
+              "undo_image",
+              "move_node",
+              "undo_position",
+              "save_node_data",
+              "undo_node_data",
+              "redo_node_data",
+              "save_board",
+              "add_attachment",
+              "remove_attachment",
+              "restore_attachment",
+              "redo_position",
+              "undo_graph",
+              "redo_graph"
+            ]
+          }
+        }
+      },
+      "preconditions": [
+        "Loopback Studio with a local form store; valid port and typed target; current graph revision."
+      ],
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "revision",
+          "junctions",
+          "nodes",
+          "beats",
+          "editable"
+        ]
+      },
+      "implementation": "story_graph/form_graph_store.py:FormGraphStore.change (re-exported in tools/studio_form_store.py)",
+      "state_changes": [
+        "Saves the selected port, new data node or named stage only. Does not activate any story form.",
+        "A new character graph and per-form image references are stored with the graph; existing known image paths remain source-linked.",
+        "Save or undo a node position for one character without changing story state.",
+        "Save a JSON object independently on a valid character junction, form port, or connected data port; saved Personality, Voice, Notes and structured_data fields project as universal_author context only for base, beat-active and linked active/base nodes (inactive forms remain withheld via hidden phrases and changes invalidate drafts via character_store_token).",
+        "Node files (up to 20 MB each) are stored as blobs with hash-checked, node-owned metadata (and excluded from scoped prompts). A revision-checked graph journal records before/after states, including attachment metadata.",
+        "Save private board notes and card positions by existing form port. The server refuses card positions referencing another form's file. Create and link a typed mind in a single graph change."
+      ],
+      "error_cases": [
+        "Stale revision, unregistered target, invalid stage, or unavailable store.",
+        "Invalid or oversized node content, invalid node for that character, stale graph revision, or no node history to undo."
+      ],
+      "undo_policy": "Graph-wide Undo/Redo reverses journaled graph actions; node details and positions also have their own recovery controls. Attachment blobs are retained for restore; a new graph change clears the redo stack.",
+      "persistence_policy": "Local SQLite transaction with revision checking.",
+      "cancellation_policy": "Leave the selection unsaved or close the map before saving.",
+      "test_ids": [
+        "tests.test_studio_form_store"
+      ],
+      "ui_binding": "Studio v2 > Graph > Character Junctions > Board. The legacy UI uses the same store but has no board surface.",
+      "automation_binding": "GET or same-origin POST /api/form-graph; replay and prose_engine scoped can read the store with --form-store or sibling character-forms.sqlite.",
+      "status": "VERIFIED",
+      "character_block_change": "Studio and NotebookStore append-block require an existing graph identity for newly added character blocks. Existing source blocks are preserved; other legacy editing paths are outside this contract.",
+      "character_graph_view": "Cytoscape projects Multi-Character Overview (All characters) and single-character views with a left roster, 3-field node cards (Personality, Voice, Notes and port indicators) and saved data connections. Rainee normal and Peter retain distinct existing port IDs; historical imported forms remain separately accessible. Node positions are revision-checked and persisted per character; planning visualization does not activate a form, while inspector Scoped Generation Context status reports active/base inclusion vs inactive withholding."
+    },
+    {
+      "id": "prose.author_pilot",
+      "owning_module": "tools",
+      "purpose": "Freeze a local author pilot and score named blinded decisions separately from automated eligibility.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "enum": [
+              "build",
+              "report"
+            ]
+          },
+          "spec": {
+            "type": "string"
+          },
+          "decisions": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          }
+        }
+      },
+      "preconditions": [
+        "Pinned manuscript and exact edit anchors; named decisions and matching fingerprint for reporting."
+      ],
+      "result_schema": {
+        "type": "object",
+        "properties": {
+          "author_preferences": {
+            "type": "object"
+          },
+          "paired_usability": {
+            "type": "object"
+          },
+          "paired_effort": {
+            "type": "object"
+          }
+        }
+      },
+      "implementation": "tools/review_pilot.py:main",
+      "state_changes": [
+        "Build creates a local review pack and gate receipt; report reads decisions and prints metrics only."
+      ],
+      "error_cases": [
+        "Source drift, stale or duplicate decisions, missing reviewer, insufficient eligible cases or existing destination."
+      ],
+      "undo_policy": "Change a saved vote and export a fresh decisions file. No source edits occur.",
+      "persistence_policy": "Review page can export and import portable decision files; local pairing key stays separate.",
+      "cancellation_policy": "Stop at any case; resume from saved progress.",
+      "test_ids": [
+        "tests.test_u5_pilot",
+        "tests.test_u5_blind",
+        "tests.test_u5_decisions"
+      ],
+      "ui_binding": "Standalone local author review page.",
+      "automation_binding": "python -B tools/review_pilot.py build or report",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "prose.reference_experiment",
+      "owning_module": "tools",
+      "purpose": "Measure local, edition-scoped reference ranking without using the production library or editing the manuscript.",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "minilm",
+          "out"
+        ],
+        "properties": {
+          "minilm": {
+            "type": "string"
+          },
+          "reranker": {
+            "type": "string"
+          },
+          "rerank_device": {
+            "enum": [
+              "cpu",
+              "cuda"
+            ]
+          },
+          "out": {
+            "type": "string"
+          }
+        }
+      },
+      "preconditions": [
+        "Original frozen fixture; pinned local safetensors snapshots and an unused output filename."
+      ],
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "held_out_queries",
+          "arms",
+          "compared_with_minilm",
+          "production_promotion"
+        ]
+      },
+      "implementation": "tools/run_retrieval_u6.py:main",
+      "state_changes": [
+        "Creates only the explicitly requested ID-only report; index and manuscript are read-only."
+      ],
+      "error_cases": [
+        "Invalid or out-of-scope fixture, missing model files, insufficient CUDA memory, wrong-edition results, or output exists."
+      ],
+      "undo_policy": "Use a new report path for another run; no production mutation occurs.",
+      "persistence_policy": "Scratch index is in memory; model files are pinned in the local cache.",
+      "cancellation_policy": "Interrupt before the report is written; reuse the same pinned inputs to rerun.",
+      "test_ids": [
+        "tests.test_u6_retrieval_metrics",
+        "tests.test_u6_retrieval_experiment"
+      ],
+      "ui_binding": "None; opt-in evaluation tool.",
+      "automation_binding": "python -B tools/run_retrieval_u6.py",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "prose.local_model_experiment",
+      "owning_module": "tools",
+      "purpose": "Compare offline coprocessors on frozen local spans and validate proposals for the primary Codex or Gemini session.",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "arm",
+          "out"
+        ],
+        "properties": {
+          "arm": {
+            "enum": [
+              "deterministic",
+              "current",
+              "qwen-gguf",
+              "gemma-gguf"
+            ]
+          },
+          "runtime": {
+            "type": "string"
+          },
+          "weights": {
+            "type": "string"
+          },
+          "out": {
+            "type": "string"
+          },
+          "cpu_smoke": {
+            "type": "boolean"
+          }
+        }
+      },
+      "preconditions": [
+        "Frozen protocol and exact source fingerprints; local model and runtime where required; unused output directory."
+      ],
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "status",
+          "arm",
+          "source_sha256",
+          "author_review",
+          "applied"
+        ]
+      },
+      "implementation": "tools/run_local_u7.py:main",
+      "state_changes": [
+        "Creates only the specified report directory; a GGUF child listens on loopback and requires a per-run key for requests."
+      ],
+      "error_cases": [
+        "Input drift, missing or mismatched weights, insufficient GPU headroom, invalid proposals or runtime/timeout errors."
+      ],
+      "undo_policy": "No manuscript or index writes. Keep prior evidence and use a new report directory for a rerun.",
+      "persistence_policy": "Keep generated spans and runtime logs in ignored local storage. Publish only aggregate evidence.",
+      "cancellation_policy": "Test disconnect of a streaming GGUF request and confirm slot release. Interrupting the trial shuts down the child; the current adapter has no per-request cancellation.",
+      "test_ids": [
+        "tests.test_u7_local_trial"
+      ],
+      "ui_binding": "None; opt-in local evaluation tool.",
+      "automation_binding": "python -B tools/run_local_u7.py",
+      "status": "VERIFIED"
+    },
+    {
+      "owning_module": "tools",
+      "input_schema": {
+        "type": "object"
+      },
+      "preconditions": [
+        "The output directory must not already exist."
+      ],
+      "result_schema": {
+        "type": "object"
+      },
+      "ui_binding": "None; opt-in local tool.",
+      "cancellation_policy": "Stop the local command; retain any incomplete output and use a new destination.",
+      "status": "VERIFIED",
+      "id": "release.code_package",
+      "purpose": "Build an application-code-only local wheel.",
+      "implementation": "tools/u8_package.py:main",
+      "state_changes": [
+        "Creates the explicitly named output directory and wheel."
+      ],
+      "error_cases": [
+        "Existing output, missing build tools, unexpected wheel contents or timeout."
+      ],
+      "undo_policy": "No existing destination is overwritten.",
+      "persistence_policy": "Local output only; no publication.",
+      "test_ids": [
+        "tests.test_u8_release"
+      ],
+      "automation_binding": "python -B tools/u8_package.py --out <new-directory>"
+    },
+    {
+      "owning_module": "tools",
+      "input_schema": {
+        "type": "object"
+      },
+      "preconditions": [
+        "The output directory must not already exist."
+      ],
+      "result_schema": {
+        "type": "object"
+      },
+      "ui_binding": "None; opt-in local tool.",
+      "cancellation_policy": "Stop the local command; retain any incomplete output and use a new destination.",
+      "status": "VERIFIED",
+      "id": "release.revision_recovery",
+      "purpose": "Create and restore a SQLite-aware editorial checkpoint and compare revision history.",
+      "implementation": "tools/u8_recovery.py:main",
+      "state_changes": [
+        "Reads an existing revision store and creates checkpoint and restored copies in a new directory."
+      ],
+      "error_cases": [
+        "Existing output, source drift, invalid store, integrity failure or timeout."
+      ],
+      "undo_policy": "No source or existing destination is overwritten.",
+      "persistence_policy": "The new local directory holds the checkpoint, restored copy and receipt.",
+      "test_ids": [
+        "tests.test_u8_release"
+      ],
+      "automation_binding": "python -B tools/u8_recovery.py --source <store> --out <new-directory>"
+    },
+    {
+      "id": "release.code_manifest",
+      "owning_module": "tools",
+      "purpose": "Create a local fingerprint of application code without overwriting existing manifests.",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "out"
+        ]
+      },
+      "preconditions": [
+        "An unused output filename and readable application source."
+      ],
+      "result_schema": {
+        "type": "object"
+      },
+      "implementation": "tools/manifest.py:main",
+      "state_changes": [
+        "Creates only the explicitly named code-only manifest."
+      ],
+      "error_cases": [
+        "Existing output or unreadable application source."
+      ],
+      "undo_policy": "No existing manifest is overwritten.",
+      "persistence_policy": "Local output only; no publication.",
+      "cancellation_policy": "Retain any incomplete output; retry with a fresh filename.",
+      "test_ids": [
+        "tests.test_u8_release"
+      ],
+      "ui_binding": "None; opt-in local tool.",
+      "automation_binding": "python -B tools/manifest.py --out <new-file>",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "prose.session_attempts",
+      "owning_module": "prose_engine",
+      "purpose": "Reserve session attempts before dispatch, persist responses and reconcile outcomes.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string"
+          },
+          "recovery_scope": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "properties": {
+          "attempt_id": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          }
+        }
+      },
+      "implementation": "prose_engine/providers/session_attempts.py:AttemptJournal",
+      "preconditions": [
+        "Use one writable journal per session configuration; use a stable job_id when resuming the same job."
+      ],
+      "state_changes": [
+        "A committed reservation consumes budget before the handler is invoked.",
+        "Concurrent pending attempts in the same provider/scope are blocked.",
+        "Successful session responses and their UTF-8 SHA-256 commit with the outcome before returning to the caller."
+      ],
+      "error_cases": [
+        "Budget exhausted, unavailable journal, failed response, remote outcome unknown."
+      ],
+      "undo_policy": "Attempts are retained and never refunded. Reconcile only after checking the outcome.",
+      "persistence_policy": "SQLite beside the local usage receipt; no prompt or response content. JSONL is an optional compatibility receipt.",
+      "cancellation_policy": "Cancel requested is not confirmed cancellation; the operator records cancellation only after transport confirmation.",
+      "test_ids": [
+        "tests.test_primary_sessions.PrimarySessionTests.test_timeout_cannot_redispatch_after_restart_or_reconciliation",
+        "tests.test_primary_sessions.PrimarySessionTests.test_concurrent_scoped_jobs_cannot_both_dispatch"
+      ],
+      "ui_binding": "Studio scoped generation; reports unresolved attempt ID. Existing standalone session consumers share the same provider class.",
+      "automation_binding": "Session provider factory and prose_engine session-attempts.",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "prose.scoped",
+      "owning_module": "prose_engine",
+      "purpose": "Produce timeline-scoped proposals and validate exact protected spans.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "episode": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "beat": {
+            "type": "integer"
+          },
+          "protected_ranges": {
+            "type": "array"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "object"
+          },
+          "target_sha256": {
+            "type": "string"
+          }
+        }
+      },
+      "implementation": "prose_engine/scoped_service.py:execute_scoped; prose_engine/scoped_pipeline.py:build_packet;generate_recorded",
+      "preconditions": [
+        "Select a current revision and nonempty code-point range; generation requires met timeline prerequisites."
+      ],
+      "state_changes": [
+        "Explicit scoped generation writes a draft attempt record; apply-draft can append a checked notebook and episode revision. Other scoped inspection operations do not change manuscript text."
+      ],
+      "error_cases": [
+        "Stale scope or invalid ranges; omitted or altered protected text; provider errors. Semantic review remains necessary."
+      ],
+      "undo_policy": "Applying a draft can be undone by appending a notebook revision; draft history remains preserved.",
+      "persistence_policy": "Explicit generation persists a scoped draft and candidate outcome in the episode timeline database; prior manuscript revisions remain intact.",
+      "cancellation_policy": "Scoped session requests use the attempt journal; absence of a result is not proof of remote cancellation.",
+      "test_ids": [
+        "tests.test_u10_scoped_pipeline.ScopedPipelineTests.test_frozen_dialogue_and_explicit_unicode_span_survive_exactly",
+        "tests.test_u10_scoped_http",
+        "tests.test_u10_scoped_cli",
+        "tests.test_nr01_universe_scope",
+        "tests.test_nr02_world_laws",
+        "tests.test_nr03_shared_enforcement",
+        "tests.test_nr04_scoped_books",
+        "tests.test_nr05_character_profiles",
+        "tests.test_nr06_beat_rhythm",
+        "tests.test_nr07_drafts",
+        "tests.test_nr08_meaning",
+        "tests.test_nr09_notebook_ui",
+        "tests.test_nr09b_finish",
+        "tests.test_nr09d_popup",
+        "tests.test_nr09e_timeline"
+      ],
+      "ui_binding": "Studio supports native single-block selection, cross-block Shift-click, preview selection or marked cursor ranges and whole-episode generation. Notebook masks determine protection; without a notebook, legacy dialogue protection applies.",
+      "automation_binding": "prose_engine scoped; --protected-ranges accepts absolute code-point pairs; --form-store reads FormGraphStore (or auto-resolves sibling character-forms.sqlite).",
+      "status": "IMPLEMENTED",
+      "nr01_change": "Scoped timeline operations bind project/universe identity and snapshot law revision; legacy database migration creates a separate copy. Standalone routes remain unscoped.",
+      "nr02_change": "Scoped structured constraints and claims are source-linked, branch/interval-aware and conservative about beliefs and quotations; automated prose extraction and complete typed-law editing are not implemented.",
+      "nr03_change": "Scoped Studio, Workbench timeline mode and CLI share operation dispatch; standalone routes are labeled unscoped. Three direct reference tools now use shared purpose/influence policy. Scoped CLI accepts --form-store and sibling character-forms.sqlite; standalone routes and local scoring gaps remain.",
+      "nr04_change": "Scoped generation may opt into purpose/influence-filtered book references; episode scope resolves before ranking, text-free draft receipts and source-setting fingerprint rechecks are retained. No-reference mode remains explicit.",
+      "nr05_change": "Scoped packets combine author-supplied CharacterProfileStore snapshots and FormGraphStore node_data (Personality, Voice, Notes, structured_data) for base, beat-active and linked active/base nodes. Private/future/inactive form text is withheld (including >=8-char hidden-phrase checks); character_store_token invalidates drafts, while uploaded node attachment blobs remain outside generation.",
+      "nr06_change": "Scoped generation resolves the selected beat rhythm revision and author direction, with optional bounded cadence observations from eligible references; stale selected-beat drafts are rejected.",
+      "nr07_change": "New episode drafts retain scoped writing context, provider budget and attempt identity. Completed, blocked and stale returned candidates are recoverable; application rechecks reference binding as well as existing scope and protection.",
+      "nr08_change": "Validation and recorded drafts include source-linked, rule-based meaning findings with supported, contradicted, uncertain or unavailable status. No match verifies the entire passage; a labeled development set documents misses.",
+      "nr09_change": "The episode composer shares Racing/Classic theme tokens and a revision-bound selection preview and cursor endpoints for cross-block protection and scoped actions. Cross-block edits preserve uniquely mapped block boundaries or reject ambiguous replacements.",
+      "nr09c_change": "Cross-block selection additionally supports Shift-click with stale selection reset. TimelineStore.save refuses text or source changes for existing notebooks even if its legacy opt-out argument is false; notebook service performs checked atomic saves. Direct database writes remain outside this guard.",
+      "nr09d_change": "Studio uses a selection-adjacent 25/50/75/100 protection popup and document default popup, calling the same revision-checked notebook save without generation; inactive stale masks can be reviewed in the Highlighter menu and dismissed in #maskPopover (#maskStaleSection / dismiss-stale) without un-hiding raw controls. Timeline shows persisted covers, revision-checked same-branch reordering, and an episode-scoped draft drawer; freeform positioning and zoom remain unimplemented.",
+      "nr09e_change": "Racing uses the supplied track animation in protection and during explicit scoped generation. Studio, /timeline and /world-laws honor ?theme=racing|classic query overrides without changing saved preferences, and /racing-comparison?mode=themes compares live Racing and Classic composers side-by-side. Timeline creates empty episodes from a title with automatic identity and placement (using create+move fallback when placing before an existing tight slot), supports revision-checked same-branch reordering (TimelineStore.move_episode), and double-clicking a cover updates artwork only after checking episode head and prior cover. Old artwork is retained internally; no restore UI yet.",
+      "nr09f_change": "Racing displays distinct original track animation frames for saved document or effective selection weights, plays the source frames on interaction, and hides Racing imagery in Classic. Mixed and unavailable selections have no single weight. The checked protection service remains authoritative.",
+      "nr09h_change": "Four source-derived GIFs play once from empty to their corresponding 25/50/75/100 protection frame and stop; the Racing control plays the matching GIF and retains its saved frame.",
+      "nr09g_change": "Studio exposes an author-focused split writing/episode-graph and beat direction workspace, a Prose Engine panel, a separate World Laws page and a simple Highlighter menu. Raw protection controls are hidden; exact soft masks can be removed and inactive stale masks dismissed in the popup, and drafts remain in Prose Engine. Block-identity editing still uses existing controls. Existing checked storage and reference eligibility remain authoritative; automatic document-to-graph intake is not yet implemented.",
+      "nr09i_change": "Racing writing-block text, speaker labels and line-number typography are reduced by 50 percent, with matching highlight and measurement metrics; Classic and notebook data remain unchanged.",
+      "nr11_change": "Fully 100-percent notebook-protected selections must match their original text exactly, including boundaries. Studio grouped passages use separate scoped calls, eligible references and a checked aggregate draft; automatic passage timing remains unverified and uses beat zero."
+    },
+    {
+      "id": "prose.reference_eligibility",
+      "owning_module": "prose_engine",
+      "purpose": "Filter author-selected source rows before reference ranking, inspection, prompt transfer or export.",
+      "input_schema": {
+        "type": "object"
+      },
+      "result_schema": {
+        "type": "object"
+      },
+      "implementation": "prose_engine/reference_policy.py:ReferencePolicy;eligible_index",
+      "preconditions": [
+        "Reference policy and source metadata must be available for requested purposes."
+      ],
+      "state_changes": [
+        "Derived filtered index views only; no source or existing index is rewritten."
+      ],
+      "error_cases": [
+        "Unconfigured, corrupt or denied sources do not enter covered routes. Legacy rank IDs cannot be uniquely mapped without the original receipt.",
+        "Configured retrieval that is missing, corrupt, or has no eligible sources reports its status and does not silently fall back."
+      ],
+      "undo_policy": "Configuration is author-controlled; existing source and index artifacts are preserved.",
+      "persistence_policy": "Policy file is explicit; existing index metadata is not silently migrated.",
+      "cancellation_policy": "Local retrieval is synchronous.",
+      "test_ids": [
+        "tests.test_reference_policy",
+        "tests.test_luar_conditioner.LuarConditionerTests.test_workbench_policy_http_requires_origin_and_preserves_stale_edits",
+        "tests.test_luar_conditioner.LuarConditionerTests.test_condition_cli_uses_policy_and_does_not_export_prompt_only_reference",
+        "tests.test_nr03_shared_enforcement",
+        "tests.test_nr04_scoped_books",
+        "tests.test_library_indexes",
+        "tests.test_library_integration"
+      ],
+      "ui_binding": "Workbench and scoped Studio use shared policy-aware retrieval. Studio availability reports all three indexes without constructing an encoder; quality-held sources are visibly excluded.",
+      "automation_binding": "CLI conditioner, variants generation, local scoring, reference inspection and passage export use shared purpose-specific policy.",
+      "status": "IMPLEMENTED",
+      "nr03_change": "Scoped Studio, Workbench timeline mode and CLI share operation dispatch; standalone routes are labeled unscoped. Three direct reference tools now use shared purpose/influence policy. Scoped CLI accepts --form-store and sibling character-forms.sqlite; standalone routes and local scoring gaps remain.",
+      "nr04_change": "Scoped generation may opt into purpose/influence-filtered book references; episode scope resolves before ranking, text-free draft receipts and source-setting fingerprint rechecks are retained. No-reference mode remains explicit.",
+      "noir_lib_001_change": "Quality exclusions independently fence retained suspect sources at policy/corpus load. Normal selectors use the atomically selected three-index release; old indexes are retained only for recovery/history after activation. Batch setup preserves existing author entries and does not grant export. Explicitly requested standalone variant references fail closed if unavailable."
+    },
+    {
+      "id": "prose.reference_provenance",
+      "owning_module": "prose_engine",
+      "purpose": "Retain source revisions and rank-independent passage identity, including explicit legacy index position IDs.",
+      "input_schema": {
+        "type": "object"
+      },
+      "result_schema": {
+        "type": "object"
+      },
+      "implementation": "prose_engine/reference_policy.py:legacy_identities; prose_engine/vector_store.py:chunk_books",
+      "preconditions": [
+        "Reference policy and source metadata must be available for requested purposes."
+      ],
+      "state_changes": [
+        "Derived filtered index views only; no source or existing index is rewritten."
+      ],
+      "error_cases": [
+        "Unconfigured, corrupt or denied sources do not enter covered routes. Legacy rank IDs cannot be uniquely mapped without the original receipt."
+      ],
+      "undo_policy": "Configuration is author-controlled; existing source and index artifacts are preserved.",
+      "persistence_policy": "New source revisions and ordinals; legacy index-position IDs preserve existing index files. Receipt mapping is explicit and ambiguous duplicates require an anchor.",
+      "cancellation_policy": "Local retrieval is synchronous.",
+      "test_ids": [
+        "tests.test_reference_policy",
+        "tests.test_reference_policy.ReferencePolicyTests.test_legacy_duplicate_ids_are_position_based_not_rank_based"
+      ],
+      "ui_binding": "Workbench exposes retrieval status; visual source configuration remains planned.",
+      "automation_binding": "Condition, generate-variants, variants, reference and corpus passages CLI paths.",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "prose.luar_calibration",
+      "owning_module": "prose_engine",
+      "purpose": "Score bounded labeled pairs locally and evaluate a LUAR similarity-drop threshold on document-disjoint held-out data.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "pairs_file": {
+            "type": "string"
+          },
+          "books": {
+            "type": "string"
+          },
+          "output": {
+            "type": "string"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "candidate": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      },
+      "implementation": "tools/score_luar_calibration.py; tools/calibrate_luar.py; prose_engine/voice/luar_calibration.py",
+      "preconditions": [
+        "Local LUAR index and explicitly permitted rank_local reference sources for scoring.",
+        "Labeled pairs identify documents, split, decisions and evidence."
+      ],
+      "state_changes": [
+        "Explicit new score and report files only; no provider requests and no change to live thresholds."
+      ],
+      "error_cases": [
+        "Missing policy or index, unverified or invalid scores, overlapping document splits, too few examples, existing output paths and changed source configuration."
+      ],
+      "undo_policy": "Inputs and existing outputs are untouched; explicitly created local outputs can be removed by their owner.",
+      "persistence_policy": "Score output omits original and candidate text; pipeline, source-policy and influence hashes accompany numeric scores.",
+      "cancellation_policy": "Local scoring is bounded to 60 pairs; no remote requests or automatic retries.",
+      "test_ids": [
+        "tests.test_luar_calibration"
+      ],
+      "ui_binding": "CLI only; user-facing calibration controls remain future work.",
+      "automation_binding": "python -B tools/score_luar_calibration.py; python -B tools/calibrate_luar.py",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "prose.reference_index_compatibility",
+      "owning_module": "prose_engine",
+      "purpose": "Inventory reference index provenance and reject incompatible versioned LUAR or style models.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "properties": {
+          "compatibility": {
+            "type": "string"
+          }
+        }
+      },
+      "implementation": "prose_engine/voice/luar.py; prose_engine/voice/retrieve.py; tools/audit_reference_indexes.py",
+      "preconditions": [
+        "Existing indexes are trusted local files; a new LUAR index needs a locally cached pinned model."
+      ],
+      "state_changes": [
+        "Audit reads indexes and writes only a new explicitly named report. New indexes are separate artifacts; existing indexes are not overwritten by save_new."
+      ],
+      "error_cases": [
+        "Encoder, runtime, source-index, chunk hash or style-model mismatch; missing source or legacy manifest remains explicitly unverified."
+      ],
+      "undo_policy": "Keep old indexes and select the prior artifact; no automatic migration or replacement.",
+      "persistence_policy": "Versioned LUAR index records source hash, chunk hashes, model revision, preprocessing and runtime.",
+      "cancellation_policy": "Local operations only; no provider request.",
+      "test_ids": [
+        "tests.test_voice_luar",
+        "tests.test_voice_retrieve",
+        "tests.test_nm06_index_audit"
+      ],
+      "ui_binding": "Studio identifies legacy indexes as incomplete; versioned readiness verifies saved bytes, source coverage, runtime, encoder/model and normalization bindings without loading an encoder.",
+      "automation_binding": "tools/audit_reference_indexes.py; Python index builders and loaders.",
+      "status": "IMPLEMENTED",
+      "noir_lib_001_change": "Separate pinned offline candidates are reloaded and probed per source before atomic-pointer activation. Original canonical files are never overwritten; code/model/source drift, incomplete coverage and failed probes block activation. See tools/library_rebuild.py and tests.test_library_indexes."
+    },
+    {
+      "id": "prose.notebook",
+      "purpose": "Versioned episode-scoped blocks with source anchors and optimistic revisions.",
+      "owning_module": "prose_engine",
+      "input_schema": {
+        "type": "object"
+      },
+      "result_schema": {
+        "type": "object"
+      },
+      "implementation": "prose_engine/notebook.py",
+      "preconditions": [
+        "Episode and expected revisions must match; preserve existing hard locks."
+      ],
+      "state_changes": [
+        "Transactional episode-scoped records; provider calls occur only on explicit generation."
+      ],
+      "error_cases": [
+        "Stale revisions or anchors, wrong branch, exact freezes, and incomplete provider outcomes fail closed."
+      ],
+      "undo_policy": "Revision-checked Undo and Redo append restored states as new revisions. Separate persistent stacks preserve redo after reload; a new edit clears redo.",
+      "persistence_policy": "SQLite timeline store; source and earlier revisions preserved.",
+      "cancellation_policy": "No automatic retries; incomplete generation remains recorded.",
+      "test_ids": [
+        "tests.test_nm07_09",
+        "tests.test_nr07_drafts",
+        "tests.test_nr09_notebook_ui",
+        "tests.test_nr09b_finish",
+        "tests.test_nr09d_popup",
+        "tests.test_processed_reader",
+        "tests.test_lossless_preparation"
+      ],
+      "ui_binding": "Studio Racing and Classic editor groups consecutive Narrator or same-speaker/form passages into continuous auto-sized full-height blocks with one header while inline protection popups, cross-block Shift-click, cursor markers and More tools remain active.",
+      "automation_binding": "Shared Python service, Studio scoped route, and scoped CLI generation.",
+      "status": "IMPLEMENTED",
+      "nr07_change": "New episode drafts retain scoped writing context, provider budget and attempt identity. Completed, blocked and stale returned candidates are recoverable; application rechecks reference binding as well as existing scope and protection.",
+      "nr09_change": "The episode composer shares Racing/Classic theme tokens and a revision-bound selection preview and cursor endpoints for cross-block protection and scoped actions. Cross-block edits preserve uniquely mapped block boundaries or reject ambiguous replacements.",
+      "nr09b_change": "Studio save-document checks notebook and timeline revisions and exact masks, then atomically appends episode and notebook revisions.",
+      "nr09c_change": "Cross-block selection additionally supports Shift-click with stale selection reset. TimelineStore.save refuses text or source changes for existing notebooks even if its legacy opt-out argument is false; notebook service performs checked atomic saves. Direct database writes remain outside this guard.",
+      "nr09d_change": "Studio uses a selection-adjacent 25/50/75/100 protection popup and document default popup, calling the same revision-checked notebook save without generation; inactive stale masks can be reviewed in the Highlighter menu and dismissed in #maskPopover (#maskStaleSection / dismiss-stale) without un-hiding raw controls. Timeline shows persisted covers, revision-checked same-branch reordering, and an episode-scoped draft drawer; freeform positioning and zoom remain unimplemented.",
+      "nr11_change": "Studio appends narrator or named character blocks through revision-checked notebook storage; source anchors and protections remain authoritative.",
+      "nr09k_change": "The redundant Select block button is removed; native text and keyboard selection continue to feed the highlighter.",
+      "nr09m_change": "A large document-protection sidebar uses the same checked notebook weight and existing Racing animations; inferred speaker labels are display-only and do not create character bindings or alter source text.",
+      "up01_03_change": "Versioned Antigravity imports preserve exact source and store source-backed speaker/form bindings; explicit speaker corrections append notebook revisions. Edited text uses only unchanged ordered source blocks for as-of alignment or conservatively falls back to the episode start.",
+      "processed_reader_change": "A separate copy-first workspace selects the seven-scene MO2 processed manuscript, preserves the previous source version in history, binds only explicit named attributions and retains its existing graph as evidence without inferring timeline cutoffs.",
+      "composer_grouping_change": "ComposeBlocks.group combines consecutive Narrator or same-speaker/form paragraphs into continuous auto-sized full-height composer blocks with one header while breaking at speaker/type changes, scene headings and separators; save_document supports homogeneous group splits/merges with split_from/merged_sources provenance while keeping heterogeneous boundary guards, and bind_speaker supports cursor sub-block or same-group block lists.",
+      "speaker_cue_layout": "The Studio v2 composer displays an exact marked cue in the header and shows its dialogue in the editor; cue bytes and existing block separators remain in saved text. Selection and split coordinates map back to source. Reconcile_versions checks both revisions and exact fingerprints, then can append an undoable layout over the chosen text. Legacy displays the unmodified raw block.",
+      "step4_modularization_change": "Studio embedded CSS, body HTML, client script and default graph data live under tools/assets/ while assembling HTML_TEMPLATE at import time and serving /assets/studio_styles.css, /assets/studio_client.js and /assets/studio_default_graph.json; Studio, /timeline and /world-laws honor ?theme=racing|classic query overrides and /racing-comparison?mode=themes compares Racing vs. Classic side-by-side."
+    },
+    {
+      "id": "prose.protection",
+      "purpose": "Resolve document and selected range protection, with exact frozen locks.",
+      "owning_module": "prose_engine",
+      "input_schema": {
+        "type": "object"
+      },
+      "result_schema": {
+        "type": "object"
+      },
+      "implementation": "prose_engine/notebook.py",
+      "preconditions": [
+        "Episode and expected revisions must match; preserve existing hard locks."
+      ],
+      "state_changes": [
+        "Transactional episode-scoped records; provider calls occur only on explicit generation."
+      ],
+      "error_cases": [
+        "Stale revisions or anchors, wrong branch, exact freezes, and incomplete provider outcomes fail closed."
+      ],
+      "undo_policy": "Append a revision restoring previous state without overwriting source.",
+      "persistence_policy": "SQLite timeline store; source and earlier revisions preserved.",
+      "cancellation_policy": "No automatic retries; incomplete generation remains recorded.",
+      "test_ids": [
+        "tests.test_nm07_09"
+      ],
+      "ui_binding": "Studio episode protection and drafts controls use shared notebook/draft endpoints; the full notebook theme and advanced selection UI remain NM-17.",
+      "automation_binding": "Shared Python service, Studio scoped route, and scoped CLI generation.",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "prose.drafts",
+      "purpose": "Record scoped generation attempts and retain reversible episode draft choices.",
+      "owning_module": "prose_engine",
+      "input_schema": {
+        "type": "object"
+      },
+      "result_schema": {
+        "type": "object"
+      },
+      "implementation": "prose_engine/notebook.py",
+      "preconditions": [
+        "Episode and expected revisions must match; preserve existing hard locks."
+      ],
+      "state_changes": [
+        "Transactional episode-scoped records; provider calls occur only on explicit generation."
+      ],
+      "error_cases": [
+        "Stale revisions or anchors, wrong branch, exact freezes, and incomplete provider outcomes fail closed."
+      ],
+      "undo_policy": "Append a revision restoring previous state without overwriting source.",
+      "persistence_policy": "SQLite timeline store; source and earlier revisions preserved.",
+      "cancellation_policy": "No automatic retries; incomplete generation remains recorded.",
+      "test_ids": [
+        "tests.test_nm07_09",
+        "tests.test_nr01_universe_scope"
+      ],
+      "ui_binding": "Studio episode protection and drafts controls use shared notebook/draft endpoints; the full notebook theme and advanced selection UI remain NM-17.",
+      "automation_binding": "Shared Python service, Studio scoped route, and scoped CLI generation.",
+      "status": "IMPLEMENTED",
+      "nr01_change": "Scoped timeline operations bind project/universe identity and snapshot law revision; legacy database migration creates a separate copy. Standalone routes remain unscoped."
+    },
+    {
+      "id": "story_graph.world_laws",
+      "purpose": "Store versioned universe-wide author laws and check configured wording in scoped output.",
+      "owning_module": "story_graph",
+      "input_schema": {
+        "type": "object"
+      },
+      "result_schema": {
+        "type": "object"
+      },
+      "implementation": "story_graph/world_laws.py",
+      "preconditions": [
+        "An existing timeline and expected law revision are required."
+      ],
+      "state_changes": [
+        "World law revisions are append-only in the timeline database."
+      ],
+      "error_cases": [
+        "Invalid rules and stale revisions are rejected; literal checks do not establish semantic compliance."
+      ],
+      "undo_policy": "Revision-checked Undo and Redo append restored states as new revisions. Separate persistent stacks preserve redo after reload; a new edit clears redo.",
+      "persistence_policy": "Versioned universe-level laws are shared across timeline episodes.",
+      "cancellation_policy": "Editing laws never starts a model.",
+      "test_ids": [
+        "tests.test_nm07_09",
+        "tests.test_nr01_universe_scope",
+        "tests.test_nr02_world_laws"
+      ],
+      "ui_binding": "Studio World laws controls.",
+      "automation_binding": "Scoped Python generation, validation, export and draft recheck.",
+      "status": "IMPLEMENTED_SCOPED_PATH_ONLY",
+      "nr01_change": "Scoped timeline operations bind project/universe identity and snapshot law revision; legacy database migration creates a separate copy. Standalone routes remain unscoped.",
+      "nr02_change": "Scoped structured constraints and claims are source-linked, branch/interval-aware and conservative about beliefs and quotations; automated prose extraction and complete typed-law editing are not implemented."
+    },
+    {
+      "id": "story.beat_rhythm",
+      "owning_module": "story_graph",
+      "purpose": "Load, save and undo a selected episode beat direction for scoped prose guidance.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "episode": {
+            "type": "string"
+          },
+          "beat": {
+            "type": "integer"
+          },
+          "timeline_revision": {
+            "type": "integer"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "profile": {
+            "type": "object"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "type": "object"
+          },
+          "revision": {
+            "type": "integer"
+          }
+        }
+      },
+      "implementation": "story_graph/beat_rhythm.py:BeatRhythmStore",
+      "preconditions": [
+        "A valid episode and beat; saves and undo require the current timeline and rhythm revisions. A linked graph node must identify that beat."
+      ],
+      "state_changes": [
+        "Save appends a beat direction revision; undo appends a revision restoring the previous profile. Neither edits the manuscript nor starts generation."
+      ],
+      "error_cases": [
+        "Invalid profile, stale revision, missing or mismatched graph link and unavailable episode are rejected."
+      ],
+      "undo_policy": "Revision-checked Undo and Redo append restored states as new revisions. Separate persistent stacks preserve redo after reload; a new edit clears redo.",
+      "persistence_policy": "Directions are stored in the timeline SQLite database by episode and beat. New branch episodes start unset.",
+      "cancellation_policy": "No provider call is made; an already committed save is undone by a new revision.",
+      "ui_binding": "Studio shows provisional source-linked passage beats; grouped requests accept natural-language direction in the Prose Engine. Manual beat-direction controls are hidden while timing is unverified. The general graph is separate and editable.",
+      "automation_binding": "Scoped Studio, Workbench and CLI generation resolve the same selected-beat profile. Studio grouped passages use reviewed or verified source timing where current, otherwise beat zero; stale or ambiguous bindings block writing. Each child keeps its own cutoff through generation and atomic application. Automatic dialogue matches remain graph evidence only; the independently verified Spring Break MO2 windows use graph beats 13 and 14.",
+      "test_ids": [
+        "tests.test_nr06_beat_rhythm",
+        "tests.test_nr09j_beat_map",
+        "tests.test_nr11_beat_workflow",
+        "tests.test_rhythm_integration",
+        "tests.test_beat_anchors",
+        "tests.test_anchored_groups"
+      ],
+      "noir_rhy_001_change": "The prose-layer guidance compiler turns the scoped profile and eligible cadence into concrete advisory techniques. Single/group previews use the shared service without a writing provider or draft. Consecutive groups bind ordinal-only entry/development/exit plans before dispatch, retain per-child guidance and before/after observations, and stop on scope/rhythm/library drift. No timeline anchors, plot outcomes or literary-quality scores are inferred.",
+      "structure_commands": "POST /api/beat-rhythm structure_open and structure_save take the episode and timeline_revision. Save also takes the current structure revision, preset and optional point on a current saved passage. Timing and sight/audio values project into Story Graph and Cook. An optional viewpoint opens the known versus withheld event diff."
+    },
+    {
+      "id": "story.passage_timing",
+      "owning_module": "story_graph",
+      "purpose": "Review an exact saved passage's association with approved, permitted same-episode timeline evidence; never infer timing from paragraph or graph numbering.",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "action",
+          "episode",
+          "revision"
+        ],
+        "properties": {
+          "action": {
+            "enum": [
+              "open",
+              "bind",
+              "unbind",
+              "undo",
+              "bind_scene",
+              "redo"
+            ]
+          },
+          "episode": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "required": [
+          "mapping",
+          "events",
+          "history"
+        ]
+      },
+      "implementation": "story_graph/beat_anchors.py:BeatAnchorStore; prose_engine/scoped_groups.py",
+      "preconditions": [
+        "Writes require exact project/universe/branch/source/revision/passage, expected anchor-ledger token and reviewer. Bind requires approved permitted evidence visible to the selected viewpoint in this same episode."
+      ],
+      "state_changes": [
+        "Only a valid explicit timing write creates the additive passage_anchor_revisions table. Writes append immutable-by-contract revisions; no canon, manuscript, graph, notebook protection or provider state changes."
+      ],
+      "error_cases": [
+        "Reject stale source, graph, evidence, scope or ledger; private/sibling/draft/denied evidence; duplicate or ambiguous passage identity. Stale bindings require explicit rebind. Composite partial application is rejected; individual children remain usable."
+      ],
+      "undo_policy": "Undo and Redo append the prior or undone assertion only if its exact source and evidence remain current; otherwise require explicit rebind. Preserve all preceding revisions.",
+      "persistence_policy": "Append-only SQLite revision ledger; read-only projections create no anchor storage. Unique unchanged text can recover a stable identity after edits but never a valid cutoff without rebind. Composite drafts retain child IDs, scopes, source/candidate boundaries and fixed separators.",
+      "cancellation_policy": "No provider call for timing edits. Interrupted group generation retains completed and interrupted child draft records. An already committed timing write is reversed with another reviewed revision.",
+      "ui_binding": "Studio Beat graph: Reviewed passage timing, Load timing evidence, Bind / rebind, Unbind, Undo and Redo; per-card timing status includes Verified from script. Viewpoint changes invalidate loaded timing.",
+      "automation_binding": "POST /api/beat-anchors uses BeatAnchorStore. Scoped packets and draft use check the same domain projection; group drafts validate every segment at its own cutoff and recheck all anchor/rhythm guards in the edit transaction. Existing explicit unassigned timeline operations are not semantic auto-mapping.",
+      "test_ids": [
+        "tests.test_beat_anchors",
+        "tests.test_anchored_groups",
+        "tests.test_source_timing"
+      ],
+      "status": "IMPLEMENTED_WITH_GAPS",
+      "rb03_change": "Exact-source receipts verify MO2 graph beats 13 and 14 and three Hot Scoomp timing windows. The existing permitted awakening is only projected after its occurrence; the narrator and named witnesses receive different perspective labels. Changed sources, old unverified forks and unrelated viewpoints do not inherit the reveal. No manuscript or event row is rewritten."
+    },
+    {
+      "id": "prose.meaning_assessment",
+      "purpose": "Report scoped rule-backed findings and uncertainty without claiming full semantic understanding.",
+      "owning_module": "prose_engine",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "claims": {
+            "type": "array"
+          }
+        }
+      },
+      "result_schema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "enum": [
+              "supported",
+              "contradicted",
+              "uncertain",
+              "unavailable"
+            ]
+          },
+          "findings": {
+            "type": "array"
+          }
+        }
+      },
+      "implementation": "prose_engine/meaning_checks.py:assess_meaning",
+      "preconditions": [
+        "A previously compiled episode, branch, beat and viewpoint packet; typed claims must be explicitly supplied."
+      ],
+      "state_changes": [
+        "No canon or user text changes and no provider calls. Scoped generation may store the assessment in its draft record."
+      ],
+      "error_cases": [
+        "Invalid inputs fail; unmatched prose and missing scoped rules are unavailable; belief, quotation and ambiguous cues remain uncertain."
+      ],
+      "undo_policy": "No mutation to undo. Draft persistence uses the existing timeline database and history.",
+      "persistence_policy": "New completed, blocked and stale returned drafts retain their assessment; older drafts and lost responses may not have one.",
+      "cancellation_policy": "Local deterministic check; no provider dispatch, retry or remote cancellation.",
+      "ui_binding": "Studio scoped result and draft writing-context inspector show limited meaning findings.",
+      "automation_binding": "Scoped Studio, Workbench and CLI validation and generation use the same service; standalone routes remain unscoped.",
+      "status": "IMPLEMENTED_SCOPED",
+      "test_ids": [
+        "tests.test_nr08_meaning",
+        "tests.test_nr02_world_laws"
+      ]
+    },
+    {
+      "id": "prose.episode_commands",
+      "owning_module": "prose_engine",
+      "purpose": "Preview direction for saved episode passages, cook a bounded draft, or edit and recover episode history.",
+      "input_schema": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": {"enum": ["intake.preview", "intake.create", "intake.receipt", "intake.source", "episode.create", "episode.prepare", "episode.preparation.open", "scene.plan.open", "scene.plan.inputs.attach", "scene.plan.inputs.timing", "director.open", "director.preview", "run.start", "run.selection.preview", "run.selection", "run.status", "run.latest", "run.resume", "run.cancel", "processing.open", "draft.open", "draft.list", "draft.compare", "draft.favorite", "draft.favorite.undo", "draft.favorite.redo", "draft.apply", "notebook.undo", "notebook.redo", "word_prep.promote", "canon.tag.save", "timeline.catalog", "timeline.history", "timeline.preview", "timeline.move", "timeline.rename", "timeline.cover.open", "timeline.cover.set", "timeline.archive", "timeline.restore", "timeline.undo", "timeline.redo", "graph.history", "graph.undo", "graph.redo"]},
+          "episode": {"type": "string"},
+          "request_id": {"type": "string"},
+          "notebook_revision": {"type": "integer"},
+          "timeline_revision": {"type": "integer"},
+          "episode_revision": {"type": "integer"},
+          "expected_revision": {"type": "integer"},
+          "polish_draft": {"type": "string"},
+          "compositor_preparation": {"type": "string", "description": "Saved episode preparation ID for the Cook writer path."},
+          "guidance": {"const": "plain", "description": "Omit the field for full guidance."}
+        }
+      },
+      "preconditions": ["Director and writer use the matching saved project, universe, branch, source and passage bounds. Writing runs require current protection and a stable request ID. Edit actions require current expected revisions unless replaying an existing receipt.", "New Apply of a book-guided draft requires the saved library and policy fingerprints. An identical published release may be configured at a different directory."],
+      "state_changes": ["Direction is advisory. Successful runs save validated episode variants; they do not edit the notebook. Apply and notebook history record the committed edit and its receipt together. Composite Apply uses the saved child ranges in one transaction. Scene input attachment validates the current preparation and compiles scoped Turn Ledger guidance before any writer starts."],
+      "result_schema": {"type": "object", "description": "Action-specific outline, proposed rhythm plan, persisted run state, draft, current history, or applied edit receipt with current notebook."},
+      "error_cases": ["Mismatched scope, stale source/protection/history, stale or unverifiable reference policy or release, input above budget, reused key with different payload, ambiguous interrupted writer attempt, rejected passage or overlapping run."],
+      "undo_policy": "Notebook edits apply through existing history; timeline and character graph history are separate revisioned stacks. Replaying an edit never advances any stack.",
+      "persistence_policy": "Store stable run IDs, plans, passage/draft references, and edit receipts in workspace SQLite. Keep both source and draft content; completed child drafts remain recoverable.",
+      "cancellation_policy": "Cancellation blocks future dispatch; it cannot promise to cancel a request already sent. An unknown send is never replayed automatically. Fully locked passages do not dispatch.",
+      "test_ids": ["tests.test_episode_writing_runs", "tests.test_episode_intake", "tests.test_library_integration", "tests.test_editorial_routes", "tests.test_u10_timeline_http", "tests.test_studio_form_store", "tests.test_fa04_shared_commands"],
+      "implementation": "prose_engine/episode_commands.py:EpisodeCommands.execute; prose_engine/writing_runs.py:WritingRuns; story_graph/director.py:plan",
+      "ui_binding": "Studio v2 Generate Selection and Beat Map Cook to draft, shared run status, resume, stop and open draft. Existing notebook, timeline and graph history adapters.",
+      "compositor_07a_change": "Generate Selection persists intent before preparation and validates the prompt digest before dispatch. The original journal can replay a verified response under the same run. Successful draft publication and selection completion commit together. Processing reads both kinds of run.",
+      "compositor_08a_change": "Prepare structure, episode.prepare and episode.preparation.open compile or read the same source-bound notebook, SceneFragments, Beat Map and provisional form sockets. The preparation saves atomically with zero provider dispatches.",
+      "compositor_09_change": "Planned cadence previews derive per-beat Craft Cards from eligible Topic, LUAR or Style receipts. The writer sees compact directions and cadence measurements. An unavailable selected backend blocks before dispatch.",
+      "compositor_10_change": "Scene proposals validate action owners and actual speaker permissions within authored beats. A separate polish request must bind to an unchanged, same-scope validated rough proposal and saves a child draft. A rejected polish leaves the rough available.",
+      "compositor_11_12_change": "processing.open reads the five compositor pass receipts. Native variant Full Graph uses the current Turn Ledger, and the desktop opens the shared Processing view. A plain control and a prepared single-scene workspace use the same scoped writer and validation.",
+      "studio_m6_m7_change": "Word Prep promotion commits typed nodes, text protection and the edit receipt with current notebook and timeline revisions. Compose canon mode and the validated time-travel carrier are stored in episode canon revisions. A Cook selection binds the saved preparation, active forms, directions, media and rhythm, journals the raw response and records local surgical polish evidence on the saved draft.",
+      "automation_binding": "Studio same-origin adapters, the authenticated v1 service, and python -m prose_engine episode. Connected Workbench sends Timeline Undo/Redo to v1; standalone file histories retain their own contract.",
+      "fa04_fa05_change": "Timeline changes and committed receipts share a transaction; replies separate original effects from current saved history. Intake saves original bytes and initial transcripts together, supports Markdown/TXT/Fountain and PDF/DOCX, and can reopen an interrupted import by request ID without rerunning extraction.",
+      "rb07_rb09_change": "Studio supplies cadence-only guidance from eligible Topic, LUAR or Style while keeping source receipts and verbatim checks local. Intake preview reads PDF/DOCX on demand; intake.create verifies preview bindings and atomically saves the original, script, notebook, brief and placement. Same-origin POST /api/intake, CLI and Workbench share the command. Blank episode creation uses the same transaction with no document. Imported text starts at 100% protection and launches no writer.",
+      "status": "IMPLEMENTED_SCOPED"
+    },
+    {
+      "id": "scene.branches",
+      "owning_module": "prose_engine",
+      "purpose": "Read alternative endings and write a bounded continuation from a pinned result.",
+      "input_schema": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": {"enum": ["scene.branches.open", "scene.branches.preview", "scene.branches.run", "scene.branches.seed"]},
+          "project": {"type": "string"},
+          "universe": {"type": "string"},
+          "episode": {"type": "string"},
+          "branch": {"type": "string"},
+          "result": {"type": "string"},
+          "plan": {"type": "string"},
+          "roles": {"type": "object"}
+        }
+      },
+      "preconditions": ["Preview and run require the actual saved fork result, current source, shape, history, protection and law revision. The parent and sibling cannot substitute for the current result."],
+      "state_changes": ["Opening, preview and seed perform no story or provider writes. Run can save one scoped draft attempt per exact current plan; it never applies text or promotes canon."],
+      "result_schema": {"type": "object", "description": "Saved endings, a scoped preview plan, a recorded draft attempt, or an abstract role seed."},
+      "error_cases": ["Wrong result, stale law/graph/source/lock, inactive or stale Mind link, invalid early transformation, or a protected continuation slot."],
+      "undo_policy": "Use checked notebook application, undo and redo; the immutable branch result is separate from those edits.",
+      "persistence_policy": "Store distinct traced branch results and terminal frame fingerprints in workspace SQLite. A generation receipt records the exact source result; identical current requests reopen it.",
+      "cancellation_policy": "No writer in preview. A pending or unknown single attempt is never automatically redispatched by an identical current request.",
+      "test_ids": ["tests.test_fx06_branches", "tests.test_scene_override"],
+      "implementation": "story_graph/scene_branches.py; prose_engine/branch_continuations.py",
+      "ui_binding": "Studio Scene Replay → Branches",
+      "automation_binding": "Episode CLI and authenticated Noir v1 episode commands. Evidence exchange uses its own result-scoped command and transport.",
+      "status": "IMPLEMENTED_SCOPED"
+    },
+    {
+      "id": "scene.exchange",
+      "owning_module": "prose_engine",
+      "purpose": "Offer source-pinned timing or appearance evidence and accept one proposed card for a saved result.",
+      "input_schema": {"type": "object", "required": ["project", "universe", "episode", "branch", "scope_revision", "result"], "properties": {"protocol": {"enum": [1, 2]}, "purpose": {"enum": ["timing", "appearance"]}}},
+      "preconditions": ["Register a checked evidence catalog and an existing writer receipt for a saved result. Appearance also pins the original image and a typed region.", "The external ticket permits only that result on the local exchange route."],
+      "state_changes": ["Save offer and proposal receipts atomically with idempotent request keys.", "Reopen a historical receipt or page through its scope. No media/model dispatch, draft edit, activation or canon write."],
+      "result_schema": {"type": "object", "description": "Canonical SHA-256 receipt with transport state, or a bounded scoped receipt page."},
+      "error_cases": ["Wrong result or scope, unsupported protocol or purpose, wrong edition, clock or image region, stale branch/Mind/writer binding, request identity collision, unregistered media, or ticket mismatch."],
+      "undo_policy": "Immutable evidence history. No manuscript edit to undo.",
+      "persistence_policy": "Noir uses timeline SQLite for authoritative receipts. Deep Miner stores the same acknowledgement in its job SQLite outbox. Restore both with new local tickets.",
+      "cancellation_policy": "An unacknowledged send stays pending. An explicit retry with the same payload reopens the original commit or saves it once.",
+      "test_ids": ["tests.test_fx06_exchange", "tools.verify_fx06_exchange", "dev_miner.tests.test_noir_exchange"],
+      "implementation": "prose_engine/evidence_exchange.py; prose_engine/service_daemon.py; dev_miner/noir_exchange.py in Deep Miner",
+      "ui_binding": "Studio episode command adapter can reopen the same receipt; no dedicated evidence panel.",
+      "automation_binding": "Authenticated loopback /v1/exchange, Noir episode CLI, real dev-miner noir-exchange command.",
+      "status": "IMPLEMENTED_SCOPED"
+    },
+    {
+      "id": "scene.bridge",
+      "owning_module": "prose_engine",
+      "purpose": "Plan and render a bounded bridge between a saved cutaway replay and an exact retained destination.",
+      "input_schema": {"type": "object", "required": ["project", "universe", "episode", "branch", "scope_revision", "bridge"], "properties": {"references": {"enum": ["none", "topic", "luar", "style"], "description": "Optional on preview and run. Default is none."}}},
+      "preconditions": ["Trusted scene setup pins exact source and join anchors, replay, permitted influence edges, forms, masks and destination state.", "Save, run and recheck require the current preview plan for a new result. Recheck applies to an original blocked draft produced without books."],
+      "state_changes": ["Open and preview do not call a writer. Save validates the supplied text and records one reusable zero-provider proposal. An explicit run records one scoped attempt. Recheck validates the same returned bytes in a separate child draft without a provider.", "Book-guided preview and run use the configured library with the planned stage directions as the ranking query. Drafts retain source receipts and check overlap locally.", "Apply revalidates the current bridge and edits only the bridge slot on the requested branch. An unrelated sibling commit does not invalidate that bridge."],
+      "result_schema": {"type": "object", "description": "Scope, import bindings, preview plan, or recorded draft status and identity."},
+      "error_cases": ["Stale graph or laws, wrong import edge/clip edition, incompatible destination, inactive cast, out-of-slot edit, exceeded limits, or unconfirmed provider attempt."],
+      "undo_policy": "Checked notebook apply, Undo and Redo. Original text, result and writer receipts are retained.",
+      "persistence_policy": "Source fingerprints and exact nodes are bound to saved replay and bridge spec records. The draft and apply have separate stable receipts. A restored copy can reopen them without another model call.",
+      "cancellation_policy": "An unknown provider result stays pending and cannot apply; repeating the same key does not dispatch again.",
+      "test_ids": ["tests.test_scene_bridge", "tools.spring_break_bridge", "tools.spring_break_routes"],
+      "implementation": "story_graph/scene_bridge.py; prose_engine/scene_bridges.py; telemetry/scene_bridge_trace.py",
+      "ui_binding": "Studio episode API calls and the existing Composer, Scene Replay and history surfaces.",
+      "automation_binding": "Episode CLI and authenticated local service; verified reopen parity. Native adapter not verified.",
+      "status": "IMPLEMENTED_SCOPED"
+    },
+    {
+      "id": "scene.plan.open",
+      "owning_module": "prose_engine",
+      "purpose": "Bind an editable scene and its exact protected boundaries to verified speaker turns and current Minds.",
+      "input_schema": {"type": "object", "required": ["project", "universe", "episode", "branch", "timeline_revision"]},
+      "preconditions": ["The branch has a registered scene plan, a verified replay and a current notebook."],
+      "state_changes": ["Opening or previewing the scene uses zero story-provider calls.", "Apply checks the original plan again and edits the validated writable passage through the notebook transaction."],
+      "result_schema": {"type": "object", "description": "The versioned plan identifies the exact range and fork, retained digest, per-turn cast, speaker permission, listener, Mind inputs and local rules."},
+      "error_cases": ["Wrong branch, stale revision or plan, ambiguous anchor, invalid form link, exact protection or changed replay dependencies."],
+      "undo_policy": "The notebook stores complete scene Apply, Undo and Redo with the existing edit receipts.",
+      "persistence_policy": "The saved bridge and policy identify the author permissions. Drafts store the plan used at creation.",
+      "cancellation_policy": "A preview can be repeated without dispatch.",
+      "test_ids": ["tests.test_scene_bridge", "tests.test_mind_inspection"],
+      "implementation": "prose_engine/scene_plan.py; prose_engine/scoped_service.py; prose_engine/notebook.py",
+      "ui_binding": "Composer and Graph share the beat inspector. Use planned passage sends the exact scope to Prose Engine.",
+      "automation_binding": "Studio episode API, episode CLI and authenticated local command service.",
+      "status": "IMPLEMENTED_SCOPED"
+    },
+    {
+      "id": "scene.timeline.open",
+      "owning_module": "prose_engine",
+      "purpose": "Follow exact saved scene beats, clip ranges and the retained destination from one branch snapshot.",
+      "input_schema": {"type": "object", "required": ["project", "universe", "episode", "branch", "timeline_revision"]},
+      "preconditions": ["Use the current saved episode revision and an exact current scene graph or bridge."],
+      "state_changes": ["Read-only projection. Zero story-provider calls."],
+      "result_schema": {"type": "object", "description": "Scenes and ordered beats with code-point passage anchors, clip ranges, scoped media links, active forms and retained-source references."},
+      "error_cases": ["Wrong scope, stale timeline, changed exact passage, missing replay rebind or changed frozen lock."],
+      "undo_policy": "Read-only. Clip pins are owned by Scene Clips.",
+      "persistence_policy": "Reads the saved manuscript, graph and receipts. Workspace snapshots include timeline and form databases with their hash-addressed media.",
+      "cancellation_policy": "A closed view can reopen the saved snapshot without dispatch.",
+      "test_ids": ["tests.test_scene_clips"],
+      "implementation": "prose_engine/story_timeline.py; prose_engine/service_daemon.py; tools/assets/v2/story_timeline.js; tools/workbench_remote.py; WinUI StoryBeatsView",
+      "ui_binding": "Browser Studio Timeline → Story Beats; native Timeline (verified on a copy) → Story Beats and exact Compose selection; connected Workbench displays passages and pinned ranges.",
+      "automation_binding": "Studio episode API, episode CLI and authenticated local command service. Owner-scoped clip bytes and HTTP ranges use GET /v1/clip.",
+      "status": "IMPLEMENTED_SCOPED"
+    },
+    {
+      "id": "mind.inspect",
+      "owning_module": "prose_engine",
+      "purpose": "Inspect the resolved writing input for one Mind on an exact beat and reopen saved auditions.",
+      "input_schema": {"type": "object", "required": ["project", "universe", "episode", "branch", "timeline_revision"], "properties": {"source": {"enum": ["story", "roast"]}, "turn": {"type": "string"}, "character": {"type": "string"}, "form": {"type": "string"}, "draft": {"type": "string"}}},
+      "preconditions": ["Use an open saved episode and branch. Explicit form selection requires its owning character.", "A saved audition requires a draft in this scope with recorded inputs."],
+      "state_changes": ["Read-only. Zero story-provider calls."],
+      "result_schema": {"type": "object", "description": "Beat, status, active cast, selected Mind and eligible guidance, scene observations and provenance, or saved audition."},
+      "error_cases": ["Wrong scope, stale revision, unknown beat or form, incompatible viewpoint, or missing saved input."],
+      "undo_policy": "No writes and no history entry.",
+      "persistence_policy": "Reads existing boards, verified replays and archived draft input. New author edits never rewrite historical audition cards.",
+      "cancellation_policy": "The command can be repeated without creating work.",
+      "test_ids": ["tests.test_mind_inspection", "tests.test_replay_minds"],
+      "implementation": "prose_engine/mind_inspection.py; prose_engine/scoped_pipeline.py",
+      "ui_binding": "Browser Studio character graph, Story beats, and Mind Drafts.",
+      "automation_binding": "Studio episode API, episode CLI and authenticated local command service.",
+      "status": "IMPLEMENTED_SCOPED"
+    },
+    {
+      "id": "processing.open",
+      "owning_module": "prose_engine",
+      "purpose": "Inspect saved processing stages for local media intake, media linking, offline bridge drafts and ordinary writing runs.",
+      "input_schema": {"type": "object", "required": ["project", "universe", "episode", "branch"]},
+      "preconditions": ["An open saved episode on its branch. An optional job ID selects a saved receipt."],
+      "state_changes": ["Read-only. Zero story-provider calls."],
+      "result_schema": {"type": "object", "description": "The matching recent jobs or single receipt with worker status, timing and per-step inputs, outputs and errors."},
+      "error_cases": ["Wrong saved episode scope or invalid job identifier."],
+      "undo_policy": "Read-only. Processing receipts are kept for inspection.",
+      "persistence_policy": "Receipts and worker leases persist in timeline SQLite. A stale running lease reads as UNKNOWN and preserves completed steps, attempts and saved drafts.",
+      "cancellation_policy": "Closing the view does not affect a worker. An interrupted job does not retry itself.",
+      "test_ids": ["tests.test_processing_media", "tests.test_episode_writing_runs"],
+      "implementation": "prose_engine/processing.py; prose_engine/writing_runs.py; telemetry/processing_jobs.py",
+      "ui_binding": "Browser Studio Story Beats, native Timeline (verified on a copy) and connected Workbench.",
+      "automation_binding": "Studio episode API, episode CLI and authenticated local command service.",
+      "status": "IMPLEMENTED_SCOPED"
+    },
+    {
+      "id": "scene.media.open/source/attach",
+      "owning_module": "prose_engine",
+      "purpose": "Preview original media and link reusable selections to saved scenes, beats and form boards.",
+      "input_schema": {"type": "object", "required": ["project", "universe", "episode", "branch"]},
+      "preconditions": ["Import original bytes first. Attach to an exact saved story target or an existing character form port."],
+      "state_changes": ["Open and source are read-only. Attach stores a reusable segment and a separate target binding. Typed roles remain distinct when a media kind uses the same fallback purpose for two roles. Zero story-provider calls."],
+      "result_schema": {"type": "object", "description": "Shared originals, segments and scoped pins, source analysis and text, or the saved link with its processing receipt."},
+      "error_cases": ["Wrong scope, stale revision or digest, missing or changed original, invalid range, region, purpose or form."],
+      "undo_policy": "Reference links are independent of manuscript Undo and Redo.",
+      "persistence_policy": "SQLite receipts and hash-addressed originals under the timeline media directory. Reuse retains the same original, selector and purpose.",
+      "cancellation_policy": "Failed destination or selector checks save no link. Repeat of the same attachment returns the saved link.",
+      "test_ids": ["tests.test_processing_media", "tests.test_media_vault_v2"],
+      "implementation": "prose_engine/media_graph.py; prose_engine/story_timeline.py; tools/studio_media_http.py",
+      "ui_binding": "Studio v2 Media Vault, Story Beats, Story Graph, Character Graph and form reference boards. Drops stream originals, then attach to the captured saved target. Failed attachments leave successfully uploaded originals available in the project library.",
+      "automation_binding": "Studio episode API, episode CLI and authenticated local command service for JSON commands. Binary transfer uses Studio loopback endpoints.",
+      "status": "IMPLEMENTED_SCOPED"
+    },
+    {
+      "id": "scene.media.override.preview/apply/clear",
+      "owning_module": "prose_engine",
+      "purpose": "Resolve a supported author stage direction against an exact linked media segment and permissible writer turn.",
+      "input_schema": {"type": "object", "required": ["project", "universe", "episode", "branch"]},
+      "preconditions": ["Preview and apply need a media pin and author direction. A form or scene pin also needs an exact destination. Apply uses the current preview plan and previous override identity."],
+      "state_changes": ["Preview resolves purpose, source evidence and active roles. Apply enables the exact scoped receipt. Clear disables its guidance while keeping the link and receipt. Zero story-provider calls."],
+      "result_schema": {"type": "object", "description": "READY, SAVED, CLEARED or UNRESOLVED with a repeatable evidence receipt or explanation."},
+      "error_cases": ["Unknown source role, ambiguous actor, unsuitable purpose or range, inactive form, wrong branch, changed source, or stale linked plan."],
+      "undo_policy": "Clear disables a saved direction. Setting the same direction again reuses the receipt. Historical drafts retain their original input.",
+      "persistence_policy": "Original media stays in the project library. Override receipts and active links persist in timeline SQLite. The scoped writer snapshot records the active cue and revalidates it on Apply.",
+      "cancellation_policy": "An unresolved preview produces no guidance or draft.",
+      "test_ids": ["tests.test_media_overrides"],
+      "implementation": "prose_engine/media_overrides.py; prose_engine/media_signal.py; prose_engine/scoped_pipeline.py",
+      "ui_binding": "Studio Beat, Scene, and Form media Writing direction panel.",
+      "automation_binding": "Shared episode CLI and authenticated local service.",
+      "status": "IMPLEMENTED_SCOPED"
+    },
+    {
+      "id": "studio.timeline.episode_archive",
+      "owning_module": "story_graph",
+      "purpose": "Remove or restore an episode without deleting its saved content.",
+      "impact_preview": "Studio previews timeline.move, timeline.rename and timeline.archive with the expected history and episode revisions. A current token plus disconnect=true authorizes detaching affected authored flags. Timeline Undo and Redo apply order or removal and the corresponding flag states in one transaction. Fixed starter order and verified rejoin rules remain hard locks.",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "id",
+          "expected_revision",
+          "action"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "expected_revision": {
+            "type": "integer"
+          },
+          "action": {
+            "enum": [
+              "archive",
+              "restore"
+            ]
+          }
+        }
+      },
+      "preconditions": [
+        "Current episode revision; any existing episode may be removed or restored."
+      ],
+      "result_schema": {
+        "type": "object",
+        "required": [
+          "cards",
+          "archived_cards"
+        ]
+      },
+      "implementation": "story_graph/episode_timeline.py:TimelineStore.set_archived",
+      "state_changes": [
+        "Removal retains all revisions, drafts, graph, position, events and branches. Archived events are excluded from active timeline resolution and frozen branch snapshots; restoring re-enables them. Scope revision changes on either operation."
+      ],
+      "error_cases": [
+        "Stale revision, missing episode, or already removed/restored."
+      ],
+      "undo_policy": "Timeline Undo and Redo use SQLite timeline_action_history (undo_history/redo_history) synchronized with SQLite cover Undo/Redo (undo_cover/redo_cover) and draft favorite Undo/Redo, covering atomic create(after), removal, restoration, same-branch reordering, branch fork/unfork, event add/unadd/restore, form bind/unbind/redo, event review/unreview, rejoin/unrejoin, and finish/reopen with dependency and revision checks across reloads, browser sessions, and server restarts.",
+      "persistence_policy": "SQLite transaction; timeline_action_history stacks, episode IDs, episode_cover_stacks/episode_cover_history, archived events/branches/rejoins, draft_favorite_history, event_reviews, and timeline positions remain recoverable across reloads, sessions, and HTTP restarts.",
+      "cancellation_policy": "No changes before the operation is invoked.",
+      "test_ids": [
+        "tests.test_u10_timeline",
+        "tests.test_u10_timeline_http",
+        "tests.test_nr09e_timeline"
+      ],
+      "ui_binding": "Timeline header/episode panel (#timelineUndo, #timelineRedo, #moveEpisodeControls, #coverHistoryControls, #draftFavoriteControls, archive/restore, inline event undo controls) and Removed episodes",
+      "automation_binding": "Same-origin POST /api/timeline (undo_history, redo_history, create with optional after, archive, restore, move, undo_cover, redo_cover, unfork, unadd_event, restore_event, unbind_form, redo_form, unreview_event, unrejoin, reopen) and POST /api/drafts (favorite, undo-favorite, redo-favorite)",
+      "status": "IMPLEMENTED",
+      "step4_reorder_change": "TimelineStore.move_episode and POST /api/timeline action='move' check expected_revision, keep branch isolation, enforce fixed AFM starter order and rejoin target_episode > fork_episode order, preserve archived position slots, and safely re-space branch positions.",
+      "step5_undo_redo_change": "Persisted timeline action stack in SQLite timeline_action_history (undo_history/redo_history) surviving reloads, sessions, and server restarts; synchronized granular cover and draft-favorite stacks; made tight-gap create_episode(..., after=...) atomic; added revision- and cover-checked undo_cover/redo_cover, recoverable unfork/unadd_event/restore_event/unbind_form_event/redo_form_event/unreview_event/unrejoin/reopen, DraftStore favorite toggle/undo_favorite/redo_favorite, multi-step RevisionStore undo/redo, BeatAnchorStore redo, standalone toolbar Undo/Redo parity, and CLI editorial --request redo help text."
+    },
+    {
+      "id": "canon.state_compiler_and_passes",
+      "purpose": "Compile accumulative universe laws, character minds/memories, and timeline deltas at any StoryCoord, validate manuscript/generated claims across engine guards without false-positive negation/quote flags, and run Pass 0-3 classification and extraction with read-only cook canon_audit.",
+      "owning_module": "story_graph.state_compiler / story_graph.state_validator / prose_engine.canon_guard / prose_engine.canon_classifier / prose_engine.fact_extractor",
+      "input_schema": {
+        "compile_state": "StoryCoord(universe_id, branch, episode_id, episode_pos, beat), optional viewpoint",
+        "run_canon_passes": "blocks_or_text, StoryCoord, sqlite3.Connection, optional viewpoint, source_origin, queue_proposals, extractor_fn",
+        "check_prose_canon": "text, episode_id, branch?, episode_position?, beat?, viewpoint?, timeline_conn?, seed_afm?, source_origin?"
+      },
+      "preconditions": "Schema ensured via ensure_canon_schema; seed_afm_universe runs only for afm-starters universes unless caller stores custom rows; Negated divergence and broadcast_quote_fixture / show-quote passages are exempted before claiming hard/import conflicts.",
+      "state_changes": "compile_state, validate_claims, check_prose_canon, and cook canon_audit are read-only; run_canon_passes(..., queue_proposals=True) inserts deduplicated pending rows into canon_proposals; resolve_proposal(decision='accepted') appends causal state_deltas/laws/traits; retire_delta sets retired flag without deleting rows.",
+      "result_schema": {
+        "compile_state": "CompiledWorldState(coord, branch_lineage, active_laws, import_bleed_guards, characters, character_traits, memories, relationships, state_digest)",
+        "run_canon_passes": "{coord, state_digest, spans_count, claims, findings, conflicts, warnings, advisories, uncertain, supported, queued_proposals}",
+        "cook_audit": "Optional canon_audit summary {state_digest, conflicts, warnings, advisories} attached inside preparation receipt"
+      },
+      "error_cases": [
+        "Unknown branch raises KeyError/ValueError",
+        "Invalid law modality, exception policy, or delta op rejected during schema/write validation",
+        "Hard invariant violations (male fox offspring, Haley/Stella biological father, Smith import bleed on unexempted prose, era anachronism such as husband Jeff in Spring Break) surface as conflict findings; soft tendency violations without character trait exception surface as warnings or advisories"
+      ],
+      "undo_policy": "Approved timeline deltas remain auditable rows in state_deltas and are reversed/superseded via retire_delta(delta_id, retired=True/False) rather than destructive deletion; pending canon_proposals may be rejected or left unapplied.",
+      "persistence_policy": "Persisted in SQLite tables universe_laws_v2, character_minds, character_traits, character_memories, state_deltas, and canon_proposals; isolated in-memory clones used when auditing unsaved text or seed-overlay cook passes.",
+      "cancellation_policy": "Compile and Pass 0-3 audits are pure in-memory evaluations; proposal writes use explicit SQLite transactions so mid-flight aborts roll back cleanly.",
+      "test_ids": [
+        "tests.test_state_compiler",
+        "tests.test_canon_pipeline"
+      ],
+      "ui_binding": "Graph World Law node parameters (modality, valid_from_episode) in tools/assets/v2/graph_engine.js and Studio canon endpoints.",
+      "automation_binding": "story_graph.state_compiler.StateCompiler / prose_engine.fact_extractor.run_canon_passes / prose_engine.canon_guard.check_prose_canon / prose_engine.cook.run_cook_pipeline",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "studio.canon_endpoints",
+      "purpose": "Inspect accumulative canon state and Pass 0-3 findings against saved episodes or draft text, queue detected delta proposals, and review/resolve/retire canon proposals in Studio.",
+      "owning_module": "tools.studio_ui / tools.studio_canon_routes",
+      "input_schema": {
+        "POST /api/canon-diff": "JSON {episode?, branch?, episode_position?, beat?, viewpoint?, source_origin?, text?, blocks?, queue_proposals?, project?, universe?}",
+        "POST /api/canon-proposals": "JSON {action: 'open'|'list'|'propose'|'resolve'|'retire_delta', project?, universe?, episode?, branch?, episode_position?, beat?, status?, kind?, payload?, rationale?, proposal_id?, decision?, reviewer?, delta_id?, retired?}"
+      },
+      "preconditions": "Same-origin HTTP header Origin == http://127.0.0.1:<port>, Content-Type application/json, Content-Length <= 1,000,000; allowed in both standalone and timeline_only Studio server modes.",
+      "state_changes": "/api/canon-diff modifies canon_proposals only when queue_proposals=True inside BEGIN IMMEDIATE; /api/canon-proposals writes pending proposals, commits accepted deltas/laws/traits on resolve, or toggles state_deltas.retired on retire_delta.",
+      "result_schema": {
+        "POST /api/canon-diff": "200 JSON {coord, state_digest, spans_count, claims, findings, conflicts, warnings, advisories, uncertain, supported, queued_proposals, relationships, characters}",
+        "POST /api/canon-proposals": "200 JSON action-specific payload ({proposals, state_digest, coord, relationships} | {proposal_id, status} | resolve receipt | {delta_id, retired})"
+      },
+      "error_cases": [
+        "403 PermissionError on foreign Origin header",
+        "400 ValueError/KeyError/sqlite3.Error on oversized/invalid JSON, missing required fields, unknown proposal action, or unknown delta_id"
+      ],
+      "undo_policy": "Accepted proposals are never destructively erased; operators invert applied timeline deltas via POST /api/canon-proposals action='retire_delta'.",
+      "persistence_policy": "Backed by the active workspace timeline SQLite database via BEGIN IMMEDIATE transactions after verify_scope.",
+      "cancellation_policy": "Request-scoped synchronous SQLite transactions; failed validation rolls back before commit.",
+      "test_ids": [
+        "tests.test_canon_pipeline",
+        "tests.test_studio_v2_ui"
+      ],
+      "ui_binding": "Studio World Laws & Canon panel (#v2CanonAuditBtn, #v2CanonRefreshBtn, #v2CanonQueueChk, [data-canon-resolve]) in tools/assets/v2/prose.js and v2 world_law graph node.",
+      "automation_binding": "Same-origin POST /api/canon-diff and POST /api/canon-proposals",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "story.epic3_multimodal_and_neurosymbolic",
+      "purpose": "Extract clip expressive envelopes and pause windows via prose_engine.media_analysis with opt-in evidence context gating; enforce physiological_emission/sensory_propagation laws, BeatPacket complement epistemic_unknown checks, and MindProjectionResolver multi-body/InteractionRule validation.",
+      "owning_module": "prose_engine.media_analysis / story_graph.compiler / prose_engine.invariant_gate / story_graph.mind_resolver",
+      "input_schema": {
+        "analyze_clip": "(audio_path, transcript_hints?, enable_cuda_encoders?) -> ClipExpressiveEnvelope",
+        "Evidence.context": "() -> {kind, source, timecode, revision, reviewer, text} (requires permission == 'permitted' and non-empty reviewer + reviewed)",
+        "InvariantGate.verify_epistemic_bounds": "(candidate_text, character_epistemic_scope, epistemic_unknown?) -> List[str]",
+        "MindProjectionResolver.active_bodies": "(junctions, replay_frame?, beat_overrides?, active_relationships?, interaction_rules?, active_pressures?) -> List[MindProjection]"
+      },
+      "preconditions": "Offline WAV pause extraction requires valid 16-bit PCM WAV; CUDA CLAP/Whisper/ECAPA paths require local HF snapshots and opt-in flag; Evidence.context() refuses unpermitted or unreviewed rows.",
+      "state_changes": "Pure analysis/validation helper calls have no persistent world mutation; BeatPacketCompiler attaches epistemic_unknown complement per active character from EpistemicLedger.get_unknown_facts.",
+      "result_schema": {
+        "ClipExpressiveEnvelope": "{schema_version, duration_sec, pause_windows, speech_segments, clap_mood_tags, speaker_embedding_dim, speech_rate_wps, errors}",
+        "MindProjection": "{character_id, form_id, node_id, location, speaker_label, provenance_layers, active_rules, traits, relationships}"
+      },
+      "error_cases": [
+        "PermissionError on Evidence.context() without permission == 'permitted' or reviewer/reviewed annotation",
+        "ValueError on unknown world-law kind in story_graph.typed_laws.validate_constraint"
+      ],
+      "undo_policy": "Evidence JSON sidecars remain inspectable on disk; world-law edits use existing canon proposal retirement.",
+      "persistence_policy": "Evidence JSON persisted via save_evidence/load_evidence when explicitly invoked; analysis envelopes and BeatPackets are in-memory artifacts.",
+      "cancellation_policy": "Deterministic local WAV RMS and rule checks complete synchronously in-memory.",
+      "test_ids": [
+        "tests.test_epic3_neurosymbolic",
+        "tests.test_canon_pipeline",
+        "tests.test_ontological_graph"
+      ],
+      "ui_binding": "Studio Graph v2 media_clip, mind_state, character_switchyard, and world_law nodes in tools/assets/v2/graph_engine.js",
+      "automation_binding": "Direct Python module APIs prose_engine.media_analysis.analyze_clip, story_graph.compiler.BeatPacketCompiler, prose_engine.invariant_gate.InvariantGate, story_graph.mind_resolver.MindProjectionResolver",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "story.epic4_slot_infill_and_seams",
+      "purpose": "Partition target passages across 0/25/50/75/100% protection tiers with exact duplicate-occurrence coordinates, splice occurrence-safe slot fills, validate structural seams and tier fidelity, and expose non-mutating preview/validation via prose_engine.scoped_pipeline and Studio POST /api/slot-infill.",
+      "owning_module": "prose_engine.slot_infill / prose_engine.scoped_pipeline / tools.studio_canon_routes",
+      "input_schema": {
+        "plan_infill_slots": "(source_text, ranges?, default_tier?, base_offset?, context_chars?) -> InfillPlan",
+        "apply_slot_fills": "(plan, fills, validate?, enforce_tier_fidelity?, allow_empty?) -> dict",
+        "validate_infill_seams": "(plan, assembled_text, source_edit?, slot_segments?, enforce_tier_fidelity?, allow_empty?) -> SeamValidationReport",
+        "POST /api/slot-infill": "JSON {action: 'plan'|'validate'|'preview', episode?, branch?, revision?, beat?, viewpoint?, start?, end?, protection_ranges?, default_tier?, source_text?, fills?, candidate_text?, source_edit?, enforce_tier_fidelity?, allow_empty?}"
+      },
+      "preconditions": "Same-origin Origin == http://127.0.0.1:<port>, Content-Type application/json, Content-Length <= 1,000,000 for HTTP POST /api/slot-infill; slot tiers must be integers in 0..100 on Unicode grapheme-safe offsets.",
+      "state_changes": "Pure read-only inspection and non-mutating validation/preview; never modifies timeline revisions, notebook revisions, or episode scripts on disk.",
+      "result_schema": {
+        "InfillPlan": "{base_offset, source_sha256, default_tier, slot_count, editable_count, locked_count, slots}",
+        "SeamValidationReport": "{valid, issues, findings, slot_reports, remapped_locks}",
+        "POST /api/slot-infill": "200 JSON ({action, plan} | {action, valid, issues, text, source_edit?, candidate_bounds?, applied_slots?, validation, plan})"
+      },
+      "error_cases": [
+        "403 PermissionError on foreign Origin header",
+        "400 ValueError on ambiguous duplicate occurrence string reference, attempt to edit a 100% locked slot, grapheme-splitting boundary, tier violation, or seam defect"
+      ],
+      "undo_policy": "Read-only planning and fill validation leave saved manuscript revisions untouched; approved edits still go through revision-checked notebook/draft apply.",
+      "persistence_policy": "Stateless per-request planning and validation over saved timeline/notebook state or supplied standalone source_text.",
+      "cancellation_policy": "Synchronous in-memory evaluation; rejected fills never write partial changes.",
+      "test_ids": [
+        "tests.test_epic4_slot_infill",
+        "tests.test_nr07_drafts",
+        "tests.test_u10_scoped_pipeline"
+      ],
+      "ui_binding": "Studio same-origin POST /api/slot-infill over Studio v2 Compose protection masks (#composeContainer / NotebookStore)",
+      "automation_binding": "Direct Python APIs prose_engine.slot_infill.{plan_infill_slots,apply_slot_fills,validate_infill_seams}, prose_engine.scoped_pipeline.{build_infill_plan,evaluate_infill_proposal}, and POST /api/slot-infill",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "story.epic5_denovo_craft_slop_bestofn",
+      "purpose": "Compile <=6144-byte UTF-8 De Novo CraftBriefs, critique prose deterministically via SlopCritic (exempting quotes and valid negations), and rank dialogue- & canon-valid candidates with BestOfN.",
+      "owning_module": "prose_engine.voice.synthesizer / prose_engine.voice.slop_critic / prose_engine.voice.best_of_n / tools.studio_canon_routes",
+      "input_schema": {
+        "compile_craft_brief": "(scene_heading, beats, skeleton?, lens_id?, viewpoint?, world_laws?, mind_directives?, epistemic_withheld?, craft_cues?, max_bytes?, seed?) -> CraftBrief",
+        "SlopCritic.critique": "(text) -> SlopCritique",
+        "DeNovoSynthesizer.synthesize_best_of_n": "(provider, scene_heading, beats, skeleton?, n?, reference_text?, margin?, packet?, infill_plan?, mind_projections?, seeds?) -> dict",
+        "POST /api/craft-brief": "JSON {action: 'compile'|'critique'|'rank', episode?, branch?, revision?, beat?, viewpoint?, start?, end?, source_text?, text?, candidates?, beats?, scene_heading?, lens_id?, world_laws?, mind_directives?, epistemic_withheld?, craft_cues?, max_bytes?, use_saved_model?, require_burstiness?, margin?}"
+      },
+      "preconditions": "Same-origin Origin == http://127.0.0.1:<port>, Content-Type application/json, Content-Length <= 1,000,000 for HTTP POST /api/craft-brief; max_bytes must be within 512..6144.",
+      "state_changes": "Pure read-only brief compilation, slop critique, and candidate ranking; never modifies episodes or canon tables on disk.",
+      "result_schema": {
+        "CraftBrief": "{scene_heading, lens_id, viewpoint, max_bytes, byte_size, brief_sha256, trimmed_sections, prompt}",
+        "SlopCritique": "{passed, slop_score, quality_bonus, hard_blocks, warnings, spans, anti_ai_issues, cliches, burstiness, burstiness_passed, model_used}",
+        "synthesize_best_of_n": "{status: 'PROPOSED'|'BLOCKED', winner, alternatives, candidates, rejected, critic_reports, brief, issues}"
+      },
+      "error_cases": [
+        "403 PermissionError on foreign Origin header",
+        "400 ValueError on out-of-range max_bytes, empty candidates list for rank, unknown action, or invalid scope"
+      ],
+      "undo_policy": "Stateless compilation and ranking; candidate adoption still passes through checked DraftStore/NotebookStore apply.",
+      "persistence_policy": "In-memory evaluation over saved episode scope or supplied text.",
+      "cancellation_policy": "Synchronous evaluation with hard per-brief UTF-8 byte ceiling (6144 bytes).",
+      "test_ids": [
+        "tests.test_epic5_synthesizer",
+        "tests.test_synthesizer",
+        "tests.test_voice_best_of_n",
+        "tests.test_voice_slop"
+      ],
+      "ui_binding": "Studio same-origin POST /api/craft-brief in tools/studio_canon_routes.py",
+      "automation_binding": "prose_engine.voice.synthesizer.{compile_craft_brief,DeNovoSynthesizer}, prose_engine.voice.slop_critic.SlopCritic, prose_engine.voice.best_of_n, and POST /api/craft-brief",
+      "status": "IMPLEMENTED"
+    }
+  ],
+  "required_fields": [
+    "id",
+    "purpose",
+    "owning_module",
+    "input_schema",
+    "preconditions",
+    "state_changes",
+    "result_schema",
+    "error_cases",
+    "undo_policy",
+    "persistence_policy",
+    "cancellation_policy",
+    "test_ids",
+    "ui_binding",
+    "automation_binding"
+  ]
+}

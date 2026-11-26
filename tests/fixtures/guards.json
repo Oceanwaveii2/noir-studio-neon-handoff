@@ -1,0 +1,23 @@
+{
+  "fact_case": {
+    "original": "A tidy little house with a wind chime and a hose coiled like a sleeping snake. MA MA LING stands on the porch, arms folded, mid-sentence before the car has even stopped.",
+    "candidate": "A tidy little house with a wind chime and a hose coiled on the lawn. Someone stands on the porch, mid-sentence.",
+    "expect_missing": [
+      "MA MA LING"
+    ]
+  },
+  "copy_case": {
+    "original": "The sedan sits low and patient, like a dog that knows it is about to be asked for something unreasonable.",
+    "candidate": "The sedan sits low and patient, like a dog that knows it is about to be asked for something unreasonable.",
+    "expect_overlap": 1.0
+  },
+  "quote_case": {
+    "candidate": "\"Evening,\" one officer says, and I reply, \"Evening.",
+    "expect_odd": true
+  },
+  "length_case": {
+    "original": "Francine loops an arm around Rainee's waist, as far as her arms can reach. Rainee's hips brush both sides of the hallway runner, making it ruck up like a loose rug.",
+    "candidate": "Francine reaches. Her arm stops halfway.",
+    "expect_ratio_below": 0.4
+  }
+}

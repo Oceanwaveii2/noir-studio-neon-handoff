@@ -1,0 +1,177 @@
+/* Noir Fiction Studio v2 — M5 Beat Map & Rhythm Direction */
+
+.v2-beat-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.v2-beat-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-paper);
+  color: var(--ink-on-paper);
+  border: 1px solid var(--border-paper);
+}
+
+.v2-beat-title-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.v2-beat-title-group h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--ink-on-paper);
+}
+
+.v2-beat-title-group span {
+  font-size: 12px;
+  color: var(--ink-muted-on-paper);
+}
+
+.v2-beat-scenes {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+}
+
+.v2-scene-chip {
+  flex: 0 0 auto;
+  padding: 6px 11px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-paper);
+  background: var(--surface-paper);
+  color: var(--ink-on-paper);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2-scene-chip[aria-pressed="true"] {
+  background: var(--accent-primary);
+  color: var(--ink-on-accent);
+  border-color: var(--accent-primary-strong);
+}
+
+.v2-beat-group-bar {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: var(--surface-paper);
+  color: var(--ink-on-paper);
+  border: 1px solid var(--border-paper);
+  display: grid;
+  gap: 10px;
+}
+
+.v2-beat-group-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.v2-beat-group-input {
+  flex: 1 1 240px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-paper);
+  background: var(--surface-paper-inset);
+  color: var(--ink-on-paper);
+  font-size: 13px;
+}
+
+.v2-beat-proposal {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-paper);
+  background: var(--surface-paper-inset);
+  color: var(--ink-on-paper);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.v2-beat-list {
+  display: grid;
+  gap: 8px;
+}
+
+.v2-beat-card {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-paper);
+  color: var(--ink-on-paper);
+  border: 1px solid var(--border-paper);
+  display: grid;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.v2-beat-card.is-selected {
+  outline: 2px solid var(--focus-ring);
+  border-color: var(--focus-ring);
+}
+
+.v2-beat-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.v2-beat-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-on-paper);
+}
+
+.v2-beat-card-excerpt {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-on-paper);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.v2-rhythm-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.v2-workspace-mode { display: flex; gap: 6px; padding-bottom: 10px; }
+.v2-workspace-mode button[aria-pressed=true] { background: var(--accent-primary); border-color: var(--accent-primary-strong); color: var(--ink-on-accent); }
+.v2-workspace-split { min-height: 0; min-width: 0; }
+.v2-workspace-split.is-split { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); gap:12px; height:calc(100% - 45px); }
+.v2-beat-paper,.v2-beat-pane { min-width:0; }
+.v2-workspace-split.is-split > * { overflow:auto; min-height:0; scrollbar-width:thin; }
+.v2-workspace-split.is-split .v2-notebook-page { padding-inline: 10px; }
+.v2-workspace-split.is-split .v2-compose-bar { padding: 10px; }
+.v2-beat-options { background: var(--surface-chrome); color: var(--ink-on-chrome); border: 1px solid var(--border-chrome); border-radius: 10px; margin: 10px 0; padding: 8px 10px; }
+@media (max-width: 1099px) { .v2-workspace-split.is-split { height:auto; grid-template-columns:1fr; } .v2-workspace-split.is-split > .v2-beat-paper { max-height:50vh; } }

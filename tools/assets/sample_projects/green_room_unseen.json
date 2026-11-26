@@ -1,0 +1,103 @@
+{
+  "id": "green_room_unseen",
+  "title": "Green Room Unseen (Unseen Transfer Test)",
+  "subtitle": "4 Stage-Crew Minds \u00b7 Proves Data-Driven Zero-Hardcoding",
+  "scenario_key": "green_room_unseen",
+  "characters": [
+    {
+      "id": "nadia",
+      "name": "Nadia",
+      "form_label": "Stage Crew \u00b7 Cue Runner",
+      "tier": "major",
+      "portrait": null,
+      "tags": [
+        "STAGE_CREW"
+      ],
+      "facts": [
+        "Bolts to corridor wings after dropping the ringing cue-bell."
+      ],
+      "rejected_claims": [],
+      "forms": [
+        {
+          "id": "nadia_base",
+          "label": "Nadia \u00b7 Green Room",
+          "status": "active"
+        }
+      ],
+      "ports": [
+        {
+          "key": "exit_wake",
+          "label": "Moroccan Exit Wake Cue (fg-moroccan.mp4)",
+          "direction": "Urgent exit + trailing cue hitting an unsuspecting bystander.",
+          "support": "Dual-bound cue from fg-moroccan.mp4 (0:01\u20130:05).",
+          "playable_clip_id": "fg_moroccan",
+          "playable_url": "mind-assets/fg-moroccan.mp4"
+        }
+      ]
+    },
+    {
+      "id": "tessa",
+      "name": "Tessa",
+      "form_label": "Stage Crew \u00b7 Bystander Witness",
+      "tier": "secondary",
+      "portrait": null,
+      "tags": [
+        "STAGE_CREW"
+      ],
+      "facts": [
+        "Catches the trailing cue-bell left by Nadia."
+      ],
+      "rejected_claims": [],
+      "forms": [
+        {
+          "id": "tessa_base",
+          "label": "Tessa \u00b7 Green Room",
+          "status": "active"
+        }
+      ],
+      "ports": []
+    },
+    {
+      "id": "bram",
+      "name": "Bram",
+      "form_label": "Stage Crew \u00b7 Prop Lead",
+      "tier": "secondary",
+      "portrait": null,
+      "tags": [
+        "STAGE_CREW"
+      ],
+      "facts": [
+        "Tracks backstage prop custody."
+      ],
+      "rejected_claims": [],
+      "forms": [
+        {
+          "id": "bram_base",
+          "label": "Bram \u00b7 Green Room",
+          "status": "active"
+        }
+      ],
+      "ports": []
+    },
+    {
+      "id": "mara",
+      "name": "Mara",
+      "form_label": "Corridor Witness",
+      "tier": "secondary",
+      "portrait": null,
+      "tags": [],
+      "facts": [
+        "Observes corridor exit from outside the green room."
+      ],
+      "rejected_claims": [],
+      "forms": [
+        {
+          "id": "mara_base",
+          "label": "Mara \u00b7 Corridor",
+          "status": "active"
+        }
+      ],
+      "ports": []
+    }
+  ]
+}

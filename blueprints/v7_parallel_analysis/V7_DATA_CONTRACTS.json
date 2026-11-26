@@ -1,0 +1,57 @@
+{
+  "schema_version": "7.0",
+  "blueprint_id": "noir_v7_parallel_analysis",
+  "verification_floor": {
+    "core_ci_cmd": "py -B tools/ci.py --core",
+    "core_baseline_min_passed": 572,
+    "arch_fixtures_min_passed": 5,
+    "studio_ui_cmd": "py -B -m unittest tests.test_studio_v2_ui",
+    "studio_ui_min_passed": 7,
+    "blueprint_sim_cmd": "py -B blueprints/v7_parallel_analysis/verify_v7_contracts.py"
+  },
+  "forbidden_anti_patterns": [
+    "NEVER mutate baseline G0 or any parent branch in place; always emit a new branch_id with parent_branch_id.",
+    "NEVER generate prose inside story_graph/; story_graph emits typed JSON beats, edges, and validation flags only.",
+    "NEVER hardcode character lore inside prompts; always read active laws from universe_laws_v2 / WORLD_LAWS.noir.",
+    "NEVER collapse MAP-Elites candidates into a single prose reply; always return 4 distinct quadrant bins.",
+    "NEVER edit files outside the active Code Node ownership fence."
+  ],
+  "code_nodes": [
+    {
+      "id": "CN-1",
+      "module": "tools/media_ingest.py",
+      "function": "ingest_media_to_baseline_graph(media_path: Path, srt_path: Path | None = None) -> dict",
+      "allowed_files": ["tools/media_ingest.py", "tests/test_media_ingest.py"],
+      "forbidden_globs": ["prose_engine/*", "story_graph/*", "tools/studio_ui.py", "ui/*"],
+      "required_output_keys": ["schema_version", "branch_id", "parent_branch_id", "immutable", "source_sha256", "scenes", "causal_edges"],
+      "golden_tests": ["SIM-15"]
+    },
+    {
+      "id": "CN-2",
+      "module": "story_graph/counterfactual.py",
+      "function": "fork_counterfactual_branch(parent_branch: dict, intervention: dict, active_world_laws: list[dict]) -> dict",
+      "allowed_files": ["story_graph/counterfactual.py", "tests/test_counterfactual.py"],
+      "forbidden_globs": ["prose_engine/*", "tools/studio_ui.py", "ui/*"],
+      "required_output_keys": ["schema_version", "branch_id", "parent_branch_id", "question", "beats", "world_law_conflicts"],
+      "golden_tests": ["SIM-15", "SIM-16"]
+    },
+    {
+      "id": "CN-3",
+      "module": "story_graph/qd_brainstorm.py",
+      "function": "generate_map_elites_grid(branch: dict, epistemic_states: list[dict], axes: tuple[str, str]) -> dict",
+      "allowed_files": ["story_graph/qd_brainstorm.py", "tests/test_qd_brainstorm.py"],
+      "forbidden_globs": ["prose_engine/*", "tools/studio_ui.py", "ui/*"],
+      "required_output_keys": ["schema_version", "branch_id", "axes", "cells"],
+      "golden_tests": ["SIM-17"]
+    },
+    {
+      "id": "CN-4",
+      "module": "ui/analysis_lab.js",
+      "function": "promoteCandidateToPrepNodes(candidate, branchId, activeLawIds)",
+      "allowed_files": ["ui/analysis_lab.js", "ui/analysis_lab.css", "ui/app.js", "tools/studio_canon_routes.py"],
+      "forbidden_globs": ["prose_engine/*", "story_graph/*"],
+      "required_output_keys": ["source_branch_id", "nodes"],
+      "golden_tests": ["SIM-18"]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Noir Workbench</title>
+<style>
+:root{color-scheme:dark;background:#141516;color:#eee9df;font:16px/1.5 system-ui,sans-serif}body{max-width:48rem;margin:5vh auto;padding:0 1.2rem}h1{font:2.35rem Georgia,serif;color:#f6d6a8;margin:.2rem 0}.eyebrow{font-size:.8rem;letter-spacing:.17em;color:#e2b484}main{margin-top:2rem;padding:1.4rem;background:#222326;border:1px solid #51483a;border-radius:12px}label{display:block;margin:1rem 0 .3rem}select,button{font:inherit;padding:.5rem .8rem;border:1px solid #988161;border-radius:6px}button{background:#f3cf99;color:#211a12;margin:1rem .4rem 0 0;cursor:pointer}button:disabled{opacity:.55;cursor:default}pre{white-space:pre-wrap;background:#efe2cc;color:#27201a;padding:1rem;border-radius:6px;min-height:3rem;overflow-wrap:anywhere}p{color:#d9c9b6}
+</style></head><body>
+<header><div class="eyebrow">NOIR · CONNECTED WORKSPACE</div><h1>Workbench</h1><p id="connection" role="status">Connecting to Noir…</p></header>
+<main><div role="group" aria-label="Timeline history">
+<button id="timeline-refresh">Refresh timeline</button>
+<button id="timeline-undo" disabled>Undo timeline change</button>
+<button id="timeline-redo" disabled>Redo timeline change</button>
+<p id="timeline-status" role="status"></p></div>
+<label for="episodes">Episode</label><select id="episodes"></select>
+<label for="beats" id="beat-label">Passage</label><select id="beats"></select>
+<button id="story" disabled>Story Beats</button><button id="processing" disabled>Processing</button>
+<button id="preview" disabled>Preview book cadence</button><button id="draft" disabled>Show latest draft</button>
+<p id="status" aria-live="polite"></p><pre id="text" aria-label="Passage or draft text"></pre></main>
+<script type="module" src="/workbench_connected.js"></script></body></html>

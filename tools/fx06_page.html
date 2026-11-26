@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NOIR · Rainee Split Pilot</title>
+<style>
+:root{color-scheme:dark;--ink:#f5ead5;--faint:#baada0;--mint:#b9f3db;--gold:#ffbf7c}
+*{box-sizing:border-box}body{margin:0;background:#131818;color:var(--ink);font:16px/1.55 system-ui,sans-serif}
+main{padding:28px clamp(14px,4vw,60px);margin:auto;max-width:1330px}header{border-bottom:1px solid #46524e}
+.eyebrow{color:var(--gold);letter-spacing:.12em;font:700 12px system-ui}a{color:var(--mint)}
+h1{font-size:clamp(2.2rem,5vw,4rem);margin:.2em 0}h2{font-size:1.35rem}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0}
+button{font:inherit;padding:9px 13px;border-radius:6px;border:1px solid #52605a;background:#262e2e;color:var(--ink);cursor:pointer}
+button[aria-pressed=true]{background:var(--mint);color:#14372a}a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.paper,.card{border:1px solid #41504a;background:#1c2524;border-radius:10px;padding:14px 18px;margin:10px 0}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+pre{white-space:pre-wrap;font:1rem/1.6 ui-monospace,monospace;margin:.5em 0}
+.muted{color:var(--faint)}.pill{color:var(--gold);font-size:.9em}
+</style>
+</head>
+<body><main>
+<header>
+<p class="eyebrow">NOIR / STUDIO / FX06</p>
+<h1>Rainee Split Pilot</h1>
+<p class="muted">A separate working copy of the scene. Pick a beat to see who the writer can use there.</p>
+<p><a href="/?episode=fx06-rainee-split">Open in Composer</a> ·
+<a href="/legacy?episode=fx06-rainee-split&amp;view=character-graph&amp;expand=1">Open character graph</a></p>
+</header>
+<p id="status" role="status">Loading saved scene…</p>
+<nav id="phases" aria-label="Inspect a scene phase"></nav>
+<section id="detail" hidden>
+<div class="paper"><p id="form" class="pill"></p><pre id="text"></pre><p id="cutaway" class="muted"></p></div>
+<div id="cast" class="grid"></div>
+</section>
+<section class="paper">
+<h2>Saved split draft</h2>
+<p>Protected line: <b id="lock"></b></p>
+<p id="receipt" class="muted"></p><pre id="draft"></pre>
+</section>
+</main>
+<script>
+'use strict';
+const el = (id) => document.getElementById(id);
+const labels = {before:'Before split',roast:'Three Rainees',rejoined:'After rejoin',peter:'Peter payoff'};
+function line(tag, text, cls='') {
+  const node = document.createElement(tag);
+  node.textContent = text;
+  if(cls) node.className=cls;
+  return node;
+}
+function show(phase) {
+  const s=phase.state;
+  document.querySelectorAll('#phases button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.phase===phase.id)));
+  el('detail').hidden=false;
+  el('form').textContent=s.active_cast.length ? 'Three active minds · one Rainee identity' :
+      (phase.id==='peter'?'Rainee Peter · split minds inactive':'Rainee · split minds inactive');
+  el('text').textContent=phase.text;
+  el('cutaway').textContent=s.override ? 'Cutaway 01:57.400–01:57.500 · '+(
+      s.override.operator==='invert_three_to_one_shape'?'fusion played in reverse for the split':'original direction for the reunion') : '';
+  el('cast').replaceChildren(...s.active_cast.map(actor=>{
+    const card=line('article','','card');
+    card.append(line('h2',actor.speaker+' · '+actor.role),line('p','Connected Digital Mind','pill'));
+    for(const t of actor.tendencies) card.append(line('p','When '+t.when+': '+t.try));
+    return card;
+  }));
+}
+async function openPilot() {
+  const res=await fetch('/api/episode-command',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'fx06.open',episode:'fx06-rainee-split',project:'noir-fx06-pilot',universe:'american-foxy-mom'})});
+  const saved=await res.json();
+  if(!res.ok) throw new Error(saved.error||'Could not open this scene.');
+  el('status').textContent='Scene loaded. Previewing a phase does not edit the timeline or start a writer.';
+  el('lock').textContent=saved.protected_line;
+  for(const phase of saved.phases) {
+    const button=line('button',labels[phase.id]);
+    button.type='button';button.dataset.phase=phase.id;
+    button.addEventListener('click',()=>show(phase));
+    el('phases').append(button);
+  }
+  show(saved.phases.find(p=>p.id==='roast'));
+  const draft=saved.draft;
+  el('receipt').textContent=draft?'Saved as a separate Studio variant · '+draft.provider:'No proposed split draft is saved yet.';
+  el('draft').textContent=draft?.text||'';
+}
+openPilot().catch(error=>{el('status').textContent=error.message;});
+</script>
+</body></html>

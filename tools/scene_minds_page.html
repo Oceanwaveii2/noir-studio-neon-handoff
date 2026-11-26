@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Noir · Mind Drafts</title>
+<style>
+:root{color-scheme:dark;--paper:#f7ebd7;--base:#151917;--panel:#202725;--line:#46514a;--gold:#f8b777;--mint:#b8efda;--muted:#c4c6b9;font-family:system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--base);color:var(--paper)}main{max-width:96rem;margin:auto;padding:clamp(1rem,4vw,3rem)}h1{font:600 clamp(2rem,5vw,3.4rem) Georgia,serif;margin:.25rem 0}h2{font-size:1.22rem;margin:.2rem 0}p{line-height:1.5}a{color:var(--mint)}.eyebrow{color:var(--gold);letter-spacing:.12em;font-size:.8rem}.muted{color:var(--muted)}.toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;margin:1rem 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(22rem,100%),1fr));gap:1rem}.card{background:var(--panel);border:1px solid var(--line);padding:1rem;border-radius:.65rem}.preview{white-space:pre-wrap;overflow-wrap:anywhere;font-family:Georgia,serif;font-size:1.1rem;line-height:1.55}.badge{color:var(--mint);font-size:.85rem}button{font:inherit;color:inherit;background:#262f2a;border:1px solid var(--line);border-radius:.4rem;padding:.55rem .7rem;min-height:2.5rem;cursor:pointer}button:disabled{opacity:.5;cursor:default}:focus-visible{outline:2px solid var(--gold);outline-offset:3px}.error{color:#ffb7a9}
+</style>
+<main>
+<header><div class="eyebrow">NOIR / MIND DRAFTS</div><h1>Same roast, three versions</h1>
+<p class="muted">Compare the saved dialogue and actions. Every version uses the same replay and three active characters.</p>
+<a id="inspect" href="/">Inspect Minds</a> · <a id="replay" href="/">Scene Replay</a> · <a id="clips" href="/">Scene Clips</a> · <a id="compose" href="/">Compose</a></header>
+<div class="toolbar"><button id="undo" disabled>Undo</button><button id="redo" disabled>Redo</button><span class="muted" id="revision"></span></div>
+<p id="status" role="status">Opening the saved drafts…</p>
+<section class="card" id="support" hidden aria-label="Shared timing library and local character rules"></section>
+<section class="grid" id="drafts" aria-label="Saved draft comparison"></section>
+</main>
+<script>
+'use strict';
+const at=id=>document.getElementById(id),episode=new URLSearchParams(location.search).get('episode');
+let scope,model,busy=false;
+function node(tag,text,style){const item=document.createElement(tag);item.textContent=text;if(style)item.className=style;return item;}
+async function command(action,input={}){
+  const resp=await fetch('/api/episode-command',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({...scope,...input,action})});const body=await resp.json();
+  if(!resp.ok)throw new Error(body.error||'Unable to use this draft.');return body;
+}
+function status(label,bad=false){at('status').textContent=label;at('status').classList.toggle('error',bad);}
+async function refresh(){
+  model=await command('scene.minds.open');
+  at('revision').textContent='Notebook revision '+model.notebook_revision;
+  at('undo').disabled=!model.can_undo||busy;at('redo').disabled=!model.can_redo||busy;
+  at('replay').href='/scene-replay?episode='+encodeURIComponent(episode)+'&receipt='+encodeURIComponent(model.replay);
+  const support=at('support'),packageData=model.mind_support;
+  if(packageData){
+    const group=packageData.library,link=node('a',group.title);
+    link.href='/scene-clips?episode='+encodeURIComponent(episode)+'&collection=fart';
+    const intro=node('p','Shared by all three Minds for timing and reactions · '+group.items.length+' clips. ','muted');intro.append(link);
+    const list=node('ul','');
+    for(const rule of packageData.rules){const item=node('li',rule.speaker+': '+rule.scent+' · ');
+      const source=node('a',rule.perfume);source.href=rule.source_url;item.append(source);list.append(item);}
+    support.replaceChildren(node('h2','Minds and local rules'),intro,list,node('p','The scents apply only to personal gas releases while those forms are active.','muted'));
+    support.hidden=false;
+  }else support.hidden=true;
+  const notes={all:'All three source-backed cards.',none:'The same cast, with no personality cards.',
+               'one-changed':'Only Rainee 2’s card changes: she sides with Haley.'};
+  at('drafts').replaceChildren(...model.variants.map(item=>{
+    const card=node('article','','card'),draft=item.draft;
+    card.append(node('h2',item.label),node('p',notes[item.condition],'muted'));
+    if(!draft){card.append(node('p','No saved draft.'));return card;}
+    const eligible=draft.status==='PROPOSED'&&draft.source_revision===model.current_timeline_revision&&draft.notebook_revision===model.notebook_revision;
+    card.append(node('p',draft.status==='PROPOSED'?'Saved draft':draft.status,'badge'));
+    if(draft.text)card.append(node('div',draft.text,'preview'));
+    const button=node('button','Use this draft');button.disabled=busy||!eligible;
+    button.addEventListener('click',()=>edit('draft.apply',{draft:draft.id},'Draft applied.'));
+    card.append(button);
+    if(!eligible&&draft.status==='PROPOSED')card.append(node('p','Saved from an earlier notebook revision.','muted'));
+    const input=node('a','Inspect saved inputs');
+    input.href='/mind-inspector?'+new URLSearchParams({episode,source:'roast',draft:draft.id});
+    const inspect=node('p','');inspect.append(input);card.append(inspect);
+    return card;
+  }));
+}
+async function edit(action,extra,label){
+  if(busy||!model)return;
+  const fields={...extra,notebook_revision:model.notebook_revision,timeline_revision:model.current_timeline_revision};
+  busy=true;for(const button of document.querySelectorAll('button'))button.disabled=true;
+  try{await command(action,fields);status(label);}catch(e){status(e.message,true);}
+  finally{busy=false;try{await refresh();}catch(e){status(e.message,true);}}
+}
+at('undo').addEventListener('click',()=>edit('notebook.undo',{},'Undo complete.'));
+at('redo').addEventListener('click',()=>edit('notebook.redo',{},'Redo complete.'));
+async function start(){
+  if(!episode)throw new Error('Open a scene to see its saved drafts.');
+  const a=await fetch('/api/state?episode='+encodeURIComponent(episode)),data=await a.json();
+  if(!a.ok)throw new Error(data.error||'Episode unavailable.');
+  scope={project:data.scope.project_id,universe:data.scope.universe_id,branch:data.episode.branch,episode};
+  at('compose').href='/?episode='+encodeURIComponent(episode)+'&view=compose';
+  at('inspect').href='/mind-inspector?'+new URLSearchParams({episode,source:'roast'});
+  at('clips').href='/scene-clips?episode='+encodeURIComponent(episode);
+  await refresh();status('Saved comparison · isolated workspace');
+}
+start().catch(e=>status(e.message,true));
+</script>
+</html>

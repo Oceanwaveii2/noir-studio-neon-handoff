@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beat media · Noir</title>
+  <link rel="stylesheet" href="/assets/processing.css">
+  <script type="module" src="/assets/beat_media.js"></script>
+</head>
+<body>
+  <header class="bar"><strong class="wordmark">NOIR</strong><a id="story" href="/v2?view=timeline&amp;track=story">← Story Beats</a><a id="activity" href="/processing" target="_blank" rel="noopener">Processing graph ↗</a></header>
+  <main>
+    <div class="page-title"><div><p class="scope" id="scope"></p><h1 id="beat-title">Beat media</h1></div></div>
+    <div class="workspace">
+      <aside class="panel" aria-label="Media library">
+        <h2>Media library</h2>
+        <form id="upload">
+          <label class="drop" id="drop">Choose or drop local files
+            <input type="file" id="files" multiple accept=".md,.txt,.fountain,.pdf,.docx,.png,.jpg,.jpeg,.webp,.wav,.mp4,.webm" disabled>
+          </label>
+          <button type="submit" id="import" disabled>Import</button>
+        </form>
+        <p class="hint" id="upload-status" role="status">Opening the saved beat…</p>
+      </aside>
+      <div class="stack">
+        <section class="panel" aria-label="Source and segment">
+          <div class="chooser">
+            <label class="field">Original source<select id="source" disabled><option value="">Choose a file</option></select></label>
+            <label class="field">Reuse saved segment<select id="segments" disabled><option value="">Choose a saved segment</option></select></label>
+          </div>
+          <form id="attachment" hidden>
+            <div id="preview" class="media-preview"></div>
+            <p id="selection" class="hint"></p>
+            <div id="selector" class="fields"></div>
+            <label id="purpose-field" class="field">Use as<select id="purpose"></select></label>
+            <label id="observation-field" class="field">Observation <input type="text" id="observation" maxlength="380" autocomplete="off"></label>
+            <div class="media-actions">
+              <button id="attach" class="primary" type="submit">Attach to beat</button>
+              <a id="original" href="">Download original</a>
+            </div>
+          </form>
+          <p id="status" class="hint" role="status"></p>
+        </section>
+        <section class="panel" aria-label="Attached here">
+          <h2>Attached here</h2>
+          <p id="no-pins" class="hint">No media linked to this beat.</p>
+          <ul id="pins" class="pin-list"></ul>
+        </section>
+        <section class="panel" id="direction-panel" aria-label="Writing direction" hidden>
+          <h2>Writing direction</h2>
+          <label class="field" id="direction-target-field">Use at <select id="direction-target"></select></label>
+          <form id="direction-form">
+            <label class="field">What to borrow <input id="direction" maxlength="260" placeholder="Borrow the longest pause before the reply" required></label>
+            <div class="media-actions">
+              <button class="primary" id="set-direction" type="submit">Set direction</button>
+              <button id="clear-direction" type="button" hidden>Clear direction</button>
+            </div>
+          </form>
+          <p class="hint" id="direction-status" role="status"></p>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script type="module">
+    import { playTick } from '/assets/v2/sound.js';
+    document.addEventListener('click', (e) => {
+      if (e.target?.closest?.('button, a')) playTick();
+    }, { passive: true });
+  </script>
+</body>
+</html>

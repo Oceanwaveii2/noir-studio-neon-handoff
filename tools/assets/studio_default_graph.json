@@ -1,0 +1,515 @@
+{
+  "nodes": [
+    {
+      "id": "node_personality_rainee",
+      "type": "personality_data",
+      "title": "Personality: Rainee Ling",
+      "x": 30,
+      "y": 40,
+      "category": "char",
+      "inputs": [],
+      "outputs": [
+        "personality_out"
+      ],
+      "data": {
+        "character": "Rainee",
+        "dataset_binding": "",
+        "dataset_status": "Empty slot (ready for massive dataset)",
+        "voice_archetype": "glamorous_siren_unfiltered",
+        "sarcasm_quotient": 0.85,
+        "slang_traits": [
+          "honey",
+          "sweetie",
+          "divine ancestors",
+          "disaster"
+        ],
+        "influence": 0.95
+      }
+    },
+    {
+      "id": "node_appearance_rainee",
+      "type": "appearance",
+      "title": "Appearance: Rainee Ling",
+      "x": 260,
+      "y": 40,
+      "category": "char",
+      "inputs": [
+        "personality_in"
+      ],
+      "outputs": [
+        "character_context"
+      ],
+      "data": {
+        "character": "Rainee",
+        "species": "Alien Fox Siren (~50 yo, looks 20)",
+        "seating_affordance": "2 Chairs Required (280 lbs)",
+        "wardrobe": "Crimson bandage dress with black racing stripes",
+        "tail": "Four-foot auburn fox tail",
+        "influence": 0.9,
+        "ref_image": "/images/image6.jpeg"
+      }
+    },
+    {
+      "id": "node_personality_rainee_peter",
+      "type": "personality_data",
+      "title": "Personality: Rainee Peter",
+      "x": 30,
+      "y": 230,
+      "category": "comedy",
+      "inputs": [],
+      "outputs": [
+        "personality_out"
+      ],
+      "data": {
+        "character": "Rainee (Peter)",
+        "dataset_binding": "",
+        "dataset_status": "Empty slot (ready for massive dataset)",
+        "voice_archetype": "quahog_farce_baritone",
+        "sarcasm_quotient": 0.92,
+        "slang_traits": [
+          "Hehehe",
+          "holy crap",
+          "sweet merciful Jesus",
+          "pal",
+          "kill zone"
+        ],
+        "influence": 0.92
+      }
+    },
+    {
+      "id": "node_trans_rainee_peter",
+      "type": "transformation",
+      "title": "Morph: Rainee Peter (Griffin Variant)",
+      "x": 260,
+      "y": 230,
+      "category": "comedy",
+      "inputs": [
+        "personality_in"
+      ],
+      "outputs": [
+        "character_context"
+      ],
+      "data": {
+        "character": "Rainee (Peter)",
+        "species": "Celestial Fox / Peter Griffin Morph",
+        "facial_features": "Cleft butt-chin, jowled cheeks, button snout, auburn bob, fox ears",
+        "wardrobe": "Tight transparent white crewneck, spray-on denim jeans, spider tattoo",
+        "props": "Peppermint candy canes, floating translucent pink stars",
+        "affordance": "Massive spherical belly & rear (2 chairs enforced)",
+        "influence": 0.88,
+        "ref_image": "/images/image11.png"
+      }
+    },
+    {
+      "id": "node_personality_francine",
+      "type": "personality_data",
+      "title": "Personality: Francine Ling",
+      "x": 30,
+      "y": 420,
+      "category": "char",
+      "inputs": [],
+      "outputs": [
+        "personality_out"
+      ],
+      "data": {
+        "character": "Francine",
+        "dataset_binding": "",
+        "dataset_status": "Empty slot (ready for massive dataset)",
+        "voice_archetype": "suburban_drill_sergeant_matriarch",
+        "sarcasm_quotient": 0.7,
+        "slang_traits": [
+          "troops",
+          "listen up",
+          "ancestral farting",
+          "filial piety"
+        ],
+        "influence": 0.85
+      }
+    },
+    {
+      "id": "node_appearance_francine",
+      "type": "appearance",
+      "title": "Appearance: Francine Ling",
+      "x": 260,
+      "y": 420,
+      "category": "char",
+      "inputs": [
+        "personality_in"
+      ],
+      "outputs": [
+        "character_context"
+      ],
+      "data": {
+        "character": "Francine",
+        "species": "Human Standard",
+        "wardrobe": "Pastel pink off-the-shoulder pencil dress with scalloped lace trim",
+        "shoes": "Four-inch baby-pink pointed stilettos",
+        "luggage": "Cherry-red wheeled overnight bag",
+        "influence": 0.8,
+        "ref_image": "/images/image2.jpeg"
+      }
+    },
+    {
+      "id": "node_personality_franny_anderson",
+      "type": "personality_data",
+      "title": "Personality: Nurse Franny",
+      "x": 30,
+      "y": 610,
+      "category": "rel",
+      "inputs": [],
+      "outputs": [
+        "personality_out"
+      ],
+      "data": {
+        "character": "Nurse Franny Anderson",
+        "dataset_binding": "",
+        "dataset_status": "Empty slot (ready for massive dataset)",
+        "voice_archetype": "breathy_marilyn_purr",
+        "sarcasm_quotient": 0.65,
+        "slang_traits": [
+          "Dr. Franny is on call",
+          "magic touch",
+          "disciplinary bed-side manner",
+          "honey",
+          "Mmm-hmm"
+        ],
+        "influence": 0.75
+      }
+    },
+    {
+      "id": "node_trans_franny_anderson",
+      "type": "transformation",
+      "title": "Morph: Nurse Pamela Franny Anderson",
+      "x": 260,
+      "y": 610,
+      "category": "rel",
+      "inputs": [
+        "personality_in"
+      ],
+      "outputs": [
+        "character_context"
+      ],
+      "data": {
+        "character": "Nurse Franny Anderson",
+        "species": "Human / 1990s Cinemax Glamour Persona",
+        "hair_and_head": "Sky-high platinum bouffant with feathered flips, sheer bachelorette veil",
+        "wardrobe": "Blinding white halter bodycon minidress cut to navel",
+        "hosiery": "White stay-up thigh-high stockings with pink satin garter trim, pink pumps",
+        "bust_physics": "Rapidly inflating pump-action pulses",
+        "influence": 0.85,
+        "ref_image": "/images/image15.jpeg"
+      }
+    },
+    {
+      "id": "node_personality_haley",
+      "type": "personality_data",
+      "title": "Personality: Haley Ling",
+      "x": 30,
+      "y": 800,
+      "category": "char",
+      "inputs": [],
+      "outputs": [
+        "personality_out"
+      ],
+      "data": {
+        "character": "Haley",
+        "dataset_binding": "",
+        "dataset_status": "Empty slot (ready for massive dataset)",
+        "voice_archetype": "cynical_slacker_deadpan",
+        "sarcasm_quotient": 0.95,
+        "slang_traits": [
+          "whatever",
+          "CDC",
+          "homeland security",
+          "Jeff",
+          "Digimon"
+        ],
+        "influence": 0.9
+      }
+    },
+    {
+      "id": "node_appearance_haley",
+      "type": "appearance",
+      "title": "Appearance: Haley Ling",
+      "x": 260,
+      "y": 800,
+      "category": "char",
+      "inputs": [
+        "personality_in"
+      ],
+      "outputs": [
+        "character_context"
+      ],
+      "data": {
+        "character": "Haley",
+        "species": "Human (Dormant Alien Fox Siren)",
+        "animal_traits": "Zero (Strictly Dormant in this episode)",
+        "wardrobe": "Oversized sun-faded black Nirvana Nevermind t-shirt, flare bellbottoms",
+        "accessories": "Teal floral headband, peace sign necklace, bare feet",
+        "influence": 0.8,
+        "ref_image": "/images/image4.png"
+      }
+    },
+    {
+      "id": "node_personality_stella",
+      "type": "personality_data",
+      "title": "Personality: Stella Ling",
+      "x": 30,
+      "y": 990,
+      "category": "char",
+      "inputs": [],
+      "outputs": [
+        "personality_out"
+      ],
+      "data": {
+        "character": "Stella",
+        "dataset_binding": "",
+        "dataset_status": "Empty slot (ready for massive dataset)",
+        "voice_archetype": "razor_tongued_greek_chorus",
+        "sarcasm_quotient": 0.9,
+        "slang_traits": [
+          "goddamn",
+          "stacked",
+          "caramel cricket",
+          "traveling cabaret",
+          "Shrek"
+        ],
+        "influence": 0.88
+      }
+    },
+    {
+      "id": "node_appearance_stella",
+      "type": "appearance",
+      "title": "Appearance: Stella Ling",
+      "x": 260,
+      "y": 990,
+      "category": "char",
+      "inputs": [
+        "personality_in"
+      ],
+      "outputs": [
+        "character_context"
+      ],
+      "data": {
+        "character": "Stella",
+        "species": "Alien Fox Siren",
+        "wardrobe": "Athletic streetwear, tortoiseshell cat-eye sunglasses indoors",
+        "props": "Sweating plastic tumbler of iced Americano",
+        "influence": 0.85,
+        "ref_image": "/images/image5.png"
+      }
+    },
+    {
+      "id": "node_personality_roger",
+      "type": "personality_data",
+      "title": "Personality: Roger the Alien",
+      "x": 30,
+      "y": 1180,
+      "category": "comedy",
+      "inputs": [],
+      "outputs": [
+        "personality_out"
+      ],
+      "data": {
+        "character": "Roger",
+        "dataset_binding": "",
+        "dataset_status": "Empty slot (ready for massive dataset)",
+        "voice_archetype": "theatrical_sociopathic_chaos",
+        "sarcasm_quotient": 0.99,
+        "slang_traits": [
+          "1998 MTV Spring Break",
+          "diamond tennis bracelets",
+          "girls",
+          "screaming"
+        ],
+        "influence": 0.98
+      }
+    },
+    {
+      "id": "node_appearance_roger",
+      "type": "appearance",
+      "title": "Appearance: Roger Alien",
+      "x": 260,
+      "y": 1180,
+      "category": "comedy",
+      "inputs": [
+        "personality_in"
+      ],
+      "outputs": [
+        "character_context"
+      ],
+      "data": {
+        "character": "Roger",
+        "species": "Grey Alien (Disguise Maestro)",
+        "wardrobe": "Electric-yellow surfer wig, neon pink wraparound shades, sky-blue tank, cut-offs",
+        "props": "Two heavy nylon backpacks, flip-flops",
+        "influence": 0.95,
+        "ref_image": "/images/image17.png"
+      }
+    },
+    {
+      "id": "node_dialogue_dial",
+      "type": "dialogue_dial",
+      "title": "Dialogue Freeze & Dial Hub",
+      "x": 580,
+      "y": 380,
+      "category": "comedy",
+      "inputs": [
+        "character_context"
+      ],
+      "outputs": [
+        "dialogue_stream"
+      ],
+      "data": {
+        "default_freeze_level": 100,
+        "allowed_drift": "0% (Strict Canon Lock)",
+        "personality_modulation_enabled": true,
+        "dialogue_channel": "100% Protected (Verbatim Canon Locked)",
+        "description_channel": "50% Co-Pilot (Balanced)",
+        "step_levels": [
+          "25% Strong AI",
+          "50% Balanced",
+          "75% Minor Polish",
+          "100% Verbatim Canon"
+        ]
+      }
+    },
+    {
+      "id": "node_prose_engine",
+      "type": "prose_conditioner",
+      "title": "Prose Engine Conditioner",
+      "x": 840,
+      "y": 380,
+      "category": "char",
+      "inputs": [
+        "dialogue_stream"
+      ],
+      "outputs": [
+        "conditioned_manuscript"
+      ],
+      "data": {
+        "default_strength": "standard",
+        "burstiness_target": 6.8,
+        "anti_ai_linter_active": true,
+        "zero_smith_enforced": true,
+        "baba_ling_permitted": true,
+        "anti_punchline_front_running": true
+      }
+    },
+    {
+      "id": "node_manuscript_output",
+      "type": "output",
+      "title": "Manuscript Release Gate",
+      "x": 1100,
+      "y": 380,
+      "category": "rel",
+      "inputs": [
+        "conditioned_manuscript"
+      ],
+      "outputs": [],
+      "data": {
+        "target_path": "out/workbench/conditioned.md",
+        "last_burstiness": 8.98,
+        "gate_status": "ALL GATES PASS"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "from": "node_personality_rainee",
+      "fromPort": "personality_out",
+      "to": "node_appearance_rainee",
+      "toPort": "personality_in"
+    },
+    {
+      "from": "node_appearance_rainee",
+      "fromPort": "character_context",
+      "to": "node_dialogue_dial",
+      "toPort": "character_context"
+    },
+    {
+      "from": "node_personality_rainee_peter",
+      "fromPort": "personality_out",
+      "to": "node_trans_rainee_peter",
+      "toPort": "personality_in"
+    },
+    {
+      "from": "node_trans_rainee_peter",
+      "fromPort": "character_context",
+      "to": "node_dialogue_dial",
+      "toPort": "character_context"
+    },
+    {
+      "from": "node_personality_francine",
+      "fromPort": "personality_out",
+      "to": "node_appearance_francine",
+      "toPort": "personality_in"
+    },
+    {
+      "from": "node_appearance_francine",
+      "fromPort": "character_context",
+      "to": "node_dialogue_dial",
+      "toPort": "character_context"
+    },
+    {
+      "from": "node_personality_franny_anderson",
+      "fromPort": "personality_out",
+      "to": "node_trans_franny_anderson",
+      "toPort": "personality_in"
+    },
+    {
+      "from": "node_trans_franny_anderson",
+      "fromPort": "character_context",
+      "to": "node_dialogue_dial",
+      "toPort": "character_context"
+    },
+    {
+      "from": "node_personality_haley",
+      "fromPort": "personality_out",
+      "to": "node_appearance_haley",
+      "toPort": "personality_in"
+    },
+    {
+      "from": "node_appearance_haley",
+      "fromPort": "character_context",
+      "to": "node_dialogue_dial",
+      "toPort": "character_context"
+    },
+    {
+      "from": "node_personality_stella",
+      "fromPort": "personality_out",
+      "to": "node_appearance_stella",
+      "toPort": "personality_in"
+    },
+    {
+      "from": "node_appearance_stella",
+      "fromPort": "character_context",
+      "to": "node_dialogue_dial",
+      "toPort": "character_context"
+    },
+    {
+      "from": "node_personality_roger",
+      "fromPort": "personality_out",
+      "to": "node_appearance_roger",
+      "toPort": "personality_in"
+    },
+    {
+      "from": "node_appearance_roger",
+      "fromPort": "character_context",
+      "to": "node_dialogue_dial",
+      "toPort": "character_context"
+    },
+    {
+      "from": "node_dialogue_dial",
+      "fromPort": "dialogue_stream",
+      "to": "node_prose_engine",
+      "toPort": "dialogue_stream"
+    },
+    {
+      "from": "node_prose_engine",
+      "fromPort": "conditioned_manuscript",
+      "to": "node_manuscript_output",
+      "toPort": "conditioned_manuscript"
+    }
+  ]
+}

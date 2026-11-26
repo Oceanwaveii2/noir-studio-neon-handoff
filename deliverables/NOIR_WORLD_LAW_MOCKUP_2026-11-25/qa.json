@@ -1,0 +1,17 @@
+{
+  "browser": "Microsoft Edge via Playwright",
+  "scope": "Standalone browser simulation",
+  "source": "deliverables/NOIR_WORLD_LAW_MOCKUP_2026-11-25/index.html",
+  "sha256": "4d993620f1b9346a896c0b1a3f5ad778e6493664d26e1ab27ee20a341d2737d4",
+  "checks": [
+    "Started empty, added world and knowledge laws, caught the exact blocking rule and beat, jumped to it, and saved only after staging the prerequisite.",
+    "A closed audio channel preserved the world fact but blocked the actor\u2019s use of it. Discard rolled back the unsaved edit.",
+    "Fork inherited the selected prefix. Inherited beats were read-only. Parent and alternate facts replayed identically through branch switches and reload.",
+    "An edit to an earlier beat flagged the affected later beat. Jump and discard restored the saved timeline.",
+    "Edge rendered at desktop and 390 px with no horizontal overflow, page errors, or HTTP requests."
+  ],
+  "files": {
+    "index.html": "4d993620f1b9346a896c0b1a3f5ad778e6493664d26e1ab27ee20a341d2737d4",
+    "BLUEPRINT.md": "00827ae3dd329e0543c37987add4efdc50a5774c32b92f13b391be5c2b2d8465"
+  }
+}

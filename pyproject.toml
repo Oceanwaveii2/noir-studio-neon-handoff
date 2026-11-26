@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prose-engine"
+version = "0.1.0"
+description = "Noir Fiction Engine, local service, and writing applications"
+requires-python = ">=3.11"
+dependencies = [
+  "pydantic>=2.0",
+  "httpx>=0.27",
+  "numpy>=1.26",
+  "Pillow>=10.0",
+  "joblib>=1.3",
+  "scikit-learn>=1.4",
+]
+
+[project.optional-dependencies]
+corpus = ["pymupdf>=1.24"]
+embeddings = ["sentence-transformers>=3"]
+local = ["torch>=2.4", "transformers>=4.40", "accelerate", "bitsandbytes>=0.43"]
+clips = ["librosa", "soundfile", "silero-vad", "faster-whisper", "speechbrain", "scikit-learn"]
+api = ["httpx>=0.27"]
+
+[project.scripts]
+prose-engine = "prose_engine.cli:main"
+noir-studio = "tools.studio_ui:main"
+noir-service = "prose_engine.service_daemon:main"
+noir-workbench = "tools.workbench_remote:main"
+
+[tool.setuptools.packages.find]
+include = ["prose_engine*", "story_graph*", "telemetry*", "tools", "ui"]
+
+[tool.setuptools.package-data]
+prose_engine = ["py.typed", "data/ai_voice_negatives.json"]
+tools = ["*.html", "compose_blocks.js", "assets/*.html", "assets/*.css", "assets/*.js", "assets/studio_default_graph.json", "assets/noir-*.gif", "assets/noir-*.png", "assets/v2/*.css", "assets/v2/*.js", "assets/v2/*.webp", "vendor/*.js", "vendor/*.css", "vendor/*LICENSE*.txt"]
+ui = ["*.js", "*.css", "*.webp", "grand_prix/*", "assets/audio/**/*", "assets/vfx/**/*"]

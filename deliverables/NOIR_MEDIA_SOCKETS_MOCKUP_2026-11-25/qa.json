@@ -1,0 +1,18 @@
+{
+  "browser": "Microsoft Edge via Playwright",
+  "scope": "Local browser simulation with fixture media",
+  "source": "deliverables/NOIR_MEDIA_SOCKETS_MOCKUP_2026-11-25/index.html",
+  "sha256": "0d061c9b6b87bf7a25e3b5e5e9252e7871751a8b39c7a6d38b15d2431242e09b",
+  "checks": [
+    "File input completed queued, processing and ready. SHA-256 matched Python and rejected duplicate content under a different filename.",
+    "Beat binding appeared in the scene input preview and persisted after reload.",
+    "Audio drop fell back to metadata-only. Retry reused the source identity and updated its existing character binding.",
+    "Interrupted work resumed after reload. Failed sources could not bind until a retry made them ready.",
+    "Image input reached ready. Unsupported input was rejected. Unbinding persisted and preserved the vault source.",
+    "Edge rendered at desktop and 390 px without horizontal overflow, page errors, or HTTP requests."
+  ],
+  "files": {
+    "index.html": "0d061c9b6b87bf7a25e3b5e5e9252e7871751a8b39c7a6d38b15d2431242e09b",
+    "BLUEPRINT.md": "a90b3ae51a146e8fcb956d94631085d9a6d1f4ec9f19eec33a003fda93fc1827"
+  }
+}

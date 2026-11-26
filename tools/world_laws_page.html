@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>World Laws — Noir</title><style>
+*{box-sizing:border-box}body{margin:0;background:#14191a;color:#f8eee1;font:16px/1.5 system-ui}button,input,textarea,select{font:inherit}button{cursor:pointer}header{display:flex;align-items:center;gap:24px;padding:18px 28px;border-bottom:4px solid #ef9550;background:#111719}header strong{font:italic 900 32px system-ui}header a{color:#f7c485;text-decoration:none}header .back{margin-left:auto}.shell{display:grid;grid-template-columns:280px minmax(0,1fr);gap:18px;padding:20px;max-width:1550px;margin:auto}.list,.editor{border-radius:16px;padding:20px}.list{background:#1d2525;border:1px solid #6f5a46}.editor{background:#f8ead8;color:#211a17;border:2px solid #fff5e8;min-height:75vh}h1{font-size:30px;margin:0 0 4px}h2{font-size:18px;margin:0 0 14px}.intro{color:#6b5041;max-width:75ch}.list button,.list .law{display:block;width:100%;text-align:left;padding:11px;margin:8px 0;border-radius:8px;border:1px solid #6f5947;background:#293030;color:#fff2df}.list .law[aria-current=true]{background:#f8cd81;color:#211a17;border-color:#ffdc98}.list .add{background:#b5eee0;color:#13241e;border:0;font-weight:700}.empty{color:#d7c3aa}label{display:block;font-weight:700;margin:18px 0 5px}input[type=text],textarea,select{display:block;width:100%;max-width:850px;padding:10px;background:#fff9ef;border:1px solid #c9ae91;border-radius:7px;color:#201b17}textarea{min-height:130px;resize:vertical}.checks{background:#f1dfc8;padding:14px;border:1px solid #dec09e;border-radius:9px;margin:20px 0;max-width:850px}.checks textarea{min-height:80px}.checks p{font-size:14px;color:#614d40}fieldset{margin:16px 0;padding:12px;border:1px solid #c9ae91;border-radius:8px;background:#f7e9d7}legend{font-weight:700;padding:0 6px}.constraint-row{background:#fff9ef;border:1px solid #dec09e;border-radius:8px;padding:10px;margin:10px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;align-items:end}.constraint-row label{margin:0;font-size:13px}.constraint-row input,.constraint-row select{padding:6px 8px;margin-top:3px}.constraint-remove{background:#f2d2cb;border:1px solid #b64b23;color:#6b1e10;border-radius:6px;padding:7px 12px;font-weight:700}#addConstraint{margin-top:6px;padding:8px 14px;border-radius:7px;border:1px solid #7b603f;background:#fff9ef;color:#211a17;font-weight:700}.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.actions button{padding:10px 18px;border-radius:8px;border:1px solid #a3552e;background:#b64b23;color:white;font-weight:700}.actions .secondary{background:transparent;color:#513220;border-color:#b39373}#status{min-height:1.5em;color:#6b3f24}#status.error{color:#a52016}[hidden]{display:none!important}body[data-theme=classic] header{border-color:#b89b70}body[data-theme=classic] .list .add{background:#c8ad83;color:#1f1912}body[data-theme=classic] .actions button{background:#7b603f;border-color:#7b603f}@media(max-width:700px){.shell{grid-template-columns:1fr}.editor{min-height:0}header{flex-wrap:wrap}}
+</style></head><body><header><strong>NOIR</strong><span>World Laws</span><a id="returnToStory" class="back" href="/">← Back to story</a></header><main class="shell"><aside class="list"><h2>Universe laws</h2><button class="add" id="newLaw" type="button" disabled>＋ New law</button><div id="lawList"></div></aside><section class="editor"><h1>World Laws</h1><p class="intro">The rules of this universe travel with its stories. Choose a law to read or edit it.</p><p id="emptyEditor">Choose a law, or add one to begin.</p><form id="lawForm" hidden><label for="lawName">Name</label><input type="text" id="lawName" maxlength="120" required><label for="lawStatement">What is always true?</label><textarea id="lawStatement" maxlength="3000" required></textarea><label><input id="lawEnabled" type="checkbox"> Active</label><div class="checks"><strong>Automatic checks</strong><p>Literal laws check exact wording; structured typed laws check branch- and time-scoped claim constraints.</p><label for="lawMatcher">Matcher</label><select id="lawMatcher"><option value="literal">Literal forbidden phrases</option><option value="typed">Structured typed constraints</option><option value="haley_parentage">Haley parentage rule</option></select><label for="lawPhrases">Phrases to prevent <small>(one per line)</small></label><textarea id="lawPhrases" aria-describedby="checkHelp"></textarea><p id="checkHelp"></p><fieldset id="lawConstraintsFieldset"><legend>Structured constraints (typed world laws)</legend><div id="lawConstraintsList"></div><button id="addConstraint" type="button">Add constraint</button></fieldset></div><div class="actions"><button type="submit">Save law</button></div></form><div class="actions"><button id="undoLaw" type="button" class="secondary">Undo</button><button id="redoLaw" type="button" class="secondary">Redo</button></div><p id="status" role="status"></p></section></main><script>
+const $=id=>document.getElementById(id);let state=null,selected=null,dirty=false,busy=false,currentConstraints=[];
+const CONSTRAINT_KINDS=['identity','parentage','relationship','transformation','chronology','location','knowledge'];
+const CONSTRAINT_AUTHORITIES=['author','reviewed_law','canon','unverified_note'];
+const urlTheme=new URLSearchParams(location.search).get('theme');try{document.body.dataset.theme=(urlTheme==='classic'||urlTheme==='racing')?urlTheme:(localStorage.getItem('noir-theme')==='classic'?'classic':'racing')}catch(_){document.body.dataset.theme=urlTheme==='classic'?'classic':'racing'}
+const episode=new URLSearchParams(location.search).get('episode');if(episode)$('returnToStory').href='/?episode='+encodeURIComponent(episode);
+async function call(action,extra={}){const r=await fetch('/api/world-laws',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...(state?{project:state.project_id,universe:state.universe_id}:{}),...extra})});const data=await r.json();if(!r.ok)throw Error(data.error||'Could not open world laws');return data}
+function report(message,error=false){$('status').textContent=message;$('status').classList.toggle('error',error)}
+function parseListField(text){return String(text||'').split(',').map(v=>v.trim()).filter(Boolean)}
+function formatBound(bound){return Array.isArray(bound)&&bound.length===2?bound[0]+','+bound[1]:''}
+function parseBound(text,label){
+  const raw=String(text||'').trim().replace(/^\[|\]$/g,'');
+  if(!raw)return null;
+  const parts=raw.split(/[,:]/).map(s=>s.trim()).filter(Boolean);
+  if(parts.length!==2||!/^\d+$/.test(parts[0])||!/^\d+$/.test(parts[1]))throw Error(label+' must be empty or position,beat (e.g. 10,5).');
+  return [Number(parts[0]),Number(parts[1])];
+}
+function updateMatcherControls(){
+  const matcher=$('lawMatcher').value;
+  $('lawPhrases').disabled=matcher!=='literal';
+  $('checkHelp').textContent=matcher==='literal'
+    ?'A literal law needs at least one exact phrase for its automatic check.'
+    :(matcher==='typed'
+      ?'A structured typed law enforces each constraint on matching universe branches and beats.'
+      :'Haley parentage uses specialized deterministic parentage detection alongside any custom structured constraints.');
+}
+function readConstraintsFromDom(){
+  return [...$('lawConstraintsList').querySelectorAll('.constraint-row')].map((row,index)=>{
+    const get=field=>row.querySelector('[data-field="'+field+'"]').value;
+    const item={
+      kind:get('kind'),
+      subject:get('subject').trim(),
+      predicate:get('predicate').trim(),
+      allowed_values:parseListField(get('allowed_values')),
+      exceptions:parseListField(get('exceptions')),
+      branch:(get('branch').trim()||'*'),
+      valid_from:parseBound(get('valid_from'),'Constraint #'+(index+1)+' valid from'),
+      valid_until:parseBound(get('valid_until'),'Constraint #'+(index+1)+' valid until'),
+      authority:get('authority'),
+      source_id:(get('source_id').trim()||'studio:world-laws')
+    };
+    if(!item.subject||!item.predicate)throw Error('Constraint #'+(index+1)+' requires a subject and predicate.');
+    return item;
+  });
+}
+function syncConstraintsDraft(){
+  currentConstraints=[...$('lawConstraintsList').querySelectorAll('.constraint-row')].map(row=>{
+    const get=field=>row.querySelector('[data-field="'+field+'"]').value;
+    return {
+      kind:get('kind'),subject:get('subject'),predicate:get('predicate'),
+      allowed_values:parseListField(get('allowed_values')),exceptions:parseListField(get('exceptions')),
+      branch:get('branch'),valid_from_text:get('valid_from'),valid_until_text:get('valid_until'),
+      authority:get('authority'),source_id:get('source_id')
+    };
+  });
+}
+function makeField(labelText,control){const label=document.createElement('label');label.append(labelText,control);return label}
+function renderConstraints(){
+  const host=$('lawConstraintsList');host.replaceChildren();
+  if(!currentConstraints.length){const empty=document.createElement('p');empty.className='empty-constraints';empty.textContent='No structured constraints yet.';host.append(empty);return}
+  currentConstraints.forEach((item,idx)=>{
+    const row=document.createElement('div');row.className='constraint-row';
+    const kind=document.createElement('select');kind.dataset.field='kind';
+    for(const k of CONSTRAINT_KINDS){const o=new Option(k,k);kind.add(o)}
+    kind.value=CONSTRAINT_KINDS.includes(item.kind)?item.kind:'identity';
+    const subject=document.createElement('input');subject.type='text';subject.dataset.field='subject';subject.maxLength=200;subject.placeholder='Subject (e.g. haley)';subject.value=item.subject||'';
+    const predicate=document.createElement('input');predicate.type='text';predicate.dataset.field='predicate';predicate.maxLength=200;predicate.placeholder='Predicate (e.g. father)';predicate.value=item.predicate||'';
+    const allowed=document.createElement('input');allowed.type='text';allowed.dataset.field='allowed_values';allowed.placeholder='Allowed (comma-separated)';allowed.value=(item.allowed_values||[]).join(', ');
+    const exceptions=document.createElement('input');exceptions.type='text';exceptions.dataset.field='exceptions';exceptions.placeholder='Exceptions (comma-separated)';exceptions.value=(item.exceptions||[]).join(', ');
+    const branch=document.createElement('input');branch.type='text';branch.dataset.field='branch';branch.maxLength=200;branch.placeholder='Branch (* or id)';branch.value=item.branch||'*';
+    const vFrom=document.createElement('input');vFrom.type='text';vFrom.dataset.field='valid_from';vFrom.placeholder='Valid from pos,beat';vFrom.value=item.valid_from_text!==undefined?item.valid_from_text:formatBound(item.valid_from);
+    const vUntil=document.createElement('input');vUntil.type='text';vUntil.dataset.field='valid_until';vUntil.placeholder='Valid until pos,beat';vUntil.value=item.valid_until_text!==undefined?item.valid_until_text:formatBound(item.valid_until);
+    const authority=document.createElement('select');authority.dataset.field='authority';
+    const authOptions=[...CONSTRAINT_AUTHORITIES];if(item.authority&&!authOptions.includes(item.authority))authOptions.push(item.authority);
+    for(const a of authOptions)authority.add(new Option(a,a));
+    authority.value=item.authority||'author';
+    const sourceId=document.createElement('input');sourceId.type='text';sourceId.dataset.field='source_id';sourceId.maxLength=200;sourceId.placeholder='Source ID';sourceId.value=item.source_id||'studio:world-laws';
+    const remove=document.createElement('button');remove.type='button';remove.className='constraint-remove';remove.dataset.action='remove-constraint';remove.textContent='Remove';
+    remove.onclick=()=>{syncConstraintsDraft();currentConstraints.splice(idx,1);dirty=true;renderConstraints()};
+    row.append(
+      makeField('Kind',kind),makeField('Subject',subject),makeField('Predicate',predicate),
+      makeField('Allowed values',allowed),makeField('Exceptions',exceptions),makeField('Branch',branch),
+      makeField('Valid from',vFrom),makeField('Valid until',vUntil),makeField('Authority',authority),
+      makeField('Source ID',sourceId),remove
+    );
+    host.append(row);
+  });
+}
+function draw(){const list=$('lawList');list.replaceChildren();if(!state.laws.length){const empty=document.createElement('p');empty.className='empty';empty.textContent='No laws yet.';list.append(empty)}for(const law of state.laws){const button=document.createElement('button');button.type='button';button.className='law';button.textContent=law.name+(law.enabled?'':' · inactive');button.setAttribute('aria-current',String(law.id===selected));button.onclick=()=>choose(law.id);list.append(button)}}
+function mayLeave(){return !dirty||confirm('Discard the unsaved changes to this law?')}
+function choose(id){if(!mayLeave())return;selected=id;dirty=false;const law=state.laws.find(item=>item.id===id);$('lawForm').hidden=false;$('emptyEditor').hidden=true;$('lawName').value=law?.name||'';$('lawStatement').value=law?.statement||'';$('lawEnabled').checked=law?law.enabled:true;$('lawMatcher').value=law?.matcher||'literal';$('lawPhrases').value=(law?.phrases||[]).join('\n');currentConstraints=structuredClone(law?.constraints||[]);renderConstraints();updateMatcherControls();report('');draw()}
+$('newLaw').onclick=()=>choose(null);
+$('lawMatcher').onchange=()=>{dirty=true;updateMatcherControls()};
+$('addConstraint').onclick=()=>{syncConstraintsDraft();currentConstraints.push({kind:'identity',subject:'',predicate:'',allowed_values:[],exceptions:[],branch:'*',valid_from:null,valid_until:null,authority:'author',source_id:'studio:world-laws'});if($('lawMatcher').value==='literal'){$('lawMatcher').value='typed';updateMatcherControls()}dirty=true;renderConstraints()};
+$('lawForm').addEventListener('input',()=>{dirty=true});
+$('lawForm').addEventListener('submit',async event=>{event.preventDefault();if(busy)return;busy=true;try{const prior=state.laws.find(item=>item.id===selected),matcher=$('lawMatcher').value,phrases=$('lawPhrases').value.split('\n').map(x=>x.trim()).filter(Boolean),constraints=readConstraintsFromDom();if(matcher==='literal'&&!phrases.length)throw Error('Add at least one exact phrase for this law’s automatic check.');if(matcher==='typed'&&!constraints.length)throw Error('Add at least one structured constraint for this typed law.');const law={...prior,id:prior?.id||crypto.randomUUID(),name:$('lawName').value.trim(),statement:$('lawStatement').value.trim(),enabled:$('lawEnabled').checked,matcher,phrases};if(constraints.length)law.constraints=constraints;else delete law.constraints;const laws=state.laws.map(item=>item.id===law.id?law:item);if(!prior)laws.push(law);state=await call('save',{revision:state.revision,laws});selected=law.id;dirty=false;choose(selected);report('Law saved.')}catch(error){report(error.message,true)}finally{busy=false}});
+async function lawHistory(action){if(busy||!mayLeave())return;busy=true;try{state=await call(action,{revision:state.revision});dirty=false;selected=state.laws[0]?.id||null;draw();if(selected)choose(selected);else{$('lawForm').hidden=true;$('emptyEditor').hidden=false}report(action==='undo'?'Previous world-law revision restored.':'World-law change reapplied.')}catch(error){report(error.message,true)}finally{busy=false}}$('undoLaw').onclick=()=>lawHistory('undo');$('redoLaw').onclick=()=>lawHistory('redo');
+window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue=''}});
+call('open').then(result=>{state=result;document.getElementById('newLaw').disabled=false;draw();if(state.laws.length)choose(state.laws[0].id)}).catch(error=>report(error.message,true));
+</script></body></html>

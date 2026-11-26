@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "synthetic",
+  "examples": [
+    {
+      "id": "example-1",
+      "document_id": "synthetic-scene-1",
+      "split": "development",
+      "decision": "acceptable",
+      "reviewer": "synthetic",
+      "evidence": "demonstration-only",
+      "original": "The lamp flickered as rain touched the empty window.",
+      "candidate": "Rain tapped the window; the lamp flickered."
+    },
+    {
+      "id": "example-2",
+      "document_id": "synthetic-scene-2",
+      "split": "held_out",
+      "decision": "off_voice",
+      "reviewer": "synthetic",
+      "evidence": "demonstration-only",
+      "original": "The station clock clicked over to midnight.",
+      "candidate": "An unrelated machine appeared beneath the sea."
+    }
+  ]
+}

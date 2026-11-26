@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "pilot_id": "spring-break-copyedit-v1",
+  "source": "work/americandad/foxy_mo2_hybrid_novel.md",
+  "source_sha256": "1e7372cebbcdae524b53e2b60a27550df3999ce2aada8aa19e593b567b6af70e",
+  "candidate_provenance": "Codex-curated local copyedits; an offline editorial calibration, not an engine-vs-engine benchmark.",
+  "seed": "spring-break-u5-frozen-pairs-v1",
+  "scene_split": {
+    "1": "held_out",
+    "2": "development",
+    "3": "held_out",
+    "4": "held_out",
+    "5": "held_out",
+    "6": "development",
+    "7": "held_out"
+  },
+  "edits": [
+    {
+      "scene": "1",
+      "paragraph": 3,
+      "before": "kitchen window panes",
+      "after": "kitchen windows"
+    },
+    {
+      "scene": "1",
+      "paragraph": 4,
+      "before": "in a humidity-defying sweep",
+      "after": "in a sweep that held against the humidity"
+    },
+    {
+      "scene": "1",
+      "paragraph": 5,
+      "before": "rolled the chrome telescoping handle of her cherry-red wheeled overnight bag upward",
+      "after": "pulled up the chrome telescoping handle of her cherry-red wheeled overnight bag"
+    },
+    {
+      "scene": "1",
+      "paragraph": 7,
+      "before": "Silence answered from the second floor. Only the faint, distant groan of copper pipes.",
+      "after": "No answer from the second floor. Just the faint groan of copper pipes."
+    },
+    {
+      "scene": "1",
+      "paragraph": 8,
+      "before": "pivoted on her pink heels, marching",
+      "after": "pivoted on her pink heels and marched"
+    },
+    {
+      "scene": "1",
+      "paragraph": 10,
+      "before": "as she scrolled with the dedication of an archaeologist",
+      "after": "as she scrolled like an archaeologist sifting a dig"
+    },
+    {
+      "scene": "1",
+      "paragraph": 11,
+      "before": "Behind cat-eye sunglasses that had no business being worn indoors, she rustled a folded morning feature section in one hand while swirling an iced coffee in the other.",
+      "after": "The cat-eye sunglasses stayed on indoors. She rustled a folded morning feature section in one hand and swirled an iced coffee in the other."
+    },
+    {
+      "scene": "1",
+      "paragraph": 21,
+      "before": "headed toward the wooden staircase",
+      "after": "made for the wooden staircase"
+    },
+    {
+      "scene": "2",
+      "paragraph": 24,
+      "before": "where her strapless crimson bandage dress with black racing stripes hung under plastic like a museum piece",
+      "after": "where her strapless crimson bandage dress with black racing stripes hung under plastic, a museum piece"
+    },
+    {
+      "scene": "2",
+      "paragraph": 25,
+      "before": "sat perched on a dark wooden stool",
+      "after": "perched on a dark wooden stool"
+    },
+    {
+      "scene": "2",
+      "paragraph": 26,
+      "before": "Suddenly, her lower abdomen seized.",
+      "after": "Her lower abdomen seized."
+    },
+    {
+      "scene": "2",
+      "paragraph": 28,
+      "before": "A pressurized rumble rolled through her gut.",
+      "after": "Pressure rumbled through her gut."
+    },
+    {
+      "scene": "2",
+      "paragraph": 30,
+      "before": "letting out a rapid series of sharp farts that released clouds of rich French floral perfume across the carpet",
+      "after": "leaving a series of sharp farts and clouds of rich French floral perfume in her wake"
+    },
+    {
+      "scene": "3",
+      "paragraph": 33,
+      "before": "burst into the rustic spa bathroom, past",
+      "after": "burst into the rustic spa bathroom and rushed past"
+    },
+    {
+      "scene": "3",
+      "paragraph": 36,
+      "before": "groaned and expanded laterally to twice its normal width—transforming into",
+      "after": "groaned, doubled in width, and became"
+    },
+    {
+      "scene": "3",
+      "paragraph": 37,
+      "before": "just as the first seismic wave hit",
+      "after": "as the first seismic wave hit"
+    },
+    {
+      "scene": "3",
+      "paragraph": 39,
+      "before": "billowed across the woven jute floor mat and seeped out beneath the bathroom door frame",
+      "after": "billowed over the woven jute mat and seeped beneath the bathroom door"
+    },
+    {
+      "scene": "3",
+      "paragraph": 40,
+      "before": "She waved a hand in front of her nose, coughing as the heavy floral cloud enveloped her green floral headband.",
+      "after": "The heavy floral cloud swallowed her green floral headband. She fanned the air in front of her nose and coughed."
+    },
+    {
+      "scene": "3",
+      "paragraph": 47,
+      "before": "stood up to adjust her hem and immediately let out",
+      "after": "stood to adjust her hem and let out"
+    },
+    {
+      "scene": "3",
+      "paragraph": 50,
+      "before": "She held the edge of the stone vessel sink for three seconds until the room finally fell quiet.",
+      "after": "She held the edge of the stone vessel sink. Three seconds passed before the room fell quiet."
+    },
+    {
+      "scene": "3",
+      "paragraph": 52,
+      "before": "looked into the rope-framed mirror",
+      "after": "faced the rope-framed mirror"
+    },
+    {
+      "scene": "3",
+      "paragraph": 54,
+      "before": "The back zipper made a sound like a zipper being asked to do something illegal; she won anyway.",
+      "after": "The back zipper protested like it had been asked to do something illegal. She won anyway."
+    },
+    {
+      "scene": "3",
+      "paragraph": 56,
+      "before": "Her stomach said something in a language she did not speak.",
+      "after": "Her stomach spoke in a language she didn't know."
+    },
+    {
+      "scene": "3",
+      "paragraph": 57,
+      "before": "She froze. Then, with enormous dignity, she lifted her chin, flicked her cream-tipped fox tail, and walked out into the hallway.",
+      "after": "She froze. Then she lifted her chin, flicked her cream-tipped fox tail, and walked out into the hallway with enormous dignity."
+    },
+    {
+      "scene": "4",
+      "paragraph": 60,
+      "before": "A sharp, confident clack of black buckled platform boots echoed down the wooden staircase.",
+      "after": "Black buckled platform boots clacked confidently down the wooden staircase."
+    },
+    {
+      "scene": "4",
+      "paragraph": 61,
+      "before": "Yet one hand pressed gingerly against her lower stomach, her gait reduced to the delicate tiptoe of someone trying not to shake a warm soda bottle.",
+      "after": "She pressed one hand against her lower stomach and tiptoed like someone trying not to shake a warm soda bottle."
+    },
+    {
+      "scene": "4",
+      "paragraph": 63,
+      "before": "knuckles whitening against the upholstery as her tail bristled like a bottlebrush",
+      "after": "until her knuckles whitened. Her tail bristled like a bottlebrush"
+    },
+    {
+      "scene": "4",
+      "paragraph": 65,
+      "before": "one eyebrow arched like a drawn bow beneath her floral headband",
+      "after": "an eyebrow rising like a drawn bow beneath her floral headband"
+    },
+    {
+      "scene": "4",
+      "paragraph": 72,
+      "before": "tore across the living room carpet like a cannon blast, catching Haley square in the chest and sending her flying halfway across the room",
+      "after": "tore across the living room carpet like a cannon blast. It caught Haley square in the chest and sent her flying halfway across the room"
+    },
+    {
+      "scene": "4",
+      "paragraph": 74,
+      "before": "Seconds later, with a second sonic pop and a halo of floating pink stars, the transformation locked in:",
+      "after": "A second sonic pop followed seconds later. Pink stars floated around her as the transformation locked in:"
+    },
+    {
+      "scene": "4",
+      "paragraph": 78,
+      "before": "groaned from the floor, rubbing her head",
+      "after": "groaned on the floor and rubbed her head"
+    },
+    {
+      "scene": "4",
+      "paragraph": 82,
+      "before": "raised her free hand and pointed two chubby finger-guns straight at Francine",
+      "after": "aimed two chubby finger-guns at Francine with her free hand"
+    },
+    {
+      "scene": "4",
+      "paragraph": 84,
+      "before": "leaped like eager puppies off Rainee-Peter's fingertips, arcing through the air in a glittering bolt of lightning that slammed into Francine",
+      "after": "leaped off Rainee-Peter's fingertips like eager puppies. The glittering bolt arced across the room and slammed into Francine"
+    },
+    {
+      "scene": "5",
+      "paragraph": 88,
+      "before": "Where Francine had stood, there was now",
+      "after": "In Francine's place stood"
+    },
+    {
+      "scene": "5",
+      "paragraph": 89,
+      "before": "She wobbled once, then planted a pink heel and pivoted like a runway model.",
+      "after": "She wobbled once. Then she planted a pink heel and pivoted like a runway model."
+    },
+    {
+      "scene": "5",
+      "paragraph": 93,
+      "before": "bent to zip the cherry-red overnight bag, the sheer white veil fluttering behind her thigh-high stockings as the sudden displacement of air tipped a kitchen chair.",
+      "after": "bent to zip the cherry-red overnight bag. Her sheer white veil fluttered behind her thigh-high stockings, and the rush of air tipped a kitchen chair."
+    },
+    {
+      "scene": "6",
+      "paragraph": 100,
+      "before": "wedged her massive denim-clad frame onto",
+      "after": "wedged herself, denim and all, onto"
+    },
+    {
+      "scene": "6",
+      "paragraph": 101,
+      "before": "disappeared down the sunny suburban street, leaving a faint trail of exhaust and floral perfume hovering over the pavement",
+      "after": "disappeared down the sunny suburban street. A faint trail of exhaust and floral perfume hung over the pavement"
+    },
+    {
+      "scene": "7",
+      "paragraph": 104,
+      "before": "clutching two overstuffed, hastily zipped backpacks. Haley and Stella stood right beside him on the concrete, arms crossed, already suspicious.",
+      "after": "clutching two overstuffed backpacks with hastily closed zippers. Haley and Stella stood beside him on the concrete, arms crossed, already suspicious."
+    },
+    {
+      "scene": "7",
+      "paragraph": 105,
+      "before": "cupped his grey hand to his mouth, yelling",
+      "after": "cupped his grey hand to his mouth and yelled"
+    },
+    {
+      "scene": "7",
+      "paragraph": 112,
+      "before": "shoved the two overstuffed backpacks directly into",
+      "after": "shoved the two overstuffed backpacks into"
+    },
+    {
+      "scene": "7",
+      "paragraph": 115,
+      "before": "pointed a grey finger deadpan in their faces",
+      "after": "pointed a grey finger in their faces. His expression didn't change"
+    },
+    {
+      "scene": "7",
+      "paragraph": 120,
+      "before": "rumbled down the block, cutting Stella off",
+      "after": "cut Stella off with a rumble from down the block"
+    },
+    {
+      "scene": "7",
+      "paragraph": 122,
+      "before": "around his shoulders, pulling a gold red-topped scepter and a red-and-white megaphone out from behind his back",
+      "after": "around his shoulders and produced a gold red-topped scepter and a red-and-white megaphone from behind his back"
+    },
+    {
+      "scene": "7",
+      "paragraph": 128,
+      "before": "Roger completely ignored them, yanking his cape free and rolling",
+      "after": "Roger ignored them. He yanked his cape free and rolled"
+    },
+    {
+      "scene": "7",
+      "paragraph": 130,
+      "before": "tried to push upstream against the crowd on the driveway, getting jostled backward toward the brown garage door",
+      "after": "pushed upstream against the crowd on the driveway but got jostled back toward the brown garage door"
+    },
+    {
+      "scene": "7",
+      "paragraph": 136,
+      "before": "poured across the lawn, completely overrunning the house",
+      "after": "poured across the lawn and overran the house"
+    }
+  ]
+}

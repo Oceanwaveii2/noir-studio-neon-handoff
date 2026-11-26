@@ -1,0 +1,11 @@
+{
+  "note": "Quality budget for CI. Relative to repo files, not the author's machine.",
+  "max_canon_violations": 0,
+  "max_staging_violations": 0,
+  "max_ledger_violations": 0,
+  "max_dialogue_bytes_changed": 0,
+  "max_invented_false_accepts": 0,
+  "max_copy_false_accepts": 0,
+  "max_tic_rate_per_1000": 10.93,
+  "min_distinct_takes": 3
+}

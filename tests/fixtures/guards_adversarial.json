@@ -1,0 +1,317 @@
+{
+  "fixture": "adversarial correction cases",
+  "cases": [
+    {
+      "id": "invented_person_0",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Detective Marsh set the tray down and looked at the door.",
+      "expect_reject": true
+    },
+    {
+      "id": "invented_person_1",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Uncle Bob set the tray down and looked at the door.",
+      "expect_reject": true
+    },
+    {
+      "id": "invented_person_2",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Cousin June set the tray down and looked at the door.",
+      "expect_reject": true
+    },
+    {
+      "id": "invented_person_3",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Officer Price set the tray down and looked at the door.",
+      "expect_reject": true
+    },
+    {
+      "id": "invented_person_4",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Aunt Vera set the tray down and looked at the door.",
+      "expect_reject": true
+    },
+    {
+      "id": "invented_person_5",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Nana Rose set the tray down and looked at the door.",
+      "expect_reject": true
+    },
+    {
+      "id": "invented_person_6",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Coach Dan set the tray down and looked at the door.",
+      "expect_reject": true
+    },
+    {
+      "id": "forbidden_0",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Dad set the tray down and looked at the door.",
+      "expect_reject": true
+    },
+    {
+      "id": "forbidden_1",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "my father set the tray down and looked at the door.",
+      "expect_reject": true
+    },
+    {
+      "id": "forbidden_2",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Stan set the tray down and looked at the door.",
+      "expect_reject": true
+    },
+    {
+      "id": "forbidden_3",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Roger set the tray down and looked at the door.",
+      "expect_reject": true
+    },
+    {
+      "id": "forbidden_4",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Steve set the tray down and looked at the door.",
+      "expect_reject": true
+    },
+    {
+      "id": "forbidden_5",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Barry set the tray down and looked at the door.",
+      "expect_reject": true
+    },
+    {
+      "id": "forbidden_6",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Toshi set the tray down and looked at the door.",
+      "expect_reject": true
+    },
+    {
+      "id": "role_swap_0",
+      "original": "Rainee slapped Francine in the hall.",
+      "candidate": "Francine slapped Rainee in the hall.",
+      "expect_reject": true
+    },
+    {
+      "id": "role_swap_1",
+      "original": "Rainee slapped Haley in the hall.",
+      "candidate": "Haley slapped Rainee in the hall.",
+      "expect_reject": true
+    },
+    {
+      "id": "role_swap_2",
+      "original": "Francine slapped Haley in the hall.",
+      "candidate": "Haley slapped Francine in the hall.",
+      "expect_reject": true
+    },
+    {
+      "id": "role_swap_3",
+      "original": "Rainee slapped Stan in the hall.",
+      "candidate": "Stan slapped Rainee in the hall.",
+      "expect_reject": true
+    },
+    {
+      "id": "role_swap_4",
+      "original": "Haley slapped Rainee in the hall.",
+      "candidate": "Rainee slapped Haley in the hall.",
+      "expect_reject": true
+    },
+    {
+      "id": "role_swap_5",
+      "original": "Francine slapped Rainee in the hall.",
+      "candidate": "Rainee slapped Francine in the hall.",
+      "expect_reject": true
+    },
+    {
+      "id": "role_swap_6",
+      "original": "Stan slapped Rainee in the hall.",
+      "candidate": "Rainee slapped Stan in the hall.",
+      "expect_reject": true
+    },
+    {
+      "id": "count_0",
+      "original": "She stacked three Tupperware containers on the table.",
+      "candidate": "She stacked four Tupperware containers on the table.",
+      "expect_reject": true
+    },
+    {
+      "id": "count_1",
+      "original": "She stacked two Tupperware containers on the table.",
+      "candidate": "She stacked three Tupperware containers on the table.",
+      "expect_reject": true
+    },
+    {
+      "id": "count_2",
+      "original": "She stacked four Tupperware containers on the table.",
+      "candidate": "She stacked five Tupperware containers on the table.",
+      "expect_reject": true
+    },
+    {
+      "id": "count_3",
+      "original": "She stacked five Tupperware containers on the table.",
+      "candidate": "She stacked six Tupperware containers on the table.",
+      "expect_reject": true
+    },
+    {
+      "id": "count_4",
+      "original": "She stacked one Tupperware containers on the table.",
+      "candidate": "She stacked two Tupperware containers on the table.",
+      "expect_reject": true
+    },
+    {
+      "id": "count_5",
+      "original": "She stacked three Tupperware containers on the table.",
+      "candidate": "She stacked two Tupperware containers on the table.",
+      "expect_reject": true
+    },
+    {
+      "id": "count_6",
+      "original": "She stacked six Tupperware containers on the table.",
+      "candidate": "She stacked seven Tupperware containers on the table.",
+      "expect_reject": true
+    },
+    {
+      "id": "quote_0",
+      "original": "She said, \"Absolutely not.\"",
+      "candidate": "She said, \"Probably not.\"",
+      "expect_reject": true
+    },
+    {
+      "id": "quote_1",
+      "original": "She said, \"That was the sushi.\"",
+      "candidate": "She said, \"That was the burrito.\"",
+      "expect_reject": true
+    },
+    {
+      "id": "quote_2",
+      "original": "She said, \"I'm aware.\"",
+      "candidate": "She said, \"I don't care.\"",
+      "expect_reject": true
+    },
+    {
+      "id": "quote_3",
+      "original": "She said, \"It's jasmine.\"",
+      "candidate": "She said, \"It's lavender.\"",
+      "expect_reject": true
+    },
+    {
+      "id": "quote_4",
+      "original": "She said, \"Gorgeous, though.\"",
+      "candidate": "She said, \"Beautiful, though.\"",
+      "expect_reject": true
+    },
+    {
+      "id": "quote_5",
+      "original": "She said, \"Tell her.\"",
+      "candidate": "She said, \"Don't tell her.\"",
+      "expect_reject": true
+    },
+    {
+      "id": "quote_6",
+      "original": "She said, \"Quiet, Haley.\"",
+      "candidate": "She said, \"Hush, Haley.\"",
+      "expect_reject": true
+    },
+    {
+      "id": "personification_0",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Tupperware laughed at her from the counter.",
+      "expect_reject": true
+    },
+    {
+      "id": "personification_1",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "The lipstick replied at her from the counter.",
+      "expect_reject": true
+    },
+    {
+      "id": "personification_2",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "The fridge sighed at her from the counter.",
+      "expect_reject": true
+    },
+    {
+      "id": "personification_3",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "The dress shrugged at her from the counter.",
+      "expect_reject": true
+    },
+    {
+      "id": "personification_4",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "The toilet whispered at her from the counter.",
+      "expect_reject": true
+    },
+    {
+      "id": "good_0",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Rainee put the tray down and stared at the door.",
+      "expect_reject": false
+    },
+    {
+      "id": "good_1",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Rainee set the tray on the counter, then looked toward the door.",
+      "expect_reject": false
+    },
+    {
+      "id": "good_2",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "The tray went down. Rainee looked at the door.",
+      "expect_reject": false
+    },
+    {
+      "id": "good_3",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Rainee lowered the tray and checked the door.",
+      "expect_reject": false
+    },
+    {
+      "id": "good_4",
+      "original": "Rainee set the tray down and looked at the door.",
+      "candidate": "Rainee set the tray aside and looked at the door.",
+      "expect_reject": false
+    },
+    {
+      "id": "number_word_equiv_0",
+      "original": "She ate 3 donuts on the porch.",
+      "candidate": "She ate three donuts on the porch.",
+      "expect_reject": false
+    },
+    {
+      "id": "prop_drop_0",
+      "original": "Francine stood at the dining table — pink dress, pearls, red lipstick — three Tupperware containers stacked beside her.",
+      "candidate": "Francine stood at the dining table. Three Tupperware containers were stacked beside her.",
+      "expect_reject": true
+    },
+    {
+      "id": "prop_drop_1",
+      "original": "Rainee stood at the vanity in the red dress, one heel on and one heel off, her tail flicking behind her.",
+      "candidate": "Rainee stood at the vanity, her tail flicking behind her.",
+      "expect_reject": true
+    },
+    {
+      "id": "prop_preserved_0",
+      "original": "Francine stood at the counter in pink dress and pearls, three Tupperware containers stacked beside her.",
+      "candidate": "Francine remained by the counter in her pink dress and pearls, with three Tupperware containers stacked beside her.",
+      "expect_reject": false
+    },
+    {
+      "id": "stan_domestic_0",
+      "original": "Francine set the tray down and looked at the door.",
+      "candidate": "Stan walked into the kitchen and kissed his wife Francine.",
+      "expect_reject": true
+    },
+    {
+      "id": "stan_domestic_1",
+      "original": "Francine and Haley spoke in the kitchen.",
+      "candidate": "Stan Smith walked into the room to see what his daughter was doing.",
+      "expect_reject": true
+    },
+    {
+      "id": "good_clean_0",
+      "original": "Upstairs, Rainee stood in front of the mirror in the red dress, one heel on and one heel off.",
+      "candidate": "Upstairs, Rainee stood before the glass in her red dress, one heel on, one heel off.",
+      "expect_reject": false
+    }
+  ]
+}

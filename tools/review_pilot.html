@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spring Break · Blinded author review</title>
+<style>
+  :root { color-scheme: dark; --ink:#f2ebdf; --muted:#c2bac0; --bg:#15161b; --panel:#1e2028; --line:#514b4e; --gold:#e1be86; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui,sans-serif; }
+  main { max-width:1170px; margin:auto; padding:clamp(16px,4vw,48px); }
+  h1,h2,h3,p { margin:0 0 12px; }
+  h1 { font:clamp(28px,5vw,44px)/1.1 Georgia,serif; margin-top:4px; }
+  .kicker { color:var(--gold); letter-spacing:.12em; font-size:12px; font-weight:700; text-transform:uppercase; }
+  .help,small { color:var(--muted); }
+  .help { max-width:72ch; }
+  .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:16px 0; }
+  input,button,select,textarea { color:var(--ink); background:#23252e; border:1px solid var(--line); border-radius:6px; font:inherit; padding:7px 10px; }
+  button { cursor:pointer; }
+  button:disabled { opacity:.5; cursor:default; }
+  button.primary { color:#211a13; background:var(--gold); border-color:var(--gold); font-weight:700; }
+  :focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
+  progress { accent-color:var(--gold); width:100%; height:12px; }
+  .options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:15px 0; }
+  article { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px; }
+  article p { font:18px/1.6 Georgia,serif; white-space:pre-wrap; overflow-wrap:anywhere; }
+  article details { margin-top:16px; }
+  article details p { font:inherit; }
+  summary { cursor:pointer; color:var(--gold); }
+  textarea { display:block; width:100%; min-height:115px; margin:8px 0; }
+  fieldset { border:1px solid var(--line); border-radius:8px; padding:10px 14px; }
+  fieldset label { display:inline-block; padding:6px 10px 6px 0; }
+  #status { min-height:24px; color:var(--gold); }
+  @media(max-width:680px) { .options { grid-template-columns:1fr; } }
+</style>
+<main>
+  <header>
+    <div class="kicker">Spring Break · U5 author pilot</div>
+    <h1>Which passage would you keep?</h1>
+    <p class="help">Compare two versions of each action passage. Choose the one you’d use, mark a tie, or reject both. Optional timing and edits help measure how much work each version needs.</p>
+    <div class="toolbar">
+      <label for="reviewer">Reviewer name</label>
+      <input id="reviewer" autocomplete="name" maxlength="100">
+      <button type="button" id="export">Export saved decisions</button>
+      <button type="button" id="import">Resume from a file</button>
+      <input type="file" id="importFile" accept=".json,application/json" hidden>
+    </div>
+    <label for="progress" id="progressLabel"></label>
+    <progress id="progress"></progress>
+  </header>
+  <nav class="toolbar" aria-label="Passages">
+    <button id="previous" type="button">Previous</button>
+    <label for="jump">Passage</label>
+    <select id="jump"></select>
+    <button id="next" type="button">Next</button>
+  </nav>
+  <form id="decision">
+    <h2 id="passageHeading" tabindex="-1"></h2>
+    <div class="options" id="options"></div>
+    <fieldset>
+      <legend>Preference</legend>
+      <label><input type="radio" name="choice" value="a" required> Keep A</label>
+      <label><input type="radio" name="choice" value="b"> Keep B</label>
+      <label><input type="radio" name="choice" value="tie"> Tie</label>
+      <label><input type="radio" name="choice" value="reject"> Reject both</label>
+    </fieldset>
+    <div class="toolbar"><button class="primary" type="submit">Save and continue</button></div>
+    <p id="status" role="status"></p>
+  </form>
+  <small>This local review saves decisions only. Export a file before closing to keep a portable copy of your progress.</small>
+</main>
+<script type="application/json" id="pilot-data">__PILOT_DATA__</script>
+<script>
+'use strict';
+const data = JSON.parse(document.getElementById('pilot-data').textContent);
+const cases = data.cases;
+const known = new Set(cases.map(row => row.token));
+const byId = id => document.getElementById(id);
+const storeKey = 'spring-break-review:' + data.fingerprint;
+let saved = new Map();
+let index = 0;
+let readers = new Map();
+let running = null;
+const options = ['a', 'b'];
+const choices = new Set(['a', 'b', 'tie', 'reject']);
+const review = () => ({schema_version:1, pilot_id:data.pilot_id, fingerprint:data.fingerprint,
+                       reviewer:byId('reviewer').value.trim(), decisions:[...saved.values()]});
+function persist() {
+  try { localStorage.setItem(storeKey, JSON.stringify(review())); } catch (_) { /* Export still works. */ }
+}
+function restore(record) {
+  if (record.schema_version !== 1 || record.fingerprint !== data.fingerprint ||
+      typeof record.reviewer !== 'string' || !Array.isArray(record.decisions)) {
+    throw new Error('Choose a decisions file for this pilot.');
+  }
+  const loaded = new Map();
+  for (const row of record.decisions) {
+    if (!known.has(row.token) || loaded.has(row.token) || !choices.has(row.choice)) {
+      throw new Error('The file includes an invalid or repeated passage.');
+    }
+    loaded.set(row.token, row);
+  }
+  byId('reviewer').value = record.reviewer;
+  saved = loaded;
+}
+function setStatus(message) { byId('status').textContent = message; }
+function element(tag, text) {
+  const node = document.createElement(tag);
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+function display() {
+  running = null;
+  readers = new Map();
+  const pair = cases[index];
+  const row = saved.get(pair.token);
+  byId('options').replaceChildren();
+  byId('passageHeading').textContent = 'Passage ' + (index + 1) + ' of ' + cases.length;
+  byId('jump').value = String(index);
+  byId('previous').disabled = index === 0;
+  byId('next').disabled = index === cases.length - 1;
+  byId('progress').max = cases.length;
+  byId('progress').value = saved.size;
+  byId('progressLabel').textContent = saved.size + ' of ' + cases.length + ' decisions saved';
+  for (const side of options) {
+    const title = 'Option ' + side.toUpperCase();
+    const text = pair['option_' + side];
+    const article = element('article');
+    article.append(element('h3', title), element('p', text));
+    const details = element('details');
+    details.append(element('summary', 'Assess ' + title + ' (optional)'));
+    const bar = element('div');
+    bar.className = 'toolbar';
+    const use = element('select');
+    use.setAttribute('aria-label', title + ' usability');
+    use.add(new Option('Usability not assessed', ''));
+    use.add(new Option('Usable', 'yes'));
+    use.add(new Option('Unusable', 'no'));
+    const old = row?.options?.[side];
+    use.value = old ? (old.usable ? 'yes' : 'no') : '';
+    const start = element('button', 'Start timer');
+    const finish = element('button', 'Mark draft usable');
+    start.type = finish.type = 'button';
+    bar.append(use, start, finish);
+    const draft = element('textarea');
+    draft.setAttribute('aria-label', title + ' edited text');
+    draft.maxLength = 10000;
+    draft.value = old?.final_text ?? text;
+    const note = element('small', old?.final_text !== undefined ? 'Usable draft recorded.' : 'Edit the draft here, then mark it usable.');
+    let effort = old?.final_text !== undefined ? {final_text:old.final_text, seconds:old.seconds} : null;
+    draft.oninput = () => { effort = null; note.textContent = 'Draft changed. Mark it usable to record it.'; };
+    start.onclick = () => {
+      if (running && running.side !== side) { setStatus('Finish the other option’s timer first.'); return; }
+      running = {side, started:performance.now()};
+      note.textContent = 'Timer running for ' + title + '.';
+    };
+    finish.onclick = () => {
+      if (!draft.value.trim()) { note.textContent = 'Enter the usable text first.'; return; }
+      effort = {final_text:draft.value};
+      if (running?.side === side) {
+        effort.seconds = Math.round(performance.now() - running.started) / 1000;
+        running = null;
+      }
+      use.value = 'yes';
+      note.textContent = effort.seconds === undefined ? 'Usable draft recorded.' : 'Usable draft recorded in ' + effort.seconds + ' s.';
+    };
+    details.append(bar, draft, note);
+    article.append(details);
+    byId('options').append(article);
+    readers.set(side, () => use.value ? {usable:use.value === 'yes', ...(use.value === 'yes' && effort ? effort : {})} : null);
+  }
+  for (const button of document.querySelectorAll('input[name="choice"]')) button.checked = button.value === row?.choice;
+}
+function move(to) {
+  if (to < 0 || to >= cases.length) return;
+  index = to;
+  display();
+  byId('passageHeading').focus();
+}
+try { const old = localStorage.getItem(storeKey); if (old) restore(JSON.parse(old)); } catch (_) { /* Import remains available. */ }
+cases.forEach((_, i) => byId('jump').add(new Option(String(i + 1), String(i))));
+const firstOpen = cases.findIndex(row => !saved.has(row.token));
+if (firstOpen >= 0) index = firstOpen;
+display();
+byId('reviewer').onchange = persist;
+byId('previous').onclick = () => move(index - 1);
+byId('next').onclick = () => move(index + 1);
+byId('jump').onchange = event => move(Number(event.target.value));
+byId('decision').onsubmit = event => {
+  event.preventDefault();
+  if (!byId('reviewer').value.trim()) { setStatus('Enter your reviewer name to save a decision.'); byId('reviewer').focus(); return; }
+  if (running) { setStatus('Mark the timed draft usable before saving.'); return; }
+  const pair = cases[index];
+  const choice = new FormData(event.target).get('choice');
+  if (!choices.has(choice)) return;
+  const observations = {};
+  for (const [side, read] of readers) { const result = read(); if (result) observations[side] = result; }
+  saved.set(pair.token, {token:pair.token, choice, options:observations});
+  persist();
+  const next = cases.findIndex((row, i) => i > index && !saved.has(row.token));
+  const unsaved = cases.findIndex(row => !saved.has(row.token));
+  if (next >= 0 || unsaved >= 0) move(next >= 0 ? next : unsaved); else display();
+  setStatus(saved.size === cases.length ? 'All decisions saved. Export your decisions when ready.' : 'Decision saved.');
+};
+byId('export').onclick = () => {
+  const result = review();
+  if (!result.reviewer || !result.decisions.length) { setStatus('Save a named decision before exporting.'); return; }
+  const url = URL.createObjectURL(new Blob([JSON.stringify(result, null, 2)], {type:'application/json'}));
+  const anchor = element('a');
+  anchor.href = url;
+  anchor.download = data.pilot_id + '-decisions.json';
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setStatus('Decisions exported.');
+};
+byId('import').onclick = () => byId('importFile').click();
+byId('importFile').onchange = async event => {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    if (file.size > 2_000_000) throw new Error('Choose a smaller decisions file.');
+    restore(JSON.parse(await file.text()));
+    persist();
+    const first = cases.findIndex(row => !saved.has(row.token));
+    move(first < 0 ? 0 : first);
+    setStatus('Decisions loaded.');
+  } catch (error) { setStatus(error.message); }
+  event.target.value = '';
+};
+</script>
+</html>

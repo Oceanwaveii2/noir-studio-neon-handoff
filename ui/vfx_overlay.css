@@ -1,0 +1,262 @@
+/* Noir Fiction Studio — Overdrive Runtime VFX Overlay Layer */
+
+.v2-vfx-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 80;
+  pointer-events: none;
+}
+
+.v2-vfx-dom-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+body[data-vfx="focus"] .v2-vfx-canvas {
+  display: none;
+}
+
+body[data-vfx="focus"] .v2-node-gutter::before {
+  animation: none;
+}
+
+body[data-vfx="focus"] .v2-node-card-controls::after {
+  animation: none;
+  opacity: 0;
+}
+
+/* Floating Telemetry Pill during Energy Progress Sweep */
+@keyframes odFloatPill {
+  0% { opacity: 0; transform: translateY(8px) scale(0.94); }
+  18% { opacity: 1; transform: translateY(0) scale(1); }
+  80% { opacity: 1; transform: translateY(-4px) scale(1); }
+  100% { opacity: 0; transform: translateY(-12px) scale(0.98); }
+}
+
+.v2-vfx-float-pill {
+  position: fixed;
+  padding: 5px 12px;
+  border-radius: 3px;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  background: rgba(11, 14, 20, 0.94);
+  border: 1px solid #38BDF8;
+  border-left: 3px solid #FFB830;
+  color: #5CE1E6;
+  font: 800 11px/1.2 var(--font-mono, monospace);
+  letter-spacing: 0.04em;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55), 0 0 14px rgba(56, 189, 248, 0.35);
+  animation: odFloatPill 1180ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Floating Action-Completed / Law-Bound Badge */
+@keyframes odActionPop {
+  0% { opacity: 0; transform: translateY(10px) scale(0.85); }
+  22% { opacity: 1; transform: translateY(0) scale(1.04); }
+  78% { opacity: 1; transform: translateY(-6px) scale(1); }
+  100% { opacity: 0; transform: translateY(-18px) scale(0.96); }
+}
+
+.v2-vfx-action-badge {
+  position: fixed;
+  padding: 5px 11px;
+  border-radius: 2px;
+  background: linear-gradient(135deg, #1E170B, #0F131C);
+  border: 1px solid #FFB830;
+  color: #FFE9A3;
+  font: 800 11px/1.2 var(--font-mono, monospace);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 16px rgba(255, 184, 48, 0.4);
+  animation: odActionPop 1300ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.v2-vfx-action-badge.is-law {
+  border-color: #FF4D4F;
+  background: linear-gradient(135deg, #2B1014, #0F131C);
+  color: #FFE4E6;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55), 0 0 18px rgba(255, 77, 79, 0.45);
+}
+
+/* Non-Blocking Top Checkered Gold Milestone Victory Ribbon */
+@keyframes odVictoryRibbon {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-20px) scaleX(0.6); }
+  14% { opacity: 1; transform: translateX(-50%) translateY(0) scaleX(1); }
+  84% { opacity: 1; transform: translateX(-50%) translateY(0) scaleX(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-14px) scaleX(1.04); }
+}
+
+.v2-vfx-victory-ribbon {
+  position: fixed;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 22px;
+  min-width: 380px;
+  background: linear-gradient(90deg, #131824, #1B160D 50%, #131824);
+  border-top: 2px solid #FFB830;
+  border-bottom: 2px solid #F5A623;
+  clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 16px 100%, 0 50%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), 0 0 24px rgba(245, 166, 35, 0.4);
+  text-align: center;
+  animation: odVictoryRibbon 1700ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.v2-vfx-victory-ribbon strong {
+  display: block;
+  font: 900 13px/1.15 var(--font-display, sans-serif);
+  letter-spacing: 0.12em;
+  color: #FFB830;
+}
+
+.v2-vfx-victory-ribbon small {
+  display: block;
+  margin-top: 2px;
+  font: 600 11px/1.2 var(--font-mono, monospace);
+  color: #5CE1E6;
+}
+
+.v2-vfx-ribbon-check {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  background:
+    repeating-conic-gradient(#FFB830 0% 25%, #121722 0% 50%) 0 0 / 8px 8px;
+  border: 1px solid #FFB830;
+}
+
+/* Live Comms / World-Law Intercept Toast (Top-Right Frosted Glass) */
+@keyframes odCommsIn {
+  from { opacity: 0; transform: translateX(36px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.v2-vfx-comms-toast {
+  position: fixed;
+  top: 64px;
+  right: 18px;
+  width: 340px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 3px;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+  background: rgba(15, 19, 28, 0.92);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(245, 166, 35, 0.45);
+  border-left: 4px solid #FFB830;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 18px rgba(245, 166, 35, 0.28);
+  animation: odCommsIn 260ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transition: opacity 240ms ease, transform 240ms ease;
+}
+
+.v2-vfx-comms-toast.is-law {
+  border-color: rgba(255, 77, 79, 0.55);
+  border-left-color: #FF4D4F;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 18px rgba(255, 77, 79, 0.34);
+}
+
+.v2-vfx-comms-toast.is-mind {
+  border-color: rgba(168, 85, 247, 0.55);
+  border-left-color: #E879F9;
+}
+
+.v2-vfx-comms-toast.is-leaving {
+  opacity: 0;
+  transform: translateX(28px);
+}
+
+.v2-vfx-comms-emblem {
+  flex: none;
+  padding: 6px 8px;
+  clip-path: polygon(16% 0%, 84% 0%, 100% 20%, 100% 80%, 84% 100%, 16% 100%, 0% 80%, 0% 20%);
+  background: #1B2232;
+  border: 1px solid #FFB830;
+  color: #FFB830;
+  font: 800 10px/1.1 var(--font-mono, monospace);
+  text-align: center;
+}
+
+.v2-vfx-comms-toast.is-law .v2-vfx-comms-emblem {
+  border-color: #FF4D4F;
+  color: #FFE4E6;
+}
+
+.v2-vfx-comms-body strong {
+  display: block;
+  font: 800 11px/1.2 var(--font-mono, monospace);
+  letter-spacing: 0.06em;
+  color: #FFB830;
+}
+
+.v2-vfx-comms-toast.is-law .v2-vfx-comms-body strong {
+  color: #FF6B35;
+}
+
+.v2-vfx-comms-body p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #E2E8F0;
+}
+
+/* Precision Injection Button Electric Sky-Cyan Hover Radiance */
+.v2-prep-inject-btns .v2-mini-btn:hover {
+  border-color: #5CE1E6;
+  background: rgba(56, 189, 248, 0.18);
+  color: #E0F2FE;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+/* Branded Checkered Standby Plinth & Live Delta Preview Bar */
+.v2-standby-plinth {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  text-align: center;
+  padding: 28px 24px;
+  border-radius: 14px;
+  border: 1px solid var(--border-chrome);
+  background-color: #10151c;
+  background-image:
+    linear-gradient(180deg, rgba(16, 21, 28, 0.84), rgba(16, 21, 28, 0.94)),
+    url('/assets/v2/game-standby-pattern.webp');
+  background-size: cover;
+  background-position: center;
+  color: #f1f5f9;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
+.v2-delta-preview-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  display: flex;
+  margin-top: 8px;
+}
+
+.v2-delta-preview-base {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gp-gold-start, #FFC43D), var(--gp-gold-end, #FF8C1A));
+  transition: width 160ms ease;
+}
+
+.v2-delta-preview-seg {
+  height: 100%;
+  background: var(--gp-cyan-glow, #45D8E6);
+  box-shadow: 0 0 8px rgba(69, 216, 230, 0.7);
+  transition: width 160ms ease, opacity 160ms ease;
+}

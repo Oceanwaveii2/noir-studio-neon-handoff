@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "status": "CONFIGURED",
+  "instructions": "Map real existing modules before adding or moving anything. A declared graph is not dependency extraction.",
+  "verification": "tools/check_architecture.py parses static Python imports between the five declared top-level paths. Dynamic imports, transitive runtime behavior, and unrelated directories are outside this check.",
+  "modules": [
+    {
+      "id": "story_graph", "path": "story_graph", "layer": 1, "role": "domain",
+      "owner": "story-logic maintainer",
+      "responsibility": "Canonical transactions, causal ordering, epistemic state, and beat packet compilation.",
+      "dependencies": [], "ui_dependencies": []
+    },
+    {
+      "id": "telemetry", "path": "telemetry", "layer": 1, "role": "persistence",
+      "owner": "evidence maintainer",
+      "responsibility": "Serializes engine-run evidence, including cliché findings supplied by the editorial layer. The core persistence fixture redirects writes to its temporary directory.",
+      "dependencies": [], "ui_dependencies": []
+    },
+    {
+      "id": "prose_engine", "path": "prose_engine", "layer": 2, "role": "engine",
+      "owner": "editorial engine maintainer",
+      "responsibility": "Editorial planning, prose safeguards, retrieval and provider adapters; includes the existing CLI facade. The coprocessor has an optional import of story_graph ontology.",
+      "dependencies": ["story_graph", "telemetry"], "ui_dependencies": []
+    },
+    {
+      "id": "experimental", "path": "experimental", "layer": 3, "role": "experiments",
+      "owner": "experiment maintainer",
+      "responsibility": "Opt-in provider, media and evaluation trials outside the standard editorial path.",
+      "dependencies": ["prose_engine"], "ui_dependencies": []
+    },
+    {
+      "id": "tools", "path": "tools", "layer": 4, "role": "shell",
+      "owner": "integration maintainer",
+      "responsibility": "Studio, Workbench, pipeline entry points, corpus maintenance, and verification.",
+      "dependencies": ["story_graph", "prose_engine", "telemetry"],
+      "ui_dependencies": ["tools/vendor/cytoscape.min.js", "tools/vendor/litegraph.min.js"]
+    }
+  ],
+  "legacy_imports": [],
+  "shared_contracts": [
+    {"id": "story_graph.transition", "source": "story_graph/models.py", "contract": "Transaction and TransactionResult"},
+    {"id": "story_graph.compile_beat", "source": "story_graph/compiler.py", "contract": "BeatPacket"},
+    {"id": "prose.condition", "source": "prose_engine/conditioner.py", "contract": "Proposal and conditioned copy; common validated apply path remains open"}
+  ],
+  "external_adapters": [
+    {"path": "prose_engine/providers", "direction": "outbound", "note": "Provider adapters; external transfer requires existing project permissions."},
+    {"path": "prose_engine/service_daemon.py", "direction": "inbound", "note": "Versioned loopback workspace service over existing scoped commands; owns index readers and persistent writer windows."},
+    {"path": "tools/studio_ui.py", "direction": "inbound", "note": "Loopback Studio HTTP shell; Compute is still a demo."},
+    {"path": "tools/workbench.py", "direction": "inbound", "note": "Standalone editor remains separate; connected mode reads scoped episodes, previews and drafts through tools/noir_client.py."}
+  ]
+}

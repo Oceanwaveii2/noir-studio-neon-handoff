@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Noir · Scene Replay</title>
+<style>
+:root{color-scheme:dark;--paper:#faeedb;--base:#151918;--panel:#202725;--line:#424d46;--muted:#c5c8bb;--gold:#f9bb73;--mint:#b5ecda;font-family:system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--base);color:var(--paper)}main{max-width:76rem;margin:auto;padding:clamp(1rem,4vw,3rem)}h1{font:600 clamp(2rem,5vw,3.3rem) Georgia,serif;margin:.3rem 0}h2{margin:.25rem 0 .75rem;font-size:1.2rem}p{line-height:1.5}a{color:var(--mint)}.eyebrow{color:var(--gold);letter-spacing:.12em;font-size:.8rem}.muted{color:var(--muted)}label{display:grid;gap:.4rem;max-width:27rem}select,button{font:inherit;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:.4rem;padding:.55rem .7rem;min-height:2.5rem}button{cursor:pointer}button[aria-pressed=true]{background:var(--mint);color:#15211c}button:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:3px}.controls{display:flex;flex-wrap:wrap;gap:.5rem;padding:.7rem 0 1rem}.card{padding:1rem;background:var(--panel);border:1px solid var(--line);border-radius:.65rem;margin:1rem 0}.badge{color:var(--mint);font-size:1.08rem;font-weight:bold}.facts{color:var(--muted)}.error{color:#ffb4a8}li{margin:.35rem 0}[hidden]{display:none!important}
+</style>
+<main>
+<header><div class="eyebrow">NOIR / SCENE REPLAY</div><h1 id="title">Scene Replay</h1>
+<p class="muted">Step through a saved run to see what each beat actually changed.</p>
+<a id="graph" href="/">Scene Graphs</a> · <a id="clips" href="/">Scene Clips</a> · <a id="branches" href="/">Branches</a> · <a id="compose" href="/">Compose</a></header>
+<p id="status" role="status">Opening saved replays…</p>
+<label>Saved replay<select id="runs" aria-label="Saved replay"></select></label>
+<section id="replay" hidden><div id="frames" class="controls" aria-label="Replay steps"></div>
+<article class="card"><h2 id="current"></h2><p id="form" class="badge"></p>
+<ul id="cast"></ul><p id="facts" class="facts"></p></article>
+<article class="card"><h2>Cutaway and override</h2><ul id="overrides"></ul><p id="audience" class="muted"></p>
+<div id="clip-panel" hidden><video id="clip-player" controls playsinline preload="metadata" aria-label="Audience cutaway" style="display:block;width:min(100%,42rem);max-height:52vh;background:#101412;margin-bottom:.55rem"></video><button type="button" id="play-clip">Play cutaway range</button></div></article>
+</section>
+</main>
+<script>
+'use strict';
+const at=id=>document.getElementById(id), q=new URLSearchParams(location.search), episode=q.get('episode');
+const pretty=s=>s==='peter_griffin_celestial_variant'?'Rainee Peter':s.replace(/[-_]/g,' ').replace(/^./,c=>c.toUpperCase());
+const make=(tag,label)=>{const el=document.createElement(tag);el.textContent=label;return el;};
+let scope, activeCue, halt;
+async function command(op, fields={}){
+  const res=await fetch('/api/episode-command',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({...scope,...fields,action:'scene.override.'+op})});
+  const data=await res.json();if(!res.ok)throw new Error(data.error||'Cannot open this replay.');return data;
+}
+function frame(row,bar,selected,cues){
+  [...bar.children].forEach(b=>b.setAttribute('aria-pressed',String(b===selected)));
+  const s=row.state,n=s.manifestations.length;
+  at('current').textContent=pretty(row.event);
+  at('form').textContent=n?`${n} active manifestations of ${pretty(s.root)}`:`${pretty(s.root_form)} active`;
+  at('cast').replaceChildren(...s.manifestations.map(v=>make('li',pretty(v.id)+' · linked Mind')));
+  const observed=Object.entries(s.knowledge).filter(([,facts])=>facts.length);
+  at('facts').textContent=observed.length?observed.map(([who,facts])=>pretty(who)+': '+facts.map(pretty).join(', ')).join(' · '):'No scene observations yet.';
+  if(s.reactions.length)at('facts').append(' · '+s.reactions.map(r=>pretty(r.actor)+' reels toward '+pretty(r.to)).join(' · '));
+  at('audience').textContent=selected.dataset.presentation==='true'?'Audience cutaway here. It changes what the reader sees.':'';
+  activeCue=cues.find(c=>c.event===row.event);halt=null;
+  const player=at('clip-player');player.pause();at('clip-panel').hidden=!activeCue;
+  if(activeCue){player.src='/api/scene-clips/media?'+new URLSearchParams({...scope,id:activeCue.clip});
+    at('play-clip').textContent=`Play cutaway · ${(activeCue.start_ms/1000).toFixed(3)}–${(activeCue.end_ms/1000).toFixed(3)} s`;
+  }else{player.removeAttribute('src');player.load();}
+}
+at('play-clip').onclick=()=>{if(!activeCue)return;const v=at('clip-player');v.currentTime=activeCue.start_ms/1000;halt=activeCue.end_ms/1000;v.play().catch(fail);};
+at('clip-player').ontimeupdate=()=>{const v=at('clip-player');if(halt!==null&&halt!==undefined&&v.currentTime>=halt){v.pause();v.currentTime=halt;halt=null;}};
+async function show(id){
+  const result=await command('open',{receipt:id});const r=result.receipt;
+  at('replay').hidden=false;at('status').textContent=result.historical?'Viewing an earlier saved run.':'Saved replay · step through any beat';
+  const clipCues=result.clip_cues||[],bar=at('frames'), cues=new Set([...r.presentation,...clipCues].map(v=>v.event));
+  const buttons=r.frames.map(row=>{const button=make('button',pretty(row.event));button.type='button';
+    button.dataset.presentation=String(cues.has(row.event));button.addEventListener('click',()=>frame(row,bar,button,clipCues));return button;});
+  bar.replaceChildren(...buttons);const i=Math.max(0,r.frames.findIndex(v=>v.event===q.get('step')));frame(r.frames[i],bar,buttons[i],clipCues);
+  const modes={borrow_pattern:'Borrow shape',insert_event:'Use destination event',present:'Show audience cutaway'};
+  at('overrides').replaceChildren(...(r.overrides.length?r.overrides.map(v=>make('li',modes[v.mode]+' · '+pretty(v.event)+
+    (v.evidence?.selector?.kind==='clip'?` · ${(v.evidence.selector.start/1000).toFixed(3)}–${(v.evidence.selector.end/1000).toFixed(3)} s`:''))):[make('li','No reference override; the scene uses its declared events.')]));
+}
+function fail(e){at('status').textContent=e.message;at('status').classList.add('error');}
+async function start(){
+  if(!episode)throw new Error('Choose an episode to view its replay.');
+  const res=await fetch('/api/state?episode='+encodeURIComponent(episode)),data=await res.json();
+  if(!res.ok)throw new Error(data.error||'Episode unavailable.');
+  scope={project:data.scope.project_id,universe:data.scope.universe_id,branch:data.episode.branch,episode};
+  at('title').textContent=data.episode.title;
+  at('graph').href='/scene-fragments?episode='+encodeURIComponent(episode);
+  at('clips').href='/scene-clips?episode='+encodeURIComponent(episode);
+  at('branches').href='/scene-branches?episode='+encodeURIComponent(episode);
+  at('compose').href='/?episode='+encodeURIComponent(episode)+'&view=compose';
+  const runs=(await command('list')).receipts;
+  at('runs').replaceChildren(...runs.map(v=>new Option(pretty(v.profile),v.id)));
+  if(!runs.length){at('status').textContent='No replay has been saved for this scene.';at('runs').disabled=true;return;}
+  const id=q.get('receipt')||runs[0].id;at('runs').value=id;await show(id);
+  at('runs').addEventListener('change',()=>show(at('runs').value).catch(fail));
+}
+start().catch(fail);
+</script>
+</html>

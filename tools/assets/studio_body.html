@@ -1,0 +1,524 @@
+<body>
+<a class="standalone-timeline-link" href="/timeline" style="position:fixed;right:8px;bottom:8px;z-index:9999;color:#e4c28a;background:#15171a;padding:6px">Project timeline</a>
+<div class="app">
+
+  <!-- 1. Top App Navigation Bar -->
+  <header class="top">
+    <div class="logo-area">
+      <div class="logo">
+        NOIR
+        <small>Noir Fiction Studio · Narrative Composer</small>
+      </div>
+    </div>
+    <label class="noir-appearance">Appearance <select id="noirTheme"><option value="racing">Racing</option><option value="classic">Classic</option></select></label>
+    <nav class="noir-primary" aria-label="Workspace">
+      <button class="noir-tab active" id="noirCompose" onclick="showNoirWorkspace('compose')">✎ <span>Compose</span></button>
+      <a class="noir-tab" id="noirTimeline" href="/timeline">▦ <span>Timeline</span></a>
+      <button class="noir-tab" id="noirGraph" onclick="showNoirWorkspace('graph')">◇ <span>Graph</span></button>
+    </nav>
+    <div class="noir-history" aria-label="Workspace history"><button id="noirUndo" type="button" title="Undo saved workspace change">Undo</button><button id="noirRedo" type="button" title="Redo saved workspace change">Redo</button></div>
+    <button class="noir-save" id="episodeSave">Save episode</button>
+    <nav class="nav">
+      <button class="active" id="tabCompose" onclick="setAppView('compose')">Compose</button>
+      <button id="tabReader" onclick="setAppView('reader')">📜 Screenplay Reader</button>
+      <button onclick="showSourceEvidence('fox_lore')">Story Bible</button>
+      <button onclick="showSourceEvidence('american_dad')">Evidence</button>
+      <button onclick="setMode('graph')">Graph</button>
+      <button onclick="exportJsonTranscript()">Export</button>
+      <a href="/reader" target="_blank" class="nav-ext-link" title="Open Standalone Screenplay (/reader)">⤢</a>
+    </nav>
+    <div class="top-actions">
+      <button class="btn-matrix" onclick="showEvidenceMatrix()">Evidence Matrix</button>
+      <button class="btn-recompute" id="btnRecompute">RECOMPUTE</button>
+    </div>
+  </header>
+
+  <!-- 2. Sub-Toolbar & Modes -->
+  <div class="sub-toolbar">
+    <div class="tool-group" id="episodeTools" hidden>
+      <strong class="noir-scope-label">Scope:</strong><span id="episodeTitle" class="noir-scope-legacy"></span>
+      <span class="noir-scope-branch">Branch: <b id="noirBranchValue">—</b></span>
+      <label class="noir-scope-episode">Episode: <select id="noirEpisodeChoice" aria-label="Episode"></select></label>
+      <label>Beat <input id="episodeBeat" type="number" min="0" value="0" style="width:4em"></label>
+      <label>Viewpoint <input id="episodeViewpoint" placeholder="Narrator"></label>
+      <button type="button" class="tool" id="highlighterTool" aria-label="Highlighter" aria-haspopup="menu" aria-expanded="false" title="Highlighter"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17 15 6l4 4L8 21H4zM13 8l4 4M3 22h12"/></svg><span>Highlight</span></button>
+      <button class="tool noir-default-protection" id="documentProtection"><span class="noir-track-gif" id="documentDial" data-weight="unknown" data-frame="27" aria-hidden="true"><img class="dial-animation" alt=""></span><span id="documentProtectionLabel">Document protection: 100%</span></button>
+      <details class="noir-advanced"><summary>Graph tools</summary><div class="noir-advanced-body">
+      <details id="legacyProtectionControls" hidden><summary>Protection and drafts</summary><div>
+        <button class="tool" id="notebookOpen">Open notebook controls</button><button class="tool" id="notebookSync">Sync saved edits</button>
+        <label>Default protection <select id="notebookDefault"><option value="100">100% exact</option><option value="75">75% mostly preserve</option><option value="50">50% balanced</option><option value="25">25% broad rewrite</option></select></label>
+        <button class="tool" id="notebookSetDefault">Set default</button>
+        <label>Selected text <select id="notebookMaskValue"><option value="100">100% exact</option><option value="75">75% mostly preserve</option><option value="50">50% balanced</option><option value="25">25% broad rewrite</option></select></label>
+        <button class="tool" id="notebookMask">Set selection protection</button><button class="tool" id="notebookShow">Show selection protection</button>
+        <button class="tool" id="selectionStart">Mark start at cursor</button><button class="tool" id="selectionEnd">Mark end at cursor</button><button class="tool" id="selectionClear">Clear selection</button><button class="tool" id="toggleHighlights" aria-pressed="true">Hide highlights</button><span id="selectionStatus" role="status">Select within a block, Shift-click another block, or mark start and end across blocks.</span>
+        <details><summary>Highlight across blocks</summary><div><p>Highlight text across the writing below, then choose Use highlighted text.</p><pre id="crossSelectionPage" tabindex="0" aria-label="Text for cross-block highlighting"></pre><button class="tool" id="selectionCapture">Use highlighted text</button></div></details>
+        <label>Saved masks <select id="maskChoice" aria-label="Saved masks"></select></label><button class="tool" id="maskUpdate">Change selected mask</button><button class="tool" id="maskRemove">Remove selected mask</button>
+        <label>Block type <select id="notebookBlockKind"><option value="unresolved">Unresolved</option><option value="narrator">Narrator</option><option value="character">Character</option><option value="scene-heading">Scene heading</option><option value="stage-direction">Stage direction</option></select></label>
+        <label>Character ID <input id="notebookSpeaker" aria-label="Character ID"></label><label>Form ID <input id="notebookForm" aria-label="Form ID"></label>
+        <button class="tool" id="notebookBind">Set block identity</button>
+        <button class="tool" id="draftList">Refresh drafts</button><select id="draftChoice" aria-label="Episode drafts"></select><select id="draftCompareChoice" aria-label="Compare with draft"></select>
+        <button class="tool" id="draftOpen">Open draft</button><button class="tool" id="draftContext">Inspect writing context</button><button class="tool" id="draftCompare">Compare drafts</button><button class="tool" id="draftFavorite">Favorite</button><button class="tool" id="draftFavoriteUndo" type="button" disabled>Undo favorite</button><button class="tool" id="draftFavoriteRedo" type="button" disabled>Redo favorite</button><button class="tool" id="draftUse">Use draft</button><button class="tool" id="draftKeep">Keep selected draft text</button><button class="tool" id="notebookUndo">Undo notebook change</button><button class="tool" id="notebookRedo" type="button">Redo notebook change</button>
+      </div></details>
+      <details id="legacyWorldLawControls" hidden><summary>World laws</summary><div>
+        <button class="tool" id="lawsOpen">Open world laws</button><select id="lawsChoice" aria-label="World law"></select>
+        <button class="tool" id="lawsNew">New law</button>
+        <label>Name <input id="lawName" aria-label="Law name"></label>
+        <label>Law <textarea id="lawStatement" aria-label="Law statement"></textarea></label>
+        <label>Block phrases (one per line) <textarea id="lawPhrases" aria-label="Blocked phrases"></textarea></label>
+        <label><input type="checkbox" id="lawEnabled" checked> Active</label>
+        <button class="tool" id="lawsSave">Save world law</button><button class="tool" id="lawsUndo">Undo law change</button><button class="tool" id="lawsRedo" type="button">Redo law change</button>
+        <span>Phrase checks catch configured wording; review remains necessary for other meanings.</span>
+      </div></details>
+      <details id="beatRhythmControls" open><summary>Beat direction</summary><div>
+        <button class="tool" id="rhythmOpen">Load selected beat</button><button class="tool" id="rhythmCreateNode">Create beat graph node</button>
+        <label>Graph node <select id="rhythmNode"><option value="">No graph node</option></select></label>
+        <label>Scene <select id="rhythmIntent"><option value="scene">General</option><option value="beauty">Beauty preparation</option><option value="comedy">Physical comedy</option><option value="transformation">Transformation</option></select></label>
+        <label>Pace <select id="rhythmPace"><option value="neutral">Not set</option><option value="slow">Slow</option><option value="measured">Measured</option><option value="fast">Fast</option></select></label>
+        <label>Tension start <input id="rhythmTensionStart" type="number" min="0" max="5" placeholder="Not set" style="width:5em"></label><label>End <input id="rhythmTensionEnd" type="number" min="0" max="5" placeholder="Not set" style="width:5em"></label>
+        <label>Pause <select id="rhythmPause"><option value="neutral">Not set</option><option value="none">None</option><option value="brief">Brief</option><option value="held">Held</option></select></label>
+        <label>Comedy <select id="rhythmComedy"><option value="none">Not set</option><option value="setup">Setup</option><option value="delay">Delay</option><option value="payoff">Payoff</option><option value="reaction">Reaction</option><option value="escalation">Escalation</option><option value="release">Release</option></select></label>
+        <label>Cadence <select id="rhythmCadence"><option value="neutral">Not set</option><option value="flowing">Flowing</option><option value="varied">Varied</option><option value="punchy">Punchy</option><option value="staccato">Staccato</option></select></label>
+        <label>Transition <select id="rhythmTransition"><option value="neutral">Not set</option><option value="smooth">Smooth</option><option value="abrupt">Abrupt</option><option value="linger">Linger</option></select></label>
+        <label>Author direction <input id="rhythmOverride" maxlength="500" placeholder="Optional pacing note"></label>
+        <button class="tool" id="rhythmSave">Save beat direction</button><button class="tool" id="rhythmUndo">Undo beat direction</button><button class="tool" id="rhythmRedo">Redo beat direction</button><span id="rhythmStatus" role="status"></span>
+      </div></details>
+      <details id="proseEngineControls" open><summary>Write with the Prose Engine</summary><div>
+        <button class="tool" id="episodeContext">Show history</button>
+        <select id="episodeProvider" aria-label="Primary session"><option value="codex-session">Codex session</option><option value="gemini-session">Gemini session</option></select>
+        <label>Book references <select id="episodeBooks"><option value="none">None</option><option value="topic">Topic</option><option value="luar">Author voice</option><option value="style">Style</option></select></label>
+        <label>Scene function <select id="episodeSceneFunction"><option value="scene">Use beat direction</option><option value="beauty">Beauty preparation</option><option value="comedy">Comedy</option><option value="tension">Tension</option><option value="dialogue">Dialogue</option><option value="quiet">Quiet / pause</option><option value="transformation">Transformation</option></select></label>
+        <label>Writing direction <input id="groupDirection" maxlength="500" placeholder="Describe the pacing or change you want"></label>
+        <button class="tool" id="previewBeatRhythm" type="button">Preview selected-beat rhythm</button><button class="tool" id="generateBeatGroup" type="button">Adjust selected beats</button><small id="groupSelectionStatus">Choose a scene or consecutive beats in Beat graph first. Preview retrieves only permitted references and never calls the writing session.</small>
+        <button class="tool" id="bookStatusCheck">Check book availability</button><span id="bookAvailability" role="status"></span>
+        <button class="tool" id="episodeRhythmPreview">Preview selection rhythm</button><button class="tool" id="episodeGenerate">Generate selection</button><button class="tool" id="episodeGenerateAll" title="Uses the selected beat and viewpoint for the entire episode">Generate whole episode</button><button class="tool" id="episodeValidate">Validate selection</button><small>Whole episode uses the selected beat and viewpoint for all its text.</small>
+        <div hidden><button class="tool" id="episodeRetrieve">Find history</button><button class="tool" id="episodeForms">Show forms</button><button class="tool" id="episodeCharacters">Show character context</button><button class="tool" id="episodeExport">Export selection</button></div>
+      </div></details>
+      <details id="bookPermissionControls" hidden><summary>Book source permissions</summary><div>
+        <button class="tool" id="bookSourcesLoad">Load book sources</button><select id="bookSourceChoice" aria-label="Book source"></select>
+        <label><input type="checkbox" id="bookEnabled"> Enabled</label>
+        <label><input type="checkbox" id="bookRank"> Local ranking</label><label><input type="checkbox" id="bookInspect"> Local inspection</label>
+        <label><input type="checkbox" id="bookPrompt"> Prompt use</label><label><input type="checkbox" id="bookRemote"> Send to session</label>
+        <label><input type="checkbox" id="bookExport"> Export excerpts</label>
+        <button class="tool" id="bookSourceSave">Save this source</button><span id="bookSourceStatus" role="status"></span>
+      </div></details>
+      <details><summary>Graph editing</summary><div>
+        <input id="episodeNodeName" aria-label="New node name" placeholder="New node name"><button class="tool" id="episodeAddNode">Add node</button>
+        <button class="tool" id="episodeConnect">Connect two nodes</button><button class="tool" id="episodeDelete">Delete selected node</button>
+      </div></details></div></details><span id="episodeNotice" role="status"></span>
+    </div>
+    <div class="tool-group">
+      <button class="tool" id="btnToggleLeft" onclick="toggleLeftSidebar()" title="Toggle Project Sidebar ([)">◧</button>
+      <button class="tool" onclick="triggerUndo()" title="Undo Last Change (Ctrl+Z)">Undo</button>
+      <button class="tool" onclick="triggerRedo()" title="Redo (Ctrl+Y)">Redo</button>
+      <button class="tool" id="btnAttachMode" onclick="toggleAttachMode()" title="Toggle Attach Node Mode">＋ Attach Node</button>
+      <button class="tool" id="btnToggleTrace" onclick="toggleTraceBadges()" title="Toggle Beat Trace Badges">⌁ Trace Logic</button>
+      <button class="tool" onclick="focusScopePanel()" title="Focus Scope Settings">☑ Recompute Scope</button>
+    </div>
+    <div class="tool-group">
+      <div class="modes">
+        <button data-mode="text" onclick="setMode('text')" title="Text View (Key 1 or T)">TEXT</button>
+        <button class="active" data-mode="split" onclick="setMode('split')" title="Split View (Key 2 or S)">SPLIT</button>
+        <button data-mode="graph" onclick="setMode('graph')" title="Graph View (Key 3 or G)">GRAPH</button>
+      </div>
+      <button class="tool" id="btnToggleRight" onclick="toggleRightInspector()" title="Toggle Inspector Drawer (])">◨</button>
+    </div>
+  </div>
+
+  <!-- 3. Multi-Column Main Layout -->
+  <div class="main-layout">
+
+    <aside id="noirEpisodeNav" class="noir-side" hidden><div class="noir-project"><span class="noir-project-icon" aria-hidden="true">▤</span><div><small>Project</small><strong id="noirProjectName">Current universe</strong></div></div><div id="noirHighlighterSlot" class="noir-highlighter-slot"></div><div class="noir-episodes-heading"><h2>▦ &nbsp; Episodes</h2><a class="noir-add-episode" href="/timeline?new=1" aria-label="Add an episode">＋</a></div><nav id="noirEpisodeList" aria-label="Episodes"></nav><div id="noirSceneList" class="noir-scenes" aria-label="Scene outline"></div><div class="noir-workspace-links" aria-label="Story workspaces"><button id="openBeatWorkspace" type="button">◇ Beat graph</button><button id="openProseWorkspace" type="button">✦ Prose Engine</button><a id="openWorldLaws" href="/world-laws">▤ World Laws</a></div><div id="noirSideTools" class="noir-side-tools" aria-label="Writing tools"></div><a class="noir-manage" href="/timeline">Manage timeline</a></aside>
+
+    <!-- Left Project Sidebar -->
+    <aside id="leftSidebar">
+      <div class="proj-header">
+        <div class="proj-title">American Foxy Mom</div>
+        <div class="proj-sub">Chapter 16 · Spring Break Protocol</div>
+      </div>
+
+      <div class="sb-section-title">DOCUMENT SCENES</div>
+      <div class="sb-item active" id="sb_scene_1" onclick="scrollToScene(1)">
+        <div class="sb-item-left"><span style="font-size:10px">📄</span> Scene 1 · Kitchen Briefing</div>
+        <span class="badge-live">LIVE</span>
+      </div>
+      <div class="sb-item" id="sb_scene_2" onclick="scrollToScene(2)">
+        <div class="sb-item-left"><span style="font-size:10px">📄</span> Scene 2 · Master Suite</div>
+      </div>
+      <div class="sb-item" id="sb_scene_3" onclick="scrollToScene(3)">
+        <div class="sb-item-left"><span style="font-size:10px">📄</span> Scene 3 · Porcelain Crucible</div>
+      </div>
+      <div class="sb-item" id="sb_scene_4" onclick="scrollToScene(4)">
+        <div class="sb-item-left"><span style="font-size:10px">📄</span> Scene 4 · Peter Griffin Morph</div>
+      </div>
+      <div class="sb-item" id="sb_scene_5" onclick="scrollToScene(5)">
+        <div class="sb-item-left"><span style="font-size:10px">📄</span> Scene 5 · Nurse Franny Morph</div>
+      </div>
+      <div class="sb-item" id="sb_scene_6" onclick="scrollToScene(6)">
+        <div class="sb-item-left"><span style="font-size:10px">📄</span> Scene 6 · Departure</div>
+      </div>
+      <div class="sb-item" id="sb_scene_7" onclick="scrollToScene(7)">
+        <div class="sb-item-left"><span style="font-size:10px">📄</span> Scene 7 · Roger's Rutgers Takeover</div>
+      </div>
+
+      <div class="sb-section-title">CHARACTERS & TRANSFORMATION MORPHS</div>
+      <div class="sb-item" onclick="focusNode('node_personality_rainee')">
+        <div class="sb-item-left"><span style="color:#10b981">●</span> Rainee Ling</div>
+        <span class="badge-count">04</span>
+      </div>
+      <div class="sb-item" onclick="focusNode('node_trans_rainee_peter')">
+        <div class="sb-item-left"><span style="color:var(--gold)">●</span> Rainee (Peter Morph)</div>
+        <span class="badge-count badge-gold">03</span>
+      </div>
+      <div class="sb-item" onclick="focusNode('node_personality_francine')">
+        <div class="sb-item-left"><span style="color:#ec4899">●</span> Francine Ling</div>
+        <span class="badge-count">05</span>
+      </div>
+      <div class="sb-item" onclick="focusNode('node_trans_franny_anderson')">
+        <div class="sb-item-left"><span style="color:#ec4899">●</span> Nurse Franny (Morph)</div>
+        <span class="badge-count badge-pink">04</span>
+      </div>
+      <div class="sb-item" onclick="focusNode('node_personality_roger')">
+        <div class="sb-item-left"><span style="color:#8b5cf6">●</span> Roger the Alien</div>
+        <span class="badge-count" style="background:#581c87;color:#e9d5ff">07</span>
+      </div>
+      <div class="sb-item" onclick="focusNode('node_personality_haley')">
+        <div class="sb-item-left"><span style="color:#38bdf8">●</span> Haley Ling</div>
+        <span class="badge-count">02</span>
+      </div>
+      <div class="sb-item" onclick="focusNode('node_personality_stella')">
+        <div class="sb-item-left"><span style="color:#f59e0b">●</span> Stella Ling</div>
+        <span class="badge-count">01</span>
+      </div>
+      <div class="sb-item" onclick="focusNode('node_personality_roger')">
+        <div class="sb-item-left"><span style="color:#a855f7">●</span> Roger</div>
+        <span class="badge-count">02</span>
+      </div>
+
+      <div class="sb-section-title">EVIDENCE SOURCES</div>
+      <div class="sb-item" onclick="showSourceEvidence('american_dad')">
+        <div class="sb-item-left"><span style="color:#38bdf8">■</span> American Dad Corpus</div>
+        <span class="badge-count">08</span>
+      </div>
+      <div class="sb-item" onclick="showSourceEvidence('quahog_farce')">
+        <div class="sb-item-left"><span style="color:#f59e0b">■</span> Quahog / Stewie Farce</div>
+        <span class="badge-count">12</span>
+      </div>
+      <div class="sb-item" onclick="showSourceEvidence('fox_lore')">
+        <div class="sb-item-left"><span style="color:#10b981">■</span> Húxiān Fox Clan Lore</div>
+        <span class="badge-count">06</span>
+      </div>
+      <div class="sb-item" onclick="showSourceEvidence('cinemax_glamour')">
+        <div class="sb-item-left"><span style="color:#ec4899">■</span> 1990s Glamour / Cinemax</div>
+        <span class="badge-count">04</span>
+      </div>
+
+      <div class="sb-section-title">PROCESSING NODES</div>
+      <div class="sb-item" onclick="focusNode('node_dialogue_dial')">
+        <div class="sb-item-left">※ Dialogue Dial Hub</div>
+      </div>
+      <div class="sb-item" onclick="focusNode('node_prose_engine')">
+        <div class="sb-item-left">※ Prose Conditioner</div>
+      </div>
+      <div class="sb-item" onclick="focusNode('node_manuscript_output')">
+        <div class="sb-item-left">※ Release Gate</div>
+      </div>
+      <div class="sb-item" onclick="runAiIsmAudit()">
+        <div class="sb-item-left">✦ AI-ism & Rule Audit</div>
+      </div>
+      <div class="sb-item" onclick="runPlotGapScan()">
+        <div class="sb-item-left">~ Plot Logic / Gaps</div>
+      </div>
+      <div class="sb-item" onclick="exportJsonTranscript()">
+        <div class="sb-item-left">↻ JSON Recompiler</div>
+      </div>
+    </aside>
+
+    <!-- Center Workspace: Text Pane + Draggable Divider + Graph Pane -->
+    <main id="centerWorkspace">
+
+      <!-- Left Sub-Pane: Warm Cream Parchment Manuscript -->
+      <section id="textPane">
+        <div class="editor" id="editorSection">
+          <div class="editor-header">
+            <div class="kicker">SCENE NODE · ACTIVE NARRATIVE · CHAPTER 16 · BUILD v2.6-LIVE</div>
+            <h1>Chapter 16: The Spring Break Protocol</h1>
+            <div class="slug" id="activeSceneSlug">INT. LING HOUSE - KITCHEN - 08:15 A.M. · MULTI-SCENE HYBRID NOVEL</div>
+          </div>
+          <div class="authoring-hud" id="authoringHud">
+            <div class="hud-top-row">
+              <div class="hud-metrics">
+                <span class="hud-pill" id="hudSceneIndicator">Scene 1 of 6 · 16%</span>
+                <span class="hud-pill" id="hudWordCount">3,840 words · 131 beats</span>
+                <span class="hud-pill ok" title="All Canonical Invariants Verified">✓ 0 Smith · ✓ Baba Ling · ✓ 2-Chair</span>
+              </div>
+              <div class="hud-actions">
+                <button class="hud-btn" id="btnHudTrace" onclick="toggleTraceBadges()" title="Show/Hide Inline Logic Tags">⌁ Trace Pills</button>
+                <button class="hud-btn" id="btnHudClean" onclick="cleanAiTells()" title="Surgically Scrub Explanatory AI Tells & Subtext Tails">✦ Clean AI Tells</button>
+                <button class="hud-btn" id="btnZenMode" onclick="toggleZenMode()" title="Distraction-Free Manuscript Focus Mode (Key Z)">🧘 Zen Focus</button>
+              </div>
+            </div>
+            <div class="hud-progress-track" title="Chapter 16 Reading & Authoring Progress">
+              <div class="hud-progress-fill" id="hudProgressFill"></div>
+            </div>
+            <div class="hud-filter-row" id="hudCharFilter">
+              <span class="hud-filter-label">Voice Filter:</span>
+              <button class="hud-filter-chip active" data-spk="ALL" onclick="filterBeatsBySpeaker('ALL', this)">All (131)</button>
+              <button class="hud-filter-chip" data-spk="RAINEE" onclick="filterBeatsBySpeaker('RAINEE', this)">Rainee</button>
+              <button class="hud-filter-chip" data-spk="RAINEE (PETER)" onclick="filterBeatsBySpeaker('RAINEE (PETER)', this)">Peter Morph</button>
+              <button class="hud-filter-chip" data-spk="FRANCINE" onclick="filterBeatsBySpeaker('FRANCINE', this)">Francine</button>
+              <button class="hud-filter-chip" data-spk="NURSE FRANNY ANDERSON" onclick="filterBeatsBySpeaker('NURSE FRANNY ANDERSON', this)">Nurse Franny</button>
+              <button class="hud-filter-chip" data-spk="HALEY" onclick="filterBeatsBySpeaker('HALEY', this)">Haley</button>
+              <button class="hud-filter-chip" data-spk="STELLA" onclick="filterBeatsBySpeaker('STELLA', this)">Stella</button>
+              <button class="hud-filter-chip" data-spk="ROGER" onclick="filterBeatsBySpeaker('ROGER', this)">Roger</button>
+            </div>
+          </div>
+          <div class="hud-filter-row" id="hudPassageFilter" style="margin-top:4px">
+            <span class="hud-filter-label">Passage Channel:</span>
+            <button class="hud-filter-chip active" data-type="ALL" onclick="filterPassageType('ALL', this)">All (162)</button>
+            <button class="hud-filter-chip" data-type="DIALOGUE" onclick="filterPassageType('DIALOGUE', this)">💬 Spoken Dialogue</button>
+            <button class="hud-filter-chip" data-type="DESCRIPTION" onclick="filterPassageType('DESCRIPTION', this)">🎬 Stage Descriptions</button>
+            <button class="hud-filter-chip" data-type="LOCKED" onclick="filterPassageType('LOCKED', this)">🔒 Locked (100%)</button>
+            <button class="hud-filter-chip" data-type="MUTABLE" onclick="filterPassageType('MUTABLE', this)">⚡ AI Mutable (&lt;100%)</button>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:4px;">
+              <span style="font-size:9.5px;color:#78716c;font-weight:700;margin-right:2px">PRESETS:</span>
+              <button class="hud-filter-chip" onclick="setAllFreeze('DIALOGUE', 100)" title="Lock all character dialogue to 100% Verbatim Canon">🔒 Lock Dialogue (100%)</button>
+              <button class="hud-filter-chip" onclick="setAllFreeze('DESCRIPTION', 50)" title="Set all stage descriptions to 50% Balanced Co-Pilot">⚖️ Descriptions (50%)</button>
+            </div>
+          </div>
+          <div class="screenplay-jump-bar">
+            <span style="font-size:10px;font-weight:800;color:#7c7263;letter-spacing:.08em;text-transform:uppercase">Scene Jumps:</span>
+            <button class="sp-jump-btn" onclick="scrollToScene(1)">S1 Kitchen Briefing</button>
+            <button class="sp-jump-btn" onclick="scrollToScene(2)">S2 Master Suite</button>
+            <button class="sp-jump-btn" onclick="scrollToScene(3)">S3 Double Commode</button>
+            <button class="sp-jump-btn" onclick="scrollToScene(4)">S4 Peter Morph</button>
+            <button class="sp-jump-btn" onclick="scrollToScene(5)">S5 Nurse Franny</button>
+            <button class="sp-jump-btn" onclick="scrollToScene(6)">S6 Departure</button>
+            <button class="sp-jump-btn" onclick="scrollToScene(7)">S7 Roger's Rutgers</button>
+          </div>
+          <div id="episodeProposal" hidden><strong>Proposal (review before use)</strong><pre id="episodeProposalText" style="white-space:pre-wrap"></pre></div><div id="episodeHistory" hidden><strong>Available history</strong><ul id="episodeHistoryList"></ul></div><div id="blocksContainer"></div>
+        </div>
+      </section>
+
+      <!-- Draggable Split Divider -->
+      <div id="splitResizer" title="Drag to adjust split ratio, double-click for 50/50"></div>
+
+      <!-- Right Sub-Pane: Real Interactive Graph Canvas (Cytoscape.js DAG & LiteGraph.js Node Wires) -->
+      <section id="graphPane">
+        <div class="graph-toolbar">
+          <div class="engine-switch-group">
+            <button class="engine-btn active" id="btnEngineCy" onclick="setGraphEngine('cytoscape')" title="Cytoscape.js Directed Acyclic Graph">◈ Cytoscape DAG</button>
+            <button class="engine-btn" id="btnEngineLg" onclick="setGraphEngine('litegraph')" title="LiteGraph.js Visual Node & Wire Editor">⚡ LiteGraph Wires</button>
+          </div>
+          <button id="openCharacterForms" class="pill-btn" type="button" aria-controls="characterFormMap" aria-expanded="false">Character junctions</button>
+          <div class="zoom-controls">
+            <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">＋</button>
+            <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">－</button>
+            <button class="zoom-btn" onclick="fitCanvas()" title="Fit Graph to Viewport">⟲</button>
+            <button class="zoom-btn" onclick="runAutoLayout()" title="Auto-Arrange Hierarchical DAG Layout" style="width:auto;padding:0 6px;font-size:9.5px">⚲ Layout</button>
+          </div>
+          <span style="font-size:9px;color:#717782;letter-spacing:.1em;text-transform:uppercase;margin-right:2px">Focus:</span>
+          <button class="pill-btn" onclick="focusNode('node_personality_rainee')">Rainee</button>
+          <button class="pill-btn gold" onclick="focusNode('node_trans_rainee_peter')">Rainee-Peter</button>
+          <button class="pill-btn" onclick="focusNode('node_personality_francine')">Francine</button>
+          <button class="pill-btn pink" onclick="focusNode('node_trans_franny_anderson')">Nurse-Franny</button>
+          <button class="pill-btn" onclick="focusNode('node_personality_haley')">Haley</button>
+          <button class="pill-btn" onclick="focusNode('node_personality_stella')">Stella</button>
+          <button class="pill-btn" onclick="focusNode('node_personality_roger')">Roger</button>
+          <button class="pill-btn" onclick="focusNode('node_dialogue_dial')">Hub</button>
+        </div>
+
+        <section id="characterFormMap" aria-labelledby="characterFormTitle" hidden>
+          <div class="form-map-tools">
+            <h2 id="characterFormTitle" tabindex="-1" style="flex:1">Character junctions</h2>
+            <span id="graphHighlighterSlot"></span>
+            <button id="characterGraphSplit" type="button" aria-pressed="false">Split view</button>
+            <button id="characterGraphExpand" type="button" aria-pressed="true">Full graph</button>
+            <button id="closeCharacterForms" type="button">Back to scene graph</button>
+          </div>
+          <p>One character, connected forms. Select a form to edit its information and connections.</p>
+          <div class="form-map-tools">
+            <label for="characterGraphChoice">Character</label>
+            <select id="characterGraphChoice" aria-label="Choose character graph"></select>
+            <button id="characterGraphOverview" type="button" aria-pressed="false">All characters</button>
+            <label for="formBeat">Story view</label>
+            <select id="formBeat"><option value="">Planning overview</option></select>
+          </div>
+          <div id="formGraphTools" hidden>
+            <details><summary>＋ New character</summary><form id="addCharacterGraph" class="form-map-tools">
+              <label for="characterGraphName">New character</label>
+              <input id="characterGraphName" placeholder="Character name" required maxlength="80">
+              <button type="submit">Create character graph</button>
+            </form></details>
+            <details><summary>Data connections</summary>
+            <form id="addFormNode" class="form-map-tools">
+              <label for="formNodeType">Add data node</label>
+              <select id="formNodeType"><option value="digital_mind">Digital Mind</option><option value="super_character">Super Character</option></select>
+              <input id="formNodeLabel" aria-label="Data node name" placeholder="Data node name" required maxlength="80">
+              <button type="submit">Add node</button>
+            </form>
+            <form id="addStellaStage" class="form-map-tools">
+              <label for="stellaStageName">Add a Stella stage</label>
+              <input id="stellaStageName" placeholder="Stage name" required maxlength="80">
+              <button type="submit">Add stage</button>
+            </form>
+            </details>
+          </div>
+          <p id="formGraphStatus" role="status"></p>
+          <div id="characterFormGroups"></div>
+        </section>
+        <div id="beatEmpty" class="beat-empty" hidden></div><section id="beatMapPanel" hidden aria-label="Story beats"><h2 class="beat-map-heading">Story beats</h2><p id="beatMapNote" class="beat-map-note"></p>
+          <details id="anchorEditor"><summary>Reviewed passage timing</summary><p>Select exactly one passage, then load its permitted evidence. This assigns timing only; it never edits canon or generates prose.</p>
+            <button type="button" id="anchorOpen">Load timing evidence</button>
+            <label>Approved event <select id="anchorEvent"><option value="">Load evidence first</option></select></label>
+            <label>Reviewed by <input id="anchorReviewer" maxlength="100" placeholder="Reviewer identity"></label>
+            <button type="button" id="anchorBind">Bind / rebind timing</button><button type="button" id="anchorBindScene">Propagate scene timing</button><button type="button" id="anchorUnbind">Unbind timing</button><button type="button" id="anchorUndo">Undo timing change</button><button type="button" id="anchorRedo">Redo timing change</button>
+            <p id="anchorStatus" role="status">No reviewed timing loaded.</p>
+          </details><div id="beatMapList" class="beat-map-list"></div></section><section id="beatWorkspacePanel" hidden aria-label="Beat direction"><div class="beat-heading"><strong>Beat direction</strong><span>Shared until timing is mapped</span></div><div id="beatPanelSlot"></div></section>
+        <div id="nodeContainer"></div>
+        <canvas id="litegraphCanvas"></canvas>
+        <div id="graphLegendPill" style="position:absolute;bottom:16px;left:16px;z-index:12;background:rgba(15,17,21,0.92);border:1px solid #2b303c;border-radius:6px;padding:6px 11px;font-size:9.5px;color:#9ca3af;display:flex;align-items:center;gap:10px;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,0.6);">
+          <span><b style="color:#10b981">●</b> Actor</span>
+          <span><b style="color:#c49a67">●</b> Peter Morph</span>
+          <span><b style="color:#ec4899">●</b> Nurse Franny</span>
+          <span><b style="color:#38bdf8">●</b> Release Gate</span>
+          <span style="color:#6b7280">| Drag nodes · Scroll zoom · Click to inspect</span>
+        </div>
+      </section>
+
+      <!-- Bottom Floating Status Bar -->
+      <div class="floating-status-pill">
+        <b>7</b> active characters/morphs · <b id="statusRelCount">16</b> node wires · <b>131</b> blocks · burstiness <strong id="statusBurst">8.98 σ</strong> · last compute just now
+      </div>
+    </main>
+
+    <aside id="noirProse" class="noir-workspace-panel" hidden aria-label="Prose Engine"><h2>✦ Prose Engine</h2><p>Choose how to develop the selected writing or the whole episode.</p><div id="prosePanelSlot"></div></aside>
+    <aside id="noirContext" class="noir-side" hidden aria-label="Document protection"><h2>Document protection</h2><div class="noir-global-panel"><button type="button" id="noirContextProtection" class="noir-global-dial" aria-label="Change document protection"><span class="noir-track-gif" id="panelDial" data-weight="unknown" data-frame="27" aria-hidden="true"><img class="dial-animation" alt=""></span><strong id="panelProtectionValue">—</strong></button><p>How much of the document should stay?</p><div class="noir-global-weights" role="group" aria-label="Document protection weight"><button type="button" data-global-weight="25">25%</button><button type="button" data-global-weight="50">50%</button><button type="button" data-global-weight="75">75%</button><button type="button" data-global-weight="100">100%</button></div><p>Selections can have their own protection.</p></div></aside>
+
+    <!-- Right Inspector Panel (320px) -->
+    <aside id="rightInspector">
+      <div class="insp-header">
+        <div class="insp-title" id="drawerTitle">Scene Node</div>
+        <div class="insp-badge" id="drawerBadge">ACTIVE</div>
+      </div>
+
+      <div class="insp-label">NODE NAME</div>
+      <input type="text" id="inspNodeName" class="insp-input" value="American Foxy Mom - Scene 1" onchange="updateActiveNodeName(this.value)">
+
+      <div class="insp-label" id="lblRefImage" style="display:none">CANON VISUAL REFERENCE (LOCKED FROM PDF)</div>
+      <div id="drawerRefImageContainer" style="display:none;margin-bottom:12px;border:1px solid #2f343d;border-radius:4px;overflow:hidden;background:#0d0e11">
+        <img id="drawerRefImage" src="" style="width:100%;max-height:220px;object-fit:cover;display:block;cursor:pointer" onclick="window.open(this.src)" title="Click to view full reference image" />
+      </div>
+
+      <div class="insp-label">PURPOSE / DATA MODEL</div>
+      <div class="insp-purpose" id="drawerData">Low-frequency plot data, relationships, behavior evidence and transformation rules that make the scene flow coherently.</div>
+
+      <div class="insp-label">PROCESSING ORDER</div>
+      <div class="switch-row">
+        <span>Visual Authoring Data</span>
+        <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+      </div>
+      <div class="switch-row">
+        <span>Character Engine</span>
+        <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+      </div>
+      <div class="switch-row">
+        <span>World Engine</span>
+        <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+      </div>
+      <div class="switch-row">
+        <span>Text Engine</span>
+        <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+      </div>
+      <div class="switch-row">
+        <span>Plot Logic / Gap Scan</span>
+        <label class="toggle-switch"><input type="checkbox"><span class="slider"></span></label>
+      </div>
+      <div class="switch-row">
+        <span>JSON Recompiler</span>
+        <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+      </div>
+
+      <div class="insp-label">RECOMPUTE SCOPE</div>
+      <label class="checkbox-row"><input type="checkbox" checked> <span>Attached node relationships</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked> <span>Character behavior</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked> <span>Farce / Comedy behavior</span></label>
+      <label class="checkbox-row"><input type="checkbox"> <span>Existing prose</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked> <span>Transformation state</span></label>
+      <div class="scope-note">Unchecked material is preserved during regeneration.</div>
+
+      <div class="insp-label" id="inspSlidersLabel">NODE PARAMETERS & INFLUENCE (LIVE TUNING)</div>
+      <div class="slider-bar-row">
+        <div class="slider-bar-head"><span id="lblSlider1">Voice Archetype Influence</span><span id="valVoiceArch">0.85</span></div>
+        <input type="range" min="0" max="1" step="0.01" value="0.85" style="--pct:85%" class="slider-range" id="rangeVoiceArch" oninput="updateInfluence('slider1', this.value)">
+      </div>
+      <div class="slider-bar-row">
+        <div class="slider-bar-head"><span id="lblSlider2">Transformation & Glamour</span><span id="valGlamour">0.65</span></div>
+        <input type="range" min="0" max="1" step="0.01" value="0.65" style="--pct:65%" class="slider-range" id="rangeGlamour" oninput="updateInfluence('slider2', this.value)">
+      </div>
+      <div class="slider-bar-row">
+        <div class="slider-bar-head"><span id="lblSlider3">Sitcom Farce & Sarcasm</span><span id="valFarce">0.80</span></div>
+        <input type="range" min="0" max="1" step="0.01" value="0.80" style="--pct:80%" class="slider-range" id="rangeFarce" oninput="updateInfluence('slider3', this.value)">
+      </div>
+      <div class="slider-bar-row">
+        <div class="slider-bar-head"><span id="lblSlider4">Dialogue Freeze Lock</span><span id="valFreezeLock">1.00</span></div>
+        <input type="range" min="0" max="1" step="0.01" value="1.00" style="--pct:100%" class="slider-range" id="rangeFreezeLock" oninput="updateInfluence('slider4', this.value)">
+      </div>
+
+      <div class="insp-label">CANONICAL TRACE / EVIDENCE</div>
+      <div class="trace-card">
+        <b>Farce Anchoring:</b>
+        Absurd suburban escalation, 4-inch baby-pink stilettos, high-contrast dialogue cadences.
+      </div>
+      <div class="trace-card">
+        <b>Transformation State:</b>
+        Celestial Húxiān fox lineage with active morph triggers (Peter Griffin & Nurse Franny).
+      </div>
+
+      <div class="insp-label">CANONICAL BACKEND RULES & GUARDS</div>
+      <div class="trace-card" id="cardBabaLing">
+        <b>Baba Ling Invariant (Protected):</b>
+        Baba Ling inguinal hernia surgery recovery is canonical and protected. Negative lookbehind prevents false patriarch flag.
+      </div>
+      <div class="trace-card" id="cardZeroSmith">
+        <b>Zero-Smith Matrilineal Guard:</b>
+        Strict Ling household hierarchy. Banned surname check prevents 'Smith' contamination across 100% of blocks.
+      </div>
+      <div class="trace-card" id="cardTwoChair">
+        <b>Physical Affordance Rule:</b>
+        Rainee Peter morph 2-chair commode constraint enforced (4-ft black lacquer double commode with brass rails).
+      </div>
+
+      <div class="insp-label" style="margin-top:20px">OUTPUT ACTIONS</div>
+      <div class="trace-card" id="review-panel">
+        <b>Reviewed edits</b>
+        <p>Open a revision store when starting Studio. Select exact text from the revision below.</p>
+        <button type="button" id="review-load">Load revision</button>
+        <label for="review-current">Current revision</label>
+        <textarea id="review-current" readonly rows="6" style="width:100%"></textarea>
+        <label for="review-original">Exact text to replace</label>
+        <textarea id="review-original" rows="3" style="width:100%"></textarea>
+        <label for="review-replacement">Proposed replacement</label>
+        <textarea id="review-replacement" rows="3" style="width:100%"></textarea>
+        <label for="reviewer">Reviewer name</label>
+        <input id="reviewer" style="width:100%">
+        <button type="button" id="review-preview">Preview</button>
+        <button type="button" id="review-apply" disabled>Accept and apply</button>
+        <button type="button" id="review-undo">Undo last revision</button><button type="button" id="review-redo" disabled>Redo revision</button>
+        <pre id="review-result" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>
+      </div>
+      <button class="btn-output" onclick="exportJsonTranscript()">COMPILE TO JSON TRANSCRIPT</button>
+      <button class="btn-output" style="background:#222731;border-color:#485060;color:#fff" onclick="document.getElementById('btnRecompute').click()">ANALYZE CURRENT TEXT</button>
+    </aside>
+
+  </div>
+  <footer id="noirFooter" aria-label="Document statistics"><span id="noirFooterBlocks"></span><span id="noirFooterWords"></span><span id="noirFooterChars"></span></footer>
+</div>
+
+<span id="maskShortcutHelp" class="noir-sr-only">Select text and press Alt plus P to choose its protection weight. Press Escape to close the popup.</span>
+<div class="highlighter-menu" id="highlighterMenu" role="menu" aria-label="Highlighter" hidden><button type="button" id="highlighterSet" role="menuitem">Set protection</button><button type="button" id="highlighterStale" role="menuitem" hidden>Review inactive masks</button><p>Select text, then choose a weight.</p></div>
+<div class="mask-popover" id="maskPopover" role="dialog" aria-labelledby="maskPopoverTitle" aria-describedby="maskPopoverHelp" hidden>
+  <div class="mask-popover-heading"><span class="noir-track-gif small" id="selectionDial" data-weight="unknown" data-frame="27" aria-hidden="true"><img class="dial-animation" alt=""></span><div><strong id="maskPopoverTitle">Protect this selection</strong><p id="maskPopoverHelp">How much of this text should stay?</p><p id="maskCurrentWeight"></p></div></div>
+  <div class="mask-weights" aria-label="Protection weight"><button type="button" data-mask-weight="25">25%</button><button type="button" data-mask-weight="50">50%</button><button type="button" data-mask-weight="75">75%</button><button type="button" data-mask-weight="100">100%</button></div>
+  <div class="mask-message" id="maskPopoverMessage" role="status"></div><div id="maskStaleSection" class="mask-stale" hidden><strong id="maskStaleHeading">Inactive masks needing reselection</strong><div id="maskStaleList"></div></div><button type="button" id="maskRemoveSelection" class="mask-remove" hidden>Remove this protection</button><button type="button" class="mask-close" id="maskPopoverClose">Cancel</button>
+</div>
+<div class="noir-job" id="noirJobStatus" role="status" aria-live="polite" hidden><div class="noir-job-inner"><img src="/assets/noir-track-loader.gif" alt=""><span class="noir-sr-only">Preparing your story. The request is running.</span><span class="noir-job-static">Preparing your story…</span></div></div>

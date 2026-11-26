@@ -1,0 +1,12 @@
+{
+  "projects": [
+    {
+      "id": "american_foxy_momma",
+      "file": "american_foxy_momma.json"
+    },
+    {
+      "id": "green_room_unseen",
+      "file": "green_room_unseen.json"
+    }
+  ]
+}

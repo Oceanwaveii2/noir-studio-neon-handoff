@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Media source sockets · NOIR Studio simulation</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0e14;--panel:#141a25;--raised:#1b2331;--line:#303c4e;--ink:#f4f0ec;--muted:#a6b1c2;--amber:#ffbf62;--cyan:#9bdae4;--green:#a9e5c8;--red:#ffb4ac;--paper:#f5ede0;--dark:#251f1a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 90% 0,#22232e 0,transparent 50%),var(--bg);color:var(--ink);font:14px/1.5 "Segoe UI",sans-serif}h1,h2,h3,p,dl,dd{margin:0}h1{font-size:clamp(32px,4vw,54px);letter-spacing:-.05em;line-height:1.05}h2{font-size:18px}h3{font-size:15px}
+header{background:#0e121b;border-bottom:1px solid var(--line)}.frame{max-width:1450px;margin:auto;padding-inline:clamp(15px,4vw,58px)}.brand{display:flex;justify-content:space-between;gap:12px;padding-block:15px}.brand strong{letter-spacing:.12em}.brand span{color:var(--amber)}.brand small,.muted{color:var(--muted)}
+main{padding-block:32px 40px}.intro{display:flex;justify-content:space-between;align-items:end;gap:15px;margin-bottom:19px}.intro p{margin-top:8px;color:var(--muted)}.pipeline{font:12px Consolas,monospace;white-space:nowrap;color:var(--cyan);padding:7px 11px;border:1px solid var(--line);border-radius:7px}
+.panel{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}.head{padding:13px 16px;border-bottom:1px solid var(--line)}.head p{font-size:13px;color:var(--muted);margin-top:3px}.body{padding:14px 16px}.columns{display:grid;grid-template-columns:minmax(280px,1fr) minmax(260px,1fr) minmax(285px,1.1fr);gap:12px;margin-top:13px;align-items:start}
+.intake{display:flex;gap:14px;align-items:center;justify-content:space-between;padding:14px 16px;border-style:dashed;border-color:#546579}.intake.drag{border-color:var(--cyan);background:#202e3c}.intake p{color:var(--muted);font-size:13px}.actions{display:flex;align-items:end;gap:8px;flex-wrap:wrap}label{display:grid;gap:3px;font-size:12px;color:var(--muted)}
+button,select{font:inherit;color:inherit;background:var(--raised);border:1px solid var(--line);border-radius:7px;padding:7px 10px;min-height:36px}button{cursor:pointer}button:hover:not(:disabled){border-color:var(--cyan)}:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}button:disabled{opacity:.5;cursor:default}.primary{background:var(--amber);color:#251708;border-color:var(--amber);font-weight:700}
+.list{display:grid;gap:7px;margin-top:4px}.job{display:block;width:100%;text-align:left;min-width:0}.job[aria-pressed=true]{border-color:var(--cyan);background:#203040}.filename,.digest{overflow-wrap:anywhere}.job small,.tag{display:block;font-size:12px;color:var(--muted)}.job small{margin-top:3px}.job[data-state=ready] small,.ready{color:var(--green)}.job[data-state=partial] small,.partial{color:var(--amber)}.job[data-state=failed] small,.failed{color:var(--red)}.job[data-state=processing] small,.processing{color:var(--cyan)}
+.statusline{min-height:24px;color:var(--cyan);padding:6px 2px 0;font-size:13px}.stack{display:grid;gap:10px}.fields dt{color:var(--muted);font-size:12px;margin-top:8px}.fields dd{margin-top:2px}.digest{font:12px/1.5 Consolas,monospace;color:var(--muted)}.warning{border-left:3px solid var(--amber);padding:6px 10px;background:#302819;color:#f8dbab;font-size:13px}
+.receipt{background:var(--paper);color:var(--dark);color-scheme:light}.receipt .head{border-color:#d7c9b6}.receipt .head p,.receipt .muted{color:#5d5144}.scene{font:700 12px Consolas,monospace;letter-spacing:.07em;margin:2px 0 12px}.binding{border-left:3px solid #a7682d;padding:4px 0 5px 11px;margin:0 0 9px;overflow-wrap:anywhere}.binding span{display:block;margin-bottom:4px;color:#675541;font-size:12px}.binding button{background:#f1e2ca;border-color:#c8b59b;color:var(--dark);padding:3px 7px;min-height:28px;font-size:12px}.binding button:hover{border-color:#735a3d}.receipt summary{cursor:pointer;margin-top:12px}.receipt pre{font:12px/1.5 Consolas,monospace;background:#e9decb;border-radius:6px;padding:10px;white-space:pre-wrap;overflow-wrap:anywhere}.footer{color:var(--muted);font-size:13px;margin-top:12px}
+[hidden]{display:none}@media(max-width:1000px){.columns{grid-template-columns:1fr 1fr}.receipt{grid-column:1/-1}.intake{align-items:start;flex-direction:column}}@media(max-width:620px){.intro{align-items:start;flex-direction:column}.columns{grid-template-columns:1fr}.receipt{grid-column:auto}}
+</style>
+</head>
+<body>
+<header><div class="frame brand"><strong>NOIR <span>STUDIO</span></strong><small>Sprint 3 · UI simulation</small></div></header>
+<main class="frame">
+  <div class="intro"><div><h1>Media source sockets</h1><p>Bring a source into the vault, bind it to a socket, and inspect what reaches the scene.</p></div><div class="pipeline">Intake → Vault → Scene inputs</div></div>
+  <section class="panel intake" id="drop" aria-label="Media intake">
+    <div><h2>Drop media here</h2><p>Images, audio, video, and documents up to 32 MiB per file.</p></div>
+    <div class="actions">
+      <label>Fixture outcome<select id="outcome"><option value="ready">Ready</option><option value="partial">Extractor unavailable</option><option value="failed">Processing error</option></select></label>
+      <button id="choose" type="button" class="primary">Choose files</button><input type="file" id="file" aria-label="Media files" multiple hidden>
+      <button id="sample" type="button">Try a sample</button>
+    </div>
+  </section>
+  <p class="statusline" id="activity" role="status"></p>
+  <div class="columns">
+    <section class="panel" aria-labelledby="vault-heading">
+      <div class="head"><h2 id="vault-heading">Source vault</h2><p id="job-count"></p></div>
+      <div class="body"><p class="muted" id="empty">Add media to start an ingestion job.</p><div class="list" id="jobs"></div></div>
+    </section>
+    <section class="panel" aria-labelledby="socket-heading">
+      <div class="head"><h2 id="socket-heading">Socket inspector</h2><p>Choose a source and where its evidence belongs.</p></div>
+      <div class="body">
+        <p class="muted" id="no-source">Select a source in the vault.</p>
+        <div class="stack" id="source" hidden>
+          <div><h3 class="filename" id="source-name"></h3><div id="source-state" class="tag"></div></div>
+          <dl class="fields"><dt>SHA-256 identity</dt><dd id="hash" class="digest"></dd><dt>Available evidence</dt><dd id="availability"></dd></dl>
+          <p id="warning" class="warning" hidden></p>
+          <button id="retry" type="button" hidden>Retry processing</button>
+          <label>Target<select id="target"><option value="beat">Beat anchor · Clock stops</option><option value="character">Character node · Mara</option><option value="style">Style reference · Station atmosphere</option></select></label>
+          <button type="button" id="bind" class="primary" disabled>Bind source</button>
+        </div>
+      </div>
+    </section>
+    <section class="panel receipt" aria-labelledby="scene-heading">
+      <div class="head"><h2 id="scene-heading">Scene inputs</h2><p>Binding preview for the saved scene.</p></div>
+      <div class="body">
+        <p class="scene">INT. NIGHT STATION</p>
+        <p id="no-bindings" class="muted">Bind a source to include it here.</p>
+        <div id="bindings"></div>
+        <details id="payload-view"><summary>View input payload</summary><pre id="payload"></pre></details>
+      </div>
+    </section>
+  </div>
+  <p class="footer">Files stay in this browser. The mockup stores job and binding metadata locally and simulates extraction.</p>
+</main>
+<script>
+'use strict';
+const el = id => document.getElementById(id);
+const storageKey = 'noir-s3-source-sockets-20261125-v1';
+const statuses = {queued:'Queued',processing:'Processing',ready:'Ready',partial:'Partial',failed:'Failed'};
+const targets = {
+  beat:{id:'clock-stops', label:'Beat anchor · Clock stops', type:'rhythm_timing'},
+  character:{id:'mara', label:'Character node · Mara', type:'personality_mind'},
+  style:{id:'station-atmosphere', label:'Style reference · Station atmosphere', type:'style_reference'}
+};
+const extensions = [
+  [/\.(png|jpe?g|webp|gif|bmp|tiff?|avif)$/i,'image'],
+  [/\.(wav|mp3|ogg|m4a|flac|aac)$/i,'audio'],
+  [/\.(mp4|mov|webm|mkv|avi)$/i,'video'],
+  [/\.(txt|md|pdf|docx|rtf|srt|json|csv)$/i,'document']
+];
+const signals = {audio:'Sample audio cue aligned to the saved passage.',video:'Sample segment cue with simulated timing.',
+  image:'Sample visual reference attached as a source.',document:'Sample document reference with simulated extraction.'};
+const jobs = [];
+const bindings = [];
+let active = null;
+let work = null;
+let note = '';
+let storageAvailable = true;
+try {
+  const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
+  jobs.push(...(saved.jobs || []));
+  bindings.push(...(saved.bindings || []));
+  active = saved.active || jobs[0]?.digest || null;
+  for (const job of jobs) if (job.status === 'processing') job.status = 'queued';
+} catch {
+  storageAvailable = false;
+}
+function persist() {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify({jobs,bindings,active}));
+  } catch {
+    storageAvailable = false;
+  }
+}
+function setNote(text) {
+  note = text;
+  render();
+}
+function commit() {
+  persist();
+  render();
+}
+function kindOf(file) {
+  for (const kind of ['image','audio','video']) if (file.type.startsWith(kind + '/')) return kind;
+  if (file.type.startsWith('text/')) return 'document';
+  return extensions.find(([pattern]) => pattern.test(file.name))?.[1] || null;
+}
+function current() {
+  return jobs.find(job => job.digest === active);
+}
+function sceneInputs() {
+  return {episode:'night-station',branch:'main', scene:'ticket-window', sources:bindings.map(binding => {
+    const job = jobs.find(item => item.digest === binding.digest);
+    const target = targets[binding.target];
+    return {target:{kind:binding.target,id:target.id}, socket_type:target.type,
+      asset:{name:job.name,kind:job.kind,sha256:job.digest}, evidence:job.evidence,
+      signal:job.evidence === 'simulated_signal' ? signals[job.kind] : null};
+  })};
+}
+function render() {
+  el('activity').textContent = storageAvailable ? note : [note,'Browser storage is unavailable. Reload persistence is disabled.'].filter(Boolean).join(' ');
+  el('job-count').textContent = jobs.length + (jobs.length === 1 ? ' source' : ' sources');
+  el('empty').hidden = jobs.length > 0;
+  for (const job of jobs) {
+    let row = el('jobs').querySelector('[data-digest="' + job.digest + '"]');
+    if (!row) {
+      row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'job';
+      row.dataset.digest = job.digest;
+      const name = document.createElement('strong');
+      name.className = 'filename';
+      name.textContent = job.name;
+      row.append(name,document.createElement('small'));
+      row.addEventListener('click', () => { active = job.digest; commit(); });
+      el('jobs').append(row);
+    }
+    row.setAttribute('aria-pressed',String(job.digest === active));
+    row.dataset.state = job.status;
+    row.querySelector('small').textContent = statuses[job.status] + ' · ' + job.kind + ' · attempt ' + job.attempt;
+  }
+  const job = current();
+  el('no-source').hidden = Boolean(job);
+  el('source').hidden = !job;
+  if (job) {
+    el('source-name').textContent = job.name;
+    el('source-state').textContent = statuses[job.status] + ' · ' + job.bytes.toLocaleString() + ' bytes';
+    el('source-state').className = 'tag ' + job.status;
+    el('hash').textContent = job.digest;
+    el('availability').textContent = job.evidence === 'simulated_signal' ? signals[job.kind] :
+      job.evidence === 'metadata_only' ? 'Filename, size, type, and content identity.' : 'No usable extraction result yet.';
+    el('warning').textContent = job.warning || '';
+    el('warning').hidden = !job.warning;
+    el('retry').hidden = !['failed','partial'].includes(job.status);
+    el('bind').disabled = !['ready','partial'].includes(job.status) ||
+      bindings.some(binding => binding.digest === job.digest && binding.target === el('target').value);
+  }
+  el('no-bindings').hidden = bindings.length > 0;
+  el('bindings').replaceChildren();
+  const payload = sceneInputs();
+  for (const [index, source] of payload.sources.entries()) {
+    const row = document.createElement('div');
+    row.className = 'binding';
+    const title = document.createElement('strong');
+    title.textContent = source.asset.name;
+    const detail = document.createElement('span');
+    detail.textContent = targets[source.target.kind].label + ' · ' + (source.signal ? 'Simulated signal' : 'Metadata only');
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.textContent = 'Unbind';
+    remove.setAttribute('aria-label','Unbind ' + source.asset.name + ' from ' + targets[source.target.kind].label);
+    remove.addEventListener('click', () => { bindings.splice(index,1); note = 'Source unbound from the scene.'; commit(); });
+    row.append(title,detail,remove);
+    el('bindings').append(row);
+  }
+  el('payload').textContent = JSON.stringify(payload,null,2);
+}
+async function intake(files) {
+  const outcome = el('outcome').value;
+  for (const file of files) {
+    const kind = kindOf(file);
+    if (!kind || !file.size || file.size > 32 * 1024 * 1024) {
+      setNote(!kind ? file.name + ' is an unsupported media type.' : file.name + ' must be between 1 byte and 32 MiB.');
+      continue;
+    }
+    try {
+      const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256',await file.arrayBuffer()));
+      const digest = Array.from(bytes,value => value.toString(16).padStart(2,'0')).join('');
+      const existing = jobs.find(job => job.digest === digest);
+      active = digest;
+      if (existing) note = 'Same content. Reopened ' + existing.name + '.';
+      else {
+        jobs.push({digest,name:file.name,bytes:file.size,kind,outcome,status:'queued',evidence:null,attempt:1,warning:null});
+        note = 'Queued ' + file.name + '.';
+      }
+      commit();
+      schedule();
+    } catch {
+      setNote('Could not read or fingerprint ' + file.name + '. Choose the file again.');
+    }
+  }
+}
+function schedule() {
+  if (work !== null) return;
+  const job = jobs.find(candidate => candidate.status === 'queued');
+  if (!job) return;
+  work = setTimeout(() => {
+    job.status = 'processing';
+    commit();
+    work = setTimeout(() => {
+      job.status = job.outcome;
+      if (job.status === 'ready') {
+        job.evidence = 'simulated_signal';
+        job.warning = null;
+      } else if (job.status === 'partial') {
+        job.evidence = 'metadata_only';
+        job.warning = 'Extractor unavailable. Metadata is ready to bind. Retry when the extractor is available.';
+      } else job.warning = 'Fixture processing error. Retry this source to recover.';
+      work = null;
+      commit();
+      schedule();
+    },1100);
+  },450);
+}
+el('choose').addEventListener('click',() => el('file').click());
+el('file').addEventListener('change',event => {
+  const files = [...event.target.files];
+  event.target.value = '';
+  void intake(files);
+});
+el('sample').addEventListener('click',() => {
+  const text = 'Fixture cue from the night station. The clock stops before Mara speaks.';
+  void intake([new File([text],'station-clock-cue.txt',{type:'text/plain'})]);
+});
+el('drop').addEventListener('dragover',event => { event.preventDefault(); el('drop').classList.add('drag'); });
+el('drop').addEventListener('dragleave',event => { if (!el('drop').contains(event.relatedTarget)) el('drop').classList.remove('drag'); });
+el('drop').addEventListener('drop',event => {
+  event.preventDefault();
+  el('drop').classList.remove('drag');
+  void intake([...event.dataTransfer.files]);
+});
+el('target').addEventListener('change',render);
+el('retry').addEventListener('click',() => {
+  const job = current();
+  if (!job || !['partial','failed'].includes(job.status)) return;
+  job.outcome = 'ready';
+  job.status = 'queued';
+  job.attempt += 1;
+  job.warning = null;
+  note = 'Retry queued for the same source.';
+  commit();
+  schedule();
+});
+el('bind').addEventListener('click',() => {
+  const job = current();
+  const target = el('target').value;
+  if (!job || !['ready','partial'].includes(job.status) ||
+      bindings.some(binding => binding.digest === job.digest && binding.target === target)) return;
+  bindings.push({digest:job.digest,target});
+  note = 'Source added to the scene inputs.';
+  commit();
+});
+render();
+schedule();
+</script>
+</body>
+</html>

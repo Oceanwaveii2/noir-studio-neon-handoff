@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Noir · Scene Clips</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;--ink:#f8eedc;--muted:#bbc4bd;--base:#121719;--panel:#1c2426;--line:#39474a;--mint:#a9ead8;--gold:#ffb56d;--error:#ffb7ac}*{box-sizing:border-box}body{margin:0;background:var(--base);color:var(--ink)}header{border-bottom:2px solid var(--gold);background:#151a1c}header div,main{max-width:92rem;margin:auto;padding:1.15rem clamp(1rem,3vw,2.5rem)}nav{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}nav strong{font-size:1.4rem;font-style:italic;letter-spacing:.1em;margin-right:1rem}nav strong span,.eyebrow{color:var(--gold)}a{color:var(--mint)}h1{font:600 clamp(1.8rem,4vw,3.1rem) Georgia,serif;margin:.35rem 0}h2{font-size:1.1rem;margin:0 0 .4rem}h3{font-size:1rem;margin:0 0 .2rem}p{line-height:1.5;margin:.45rem 0}.muted,small{color:var(--muted)}.eyebrow{font-size:.75rem;letter-spacing:.13em}.layout{display:grid;grid-template-columns:minmax(12rem,1fr) minmax(18rem,2.6fr) minmax(15rem,1.35fr);gap:.9rem;align-items:start}.panel{min-width:0;padding:1rem;background:var(--panel);border:1px solid var(--line);border-radius:.85rem}.details{margin-top:.9rem}.stack{display:grid;gap:.65rem}.tiles{max-height:27rem;overflow:auto;display:grid;gap:.4rem;margin-top:.5rem}button,select,input,textarea{font:inherit;color:inherit;border:1px solid var(--line);border-radius:.42rem;background:#141c1f;padding:.53rem .62rem}label{display:grid;gap:.3rem;min-width:0}select,input,textarea{width:100%}select{overflow:hidden;text-overflow:ellipsis}textarea{resize:vertical}button{cursor:pointer;min-height:2.4rem}button.primary{background:var(--mint);color:#142022;font-weight:700}button:disabled{opacity:.44;cursor:default}button[aria-pressed=true]{border-color:var(--mint);box-shadow:inset 3px 0 var(--mint)}button.tile{text-align:left;overflow-wrap:anywhere}button.tile small{display:block;margin-top:.15rem}.drop{display:grid;justify-items:center;gap:.4rem;padding:1rem;border:1px dashed var(--line);border-radius:.6rem;text-align:center;background:#141c1f}.drop.drag{border-color:var(--mint);background:#233c37}.drop button{width:100%}video{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#0b1113;border-radius:.55rem;max-height:55svh}.range-row,.actions{display:flex;gap:.45rem;align-items:end;flex-wrap:wrap}.range-row>*{flex:1;min-width:6rem}.actions{align-items:center}.strip{height:.4rem;border-radius:1rem;background:#384247;overflow:hidden;margin-top:.25rem}.strip span{display:block;height:100%;background:var(--gold)}.row{display:flex;gap:.75rem;align-items:center;justify-content:space-between;padding:.65rem 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}.row:last-child{border:none}.row button{flex-shrink:0}.check{display:flex;align-items:baseline;gap:.45rem}.check input{width:auto;accent-color:var(--mint)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:1rem/1.55 Georgia,serif;background:#f7eddb;color:#222;padding:1rem;border-radius:.65rem}.error{color:var(--error)}:focus-visible{outline:2px solid var(--gold);outline-offset:2px}[hidden]{display:none!important}@media(max-width:60rem){.layout{grid-template-columns:minmax(12rem,1fr) minmax(16rem,2fr)}.assignment{grid-column:1/-1}}@media(max-width:36rem){.layout{grid-template-columns:1fr}.assignment{grid-column:auto}.tiles{max-height:12rem}}
+</style>
+<header><div><nav><strong><span>///</span> NOIR</strong><a id="compose" href="/">Compose</a><a id="story-track" href="/">Story beats</a><a id="graphs" href="/">Scene Graphs</a><a id="replay" href="/">Replay</a><a id="minds" href="/" hidden>Mind Drafts</a></nav></div></header>
+<main>
+<span class="eyebrow" id="episode">STUDIO</span><h1>Scene Clips</h1>
+<p class="muted">Choose a moment to show, a performance to borrow, or a pause to try.</p>
+<p id="status" role="status">Opening the episode…</p>
+<div id="workspace" class="layout" hidden>
+  <aside class="panel">
+    <h2>Clip library</h2>
+    <div id="drop" class="drop"><span>Drop clips here</span><button type="button" id="choose">Choose clips</button><small>MP4 or WebM · 128 MiB per clip</small><input id="files" type="file" accept="video/mp4,video/webm,.mp4,.webm" multiple hidden></div>
+    <label id="collection-label" class="details" hidden>Collection<select id="collection"><option value="">All clips</option><option value="fart">Fart Media</option></select></label>
+    <div id="clips" class="tiles" aria-label="Local clips"></div>
+  </aside>
+  <section class="panel stack" aria-labelledby="clip-title">
+    <h2 id="clip-title">Pick a clip</h2>
+    <video id="player" controls playsinline preload="metadata" aria-label="Local clip preview"></video>
+    <div id="selected" class="stack" hidden>
+      <p id="clip-detail" class="muted"></p>
+      <div class="strip" aria-hidden="true"><span id="range-preview"></span></div>
+      <div class="range-row"><label>Start (seconds)<input id="start" type="number" min="0" step=".001" required></label><label>End (seconds)<input id="end" type="number" min=".001" step=".001" required></label></div>
+      <div class="actions"><button type="button" id="mark-start">Start at playhead</button><button type="button" id="mark-end">End at playhead</button><button type="button" id="play">Play range</button></div>
+    </div>
+  </section>
+  <section class="panel stack assignment">
+    <h2>Attach to a beat</h2>
+    <label>Scene<select id="scene"></select></label>
+    <label>Beat<select id="beat"></select></label>
+    <p class="muted" id="no-beats" hidden>Import a saved scene in <a id="import-link" href="/">Scene Graphs</a> to attach clips to its beats.</p>
+    <label>Use as<select id="purpose"><option value="cutaway">Audience cutaway</option><option value="personality">Personality reference</option><option value="performance">Performance reference</option><option value="timing">Timing reference</option></select></label>
+    <label id="frame-field" hidden>Replay step<select id="frame"></select></label>
+    <label id="actor-field" hidden>Character<input id="actor" maxlength="55" list="active-cast" autocomplete="off" placeholder="Speaker’s name"><datalist id="active-cast"></datalist></label>
+    <label id="note-field" hidden>What should Noir borrow?<textarea id="note" maxlength="380" rows="3" placeholder="Describe the timing or behavior you want to carry over."></textarea></label>
+    <p class="muted" id="purpose-help"></p>
+    <button type="button" class="primary" id="attach">Attach selected range</button>
+  </section>
+</div>
+<section id="beat-panel" class="panel details" hidden>
+  <h2>On this beat</h2><div id="assignments"></div>
+  <label id="test-field" class="check" hidden><input id="test" type="checkbox"> Test all three local scent signatures</label>
+  <p id="preview-detail" class="muted" aria-live="polite"></p>
+  <div class="actions"><button type="button" id="preview">Preview draft context</button><button type="button" id="run" class="primary" disabled>Generate one draft</button></div>
+</section>
+<section id="draft-panel" class="panel details" hidden>
+  <h2>Clip drafts</h2><div id="drafts"></div><pre id="draft-text" hidden></pre>
+</section>
+</main>
+<script>
+'use strict';
+const at=id=>document.getElementById(id), query=new URLSearchParams(location.search), episode=query.get('episode');
+const make=(tag,value)=>{const n=document.createElement(tag);n.textContent=value;return n;};
+const title={cutaway:'Cutaway',personality:'Personality',performance:'Performance',timing:'Timing'};
+const needsActor=kind=>kind==='personality'||kind==='performance';
+const sec=n=>(n/1000).toFixed(3);
+let scope,model,scenes=[],beats=[],replays=[],selected=null,plan=null,busy=false,rangeStop=null;
+function status(msg,bad=false){at('status').textContent=msg;at('status').classList.toggle('error',bad);}
+async function json(url,init){const r=await fetch(url,init),value=await r.json();if(!r.ok)throw new Error(value.error||'Unable to open this Studio action.');return value;}
+const cmd=(action,fields={})=>json('/api/episode-command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...scope,...fields,action})});
+const clipURL=(route,fields)=>'/api/scene-clips/'+route+'?'+new URLSearchParams({...scope,...fields});
+const asset=id=>model?.clips.find(a=>a.id===id);
+const entry=id=>model?.mind_support?.library.items.find(a=>a.clip===id);
+const clipTitle=a=>entry(a.id)?.title||a.name;
+const beat=()=>beats.find(b=>b.id===at('beat').value);
+const scene=()=>scenes.find(s=>s.id===at('scene').value);
+function destination(){return {fragment:scene()?.id,fragment_revision:scene()?.revision,node:beat()?.id,timeline_revision:model.timeline_revision};}
+function range(){
+  if(!selected||at('start').value===''||at('end').value==='')return null;
+  const start=Math.round(at('start').valueAsNumber*1000),end=Math.round(at('end').valueAsNumber*1000);
+  return 0<=start&&start<end&&end<=selected.duration_ms?[start,end]:null;
+}
+function clearPreview(){plan=null;at('preview-detail').textContent='';sync();}
+function sync(){
+  if(!model)return;
+  const item=selected?entry(selected.id):null;
+  const kind=at('purpose').value;
+  const canUse=!item||(item.writing_eligible&&kind==='timing');
+  at('actor-field').hidden=!needsActor(kind);at('note-field').hidden=kind==='cutaway';
+  at('frame-field').hidden=kind!=='cutaway'||at('frame').options.length<2;
+  at('purpose-help').textContent=item&&!item.writing_eligible?'Listen or watch for context. This clip stays out of writing.':item?'Borrow timing and listener reactions from this collection.':{
+    cutaway:'Place the selected footage on the audience track. It won’t change the story or character state.',
+    personality:'Describe one behavior for a character. Only your observation goes to the writer.',
+    performance:'Describe a delivery, gesture, or reaction for this character at the selected beat.',
+    timing:'Describe where to hold, accelerate, or let the reaction land.'}[kind];
+  const selection=range();
+  at('play').disabled=!selection;
+  const marker=at('range-preview');
+  marker.style.marginLeft=selection?`${100*selection[0]/selected.duration_ms}%`:'0';
+  marker.style.width=selection?`${100*(selection[1]-selection[0])/selected.duration_ms}%`:'0';
+  at('choose').disabled=busy;at('scene').disabled=busy||!scenes.length;at('beat').disabled=busy||!beats.length;
+  at('attach').disabled=busy||!selected||!beat()||!selection||selection[1]-selection[0]>90000||!canUse
+    ||(kind!=='cutaway'&&!at('note').value.trim())||(needsActor(kind)&&!at('actor').value.trim());
+  at('preview').disabled=busy||!assignments().some(a=>a.purpose!=='cutaway');at('run').disabled=busy||!plan||plan.locked;
+  at('test-field').hidden=!model.mind_support||beat()?.id!==model.draft_node;
+  if(at('test-field').hidden)at('test').checked=false;
+  at('test').disabled=busy;
+}
+function showClips(){
+  const list=at('collection').value==='fart'?model.clips.filter(a=>entry(a.id)):model.clips;
+  const buttons=list.map(a=>{const b=make('button',clipTitle(a));b.type='button';b.className='tile';
+    b.setAttribute('aria-pressed',String(selected?.id===a.id));b.append(make('small',sec(a.duration_ms)+' s'+(entry(a.id)?' · Fart Media':'')));
+    b.onclick=()=>choose(a);return b;});
+  at('clips').replaceChildren(...(buttons.length?buttons:[make('p','No clips here yet.')]));
+}
+function choose(a){
+  selected=a;rangeStop=null;const v=at('player');v.pause();v.src=clipURL('media',{id:a.id});
+  at('selected').hidden=false;at('clip-title').textContent=clipTitle(a);
+  const item=entry(a.id);at('clip-detail').textContent=item?.note||'Mark the part you want to use.';
+  at('start').value='0.000';at('end').value=sec(Math.min(a.duration_ms,90000));
+  at('start').max=sec(a.duration_ms-1);at('end').max=sec(a.duration_ms);
+  at('note').value=item?.writing_eligible?item.note:'';
+  if(item)at('purpose').value='timing';
+  showClips();sync();
+}
+function assignments(){const d=destination();return model.assignments.filter(a=>a.destination.fragment===d.fragment&&a.destination.fragment_revision===d.fragment_revision&&a.destination.node===d.node&&a.destination.timeline_revision===d.timeline_revision);}
+function showAssignments(){
+  const items=assignments();at('beat-panel').hidden=!beat();
+  at('assignments').replaceChildren(...(items.length?items.map(p=>{
+    const row=make('div','');row.className='row';const detail=make('div',''),a=asset(p.clip);
+    detail.append(make('h3',title[p.purpose]+' · '+(a?clipTitle(a):'Unavailable clip')),
+      make('small',`${sec(p.start_ms)}–${sec(p.end_ms)} s${p.character?' · '+p.character:''}${p.frame?' · '+p.frame.event:''}`));
+    if(p.note)detail.append(make('p',p.note));
+    const remove=make('button','Remove');remove.type='button';remove.onclick=()=>action(async()=>{
+      clearPreview();await cmd('scene.clips.detach',{assignment:p.id});await refresh();status('Assignment removed. The original clip is still in your library.');});
+    const controls=make('div','');controls.className='actions';
+    if(a){const show=make('button','Play range');show.type='button';show.onclick=()=>{
+      choose(a);at('start').value=sec(p.start_ms);at('end').value=sec(p.end_ms);
+      sync();at('player').scrollIntoView({block:'nearest'});at('play').click();};controls.append(show);}
+    controls.append(remove);row.append(detail,controls);return row;
+  }):[make('p','Choose a range and attach it to this beat.')]));
+  sync();
+}
+function showFrames(hint){
+  const pairs=replays.flatMap(r=>r.frames.filter(f=>f.node===beat()?.id).map(f=>({id:r.id,event:f.event,title:r.title})));
+  const menu=at('frame');menu.replaceChildren(new Option('Scene beat only',''),...pairs.map(p=>new Option(`${p.event} · ${p.title}`,JSON.stringify([p.id,p.event]))));
+  const defaultFrame=hint ? pairs.find(p=>p.event===hint.event&&p.id===hint.receipt) : pairs.find(p=>p.event==='split');
+  if(hint&&!defaultFrame)throw new Error('Reopen the story timeline to pick a current replay beat.');
+  if(defaultFrame)menu.value=JSON.stringify([defaultFrame.id,defaultFrame.event]);
+  clearPreview();showAssignments();
+}
+async function showBeats(wanted,hint){
+  const picked=scene(),chosen=at('beat').value;
+  beats=picked?(await cmd('scene.fragment.open',{fragment:picked.id})).fragment.graph.nodes.filter(n=>!['heading','reference'].includes(n.kind)&&n.passage):[];
+  at('beat').replaceChildren(...beats.map(n=>new Option(n.label,n.id)));
+  if(wanted&&!beats.some(n=>n.id===wanted))throw new Error('Reopen the story timeline to pick a current scene beat.');
+  const desired=beats.find(n=>n.id===(wanted||chosen))||beats.find(n=>n.id===model.draft_node);
+  if(desired)at('beat').value=desired.id;
+  at('no-beats').hidden=!!beats.length;showFrames(hint);
+}
+function showDrafts(){
+  at('draft-panel').hidden=!model.drafts.length;
+  at('drafts').replaceChildren(...model.drafts.map((d,i)=>{
+    const row=make('div','');row.className='row';row.append(make('div',`Draft ${model.drafts.length-i} · ${d.status==='PROPOSED'?'Saved':d.status.toLowerCase()}`));
+    const open=make('button','Read draft');open.type='button';open.onclick=()=>action(()=>openDraft(d.id));row.append(open);return row;
+  }));
+}
+async function openDraft(id){const d=await cmd('draft.open',{draft:id});at('draft-panel').hidden=false;at('draft-text').hidden=false;at('draft-text').textContent=d.text||'No accepted text for this attempt.';}
+async function refresh(){model=await cmd('scene.clips.open');showClips();showAssignments();showDrafts();}
+async function action(run){if(busy)return;busy=true;sync();try{await run();}catch(e){status(e.message,true);}finally{busy=false;sync();}}
+const upload=files=>action(async()=>{
+  const list=[...files],errors=[];let latest=null;
+  for(let i=0;i<list.length;i++){
+    const file=list[i];status(`Importing ${i+1} of ${list.length}: ${file.name}`);
+    try{latest=(await json(clipURL('upload',{name:file.name}),{method:'POST',body:file})).asset;}
+    catch(e){errors.push(`${file.name}: ${e.message}`);}
+  }
+  if(latest)at('collection').value='';await refresh();if(latest)choose(asset(latest.id));
+  status(errors.length?errors.join(' · '):'Clips are ready. Pick a range to use.',!!errors.length);
+});
+at('choose').onclick=()=>at('files').click();at('files').onchange=e=>{if(e.target.files.length)upload(e.target.files);e.target.value='';};
+at('drop').ondragover=e=>{e.preventDefault();if(!busy)at('drop').classList.add('drag');};
+at('drop').ondragleave=()=>at('drop').classList.remove('drag');
+at('drop').ondrop=e=>{e.preventDefault();at('drop').classList.remove('drag');if(e.dataTransfer.files.length)upload(e.dataTransfer.files);};
+at('collection').onchange=()=>{showClips();if(at('collection').value==='fart'&&!entry(selected?.id)){const first=model.clips.find(a=>entry(a.id));if(first)choose(first);}};
+at('scene').onchange=()=>action(()=>showBeats());at('beat').onchange=()=>showFrames();
+for(const id of ['start','end','actor','note','purpose'])at(id).addEventListener('input',sync);
+at('test').onchange=clearPreview;
+for(const [id,bound] of [['mark-start','start'],['mark-end','end']])at(id).onclick=()=>{
+  at(bound).value=sec(Math.min(selected.duration_ms,Math.round(at('player').currentTime*1000)));sync();};
+at('play').onclick=()=>{
+  const [a,b]=range(),v=at('player');rangeStop=b/1000;v.currentTime=a/1000;
+  v.play().catch(()=>{rangeStop=null;status('The clip could not play in this browser.',true);});
+};
+at('player').ontimeupdate=()=>{const v=at('player');if(rangeStop!==null&&v.currentTime>=rangeStop){const end=rangeStop;rangeStop=null;v.pause();v.currentTime=end;}};
+at('player').onerror=()=>status('This video is unavailable or its codec is not playable in this browser.',true);
+at('attach').onclick=()=>action(async()=>{
+  const [start_ms,end_ms]=range(),purpose=at('purpose').value;
+  const fields={...destination(),clip:selected.id,start_ms,end_ms,purpose};
+  if(purpose==='cutaway'&&at('frame').value)[fields.replay,fields.event]=JSON.parse(at('frame').value);
+  if(purpose!=='cutaway')fields.note=at('note').value.trim();
+  if(needsActor(purpose))fields.character=at('actor').value.trim();
+  clearPreview();await cmd('scene.clips.attach',fields);await refresh();status('Selected range attached to '+beat().label+'.');
+});
+at('preview').onclick=()=>action(async()=>{
+  clearPreview();const fields={...destination(),test_signatures:at('test').checked},p=await cmd('scene.clips.preview',fields);
+  plan={id:p.plan,fields,locked:p.rhythm_guidance.fully_locked};
+  const count=p.scope.clip_context.binding.pins.length;
+  at('preview-detail').textContent=plan.locked?'This beat is fully protected. Lower protection on the text you want to change.':`${count} selected clip uses · ${p.scope.mind_support?.rules.length||0} local character rules · ready for one draft`;
+  status('Context checked. No writer call was made.');
+});
+at('run').onclick=()=>action(async()=>{
+  const current=plan;clearPreview();status('Writing one draft…');
+  try{const r=await cmd('scene.clips.run',{...current.fields,plan:current.id});await refresh();if(r.draft_id)await openDraft(r.draft_id);
+    status(r.status==='PROPOSED'?'Draft saved in this episode. The script is unchanged.':'Draft result: '+r.status+'.');
+  }finally{await refresh();}
+});
+async function start(){
+  if(!episode)throw new Error('Open an episode from Compose first.');
+  const e=encodeURIComponent(episode),data=await json('/api/state?episode='+e);
+  scope={project:data.scope.project_id,universe:data.scope.universe_id,episode,branch:data.episode.branch};
+  at('compose').href='/?view=compose&episode='+e;at('graphs').href=at('import-link').href='/scene-fragments?episode='+e;
+  const returnQuery=new URLSearchParams({view:'timeline',track:'story',episode});
+  if(query.has('return-beat'))returnQuery.set('story-beat',query.get('return-beat'));
+  at('story-track').href='/v2?'+returnQuery;
+  at('replay').href='/scene-replay?episode='+e;at('minds').href='/scene-minds?episode='+e;at('episode').textContent=data.episode.title;
+  const [list,receipts,info]=await Promise.all([cmd('scene.fragment.list'),cmd('scene.override.list'),cmd('scene.clips.open')]);
+  model=info;scenes=list.fragments.filter(v=>v.anchor.timeline_revision===model.timeline_revision);
+  at('scene').replaceChildren(...scenes.map(s=>new Option(s.title,s.id)));
+  const target=query.get('fragment')||model.draft_fragment;
+  const currentScene=scenes.find(s=>s.id===target);
+  if((query.has('timeline_revision')&&query.get('timeline_revision')!==String(model.timeline_revision))
+    ||(query.has('fragment')&&!currentScene)
+    ||(query.has('fragment_revision')&&query.get('fragment_revision')!==String(currentScene?.revision))){
+    throw new Error('Reopen the story timeline to attach to the current manuscript revision.');
+  }
+  if(currentScene)at('scene').value=target;
+  replays=(await Promise.all(receipts.receipts.filter(r=>r.timeline_revision===model.timeline_revision).map(r=>cmd('scene.override.open',{receipt:r.id})))).map(r=>r.receipt);
+  const support=model.mind_support;at('collection-label').hidden=!support;at('minds').hidden=!support;
+  if(support)at('active-cast').replaceChildren(...support.rules.map(r=>new Option(r.speaker,r.speaker)));
+  if(support&&query.get('collection')==='fart')at('collection').value='fart';
+  const hint=query.has('event')?{receipt:query.get('receipt'),event:query.get('event')}:null;
+  await showBeats(query.get('beat'),hint);showClips();showDrafts();at('workspace').hidden=false;
+  const first=model.clips.find(a=>a.id===query.get('clip'))||model.clips.find(a=>at('collection').value!=='fart'||entry(a.id));
+  if(first)choose(first);if(query.get('draft'))await openDraft(query.get('draft'));
+  status('Ready · clips stay in this workspace');
+}
+start().catch(e=>status(e.message,true));
+</script>
+<script type="module">
+  import { playTick } from '/assets/v2/sound.js';
+  document.addEventListener('click', (e) => {
+    if (e.target?.closest?.('button, a')) playTick();
+  }, { passive: true });
+</script>
+</html>

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Noir · Scene Graphs</title>
+<style>
+:root{color-scheme:dark;--paper:#f8edda;--base:#151918;--panel:#202725;--line:#434b45;--muted:#bdc0b3;--gold:#f7b467;--mint:#b6ecda;font-family:system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--base);color:var(--paper)}main{max-width:76rem;margin:auto;padding:clamp(1.1rem,4vw,3rem)}h1{font:600 clamp(2rem,5vw,3.3rem) Georgia,serif;margin:.35rem 0}h2{margin:.25rem 0 .75rem;font-size:1.2rem}p{line-height:1.55}a{color:var(--mint)}.eyebrow{color:var(--gold);letter-spacing:.12em;font-size:.8rem;text-transform:uppercase}.muted{color:var(--muted)}.tools{display:flex;flex-wrap:wrap;align-items:end;gap:.7rem;margin:1.35rem 0}.tools label{display:grid;gap:.35rem;max-width:min(31rem,100%)}button,select{font:inherit;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:.5rem;padding:.58rem .72rem;min-height:2.55rem}button:enabled{cursor:pointer}button:disabled{opacity:.5}.primary{color:#15201b;background:var(--mint)}:focus-visible{outline:2px solid var(--gold);outline-offset:3px}.paper{margin-top:1.35rem;padding:1rem;border:1px solid var(--line);border-radius:.8rem;background:var(--panel)}.beats{list-style:none;margin:1rem 0 0;padding:0;display:grid;gap:.6rem}.beat{border-inline-start:2px solid var(--gold);padding:.55rem .8rem;background:#19201d;border-radius:.2rem .45rem .45rem .2rem}.beat p{margin:.25rem 0;overflow-wrap:anywhere}.kind{color:var(--mint);text-transform:uppercase;letter-spacing:.07em;font-size:.73rem}#status{min-height:1.5rem}.error{color:#ffb3a5}pre{white-space:pre-wrap;overflow-wrap:anywhere}[hidden]{display:none!important}
+</style>
+<main>
+<header><div class="eyebrow">NOIR / SCENE GRAPHS</div><h1 id="title">Scene Graphs</h1>
+<p class="muted">Map a saved scene, then reopen its passages and references. This view follows source order.</p>
+<a id="compose" href="/">Back to Studio</a> · <a id="scene-clips" href="/">Scene Clips</a></header>
+<div class="tools">
+<label>Scene<select id="scenes" aria-label="Scene"></select></label>
+<button id="preview" disabled>Preview graph</button><button id="save" class="primary" disabled>Save graph</button>
+<label>Saved graph<select id="saved" aria-label="Saved graph"><option value="">Choose a saved graph</option></select></label>
+<button id="rebind" disabled>Update passage positions</button><button id="export" disabled>Export JSON</button>
+</div>
+<p id="status" role="status">Opening the episode…</p>
+<section id="graph" class="paper" hidden><h2 id="sceneTitle"></h2><p id="summary" class="muted"></p><ol id="nodes" class="beats"></ol>
+<details id="receipts" hidden><summary>Reference evidence</summary><ul id="references"></ul></details></section>
+</main>
+<script>
+'use strict';
+const at=id=>document.getElementById(id), episode=new URLSearchParams(location.search).get('episode');
+let scope, timeline, viewed, closed=false;
+const capture = {heading:'Scene heading',narration:'Narration',dialogue:'Dialogue',direction:'Direction',event:'Event',reference:'Reference',unclassified:'Passage'};
+const make=(tag,text)=>{const node=document.createElement(tag);node.textContent=text;return node;};
+const cleanTitle=text=>text.replace(/^#{1,6}\s+/,'');
+function status(message,error=false){at('status').textContent=message;at('status').classList.toggle('error',error);}
+async function command(operation,detail={}){
+  const res=await fetch('/api/episode-command',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({...scope,action:'scene.fragment.'+operation,...detail})});
+  const result=await res.json();if(!res.ok)throw new Error(result.error||'Could not open the scene graph.');return result;
+}
+function buttons(){
+  const ready=!!scope&&!closed;
+  at('scenes').disabled=at('saved').disabled=!ready;
+  at('preview').disabled=at('save').disabled=!ready||!at('scenes').value;
+  at('rebind').disabled=!ready||!viewed?.fragment_head||!viewed?.needs_rebind;
+  at('export').disabled=!ready||!viewed?.fragment_head;
+}
+function show(result,notice){
+  viewed=result;const f=result.fragment;const role=new Map(f.graph.roles.map(r=>[r.id,r.label]));
+  const nodeLabels=new Map(f.graph.nodes.map(n=>[n.id,n.label]));
+  at('graph').hidden=false;at('sceneTitle').textContent=cleanTitle(f.declaration.title);
+  at('summary').textContent=f.graph.passages.length+' source passages · '+f.graph.roles.length+
+    (f.graph.roles.length===1?' speaker cue · ':' speaker cues · ')+
+    (result.fragment_head?'Graph revision '+f.revision:'Preview')+
+    (f.location?' · '+f.location.label:'');
+  at('nodes').replaceChildren(...f.graph.nodes.map(n=>{
+    const item=make('li','');item.className='beat';const kind=make('span',capture[n.kind]+(n.roles.length?' · '+n.roles.map(id=>role.get(id)).join(', '):''));
+    kind.className='kind';item.append(kind,make('p',n.label));
+    item.dataset.node=n.id;
+    const preceding=f.graph.edges.find(e=>e.kind==='sequence'&&e.to===n.id);
+    if(preceding){const link=make('small','Follows '+nodeLabels.get(preceding.from));link.className='muted';item.append(link);}
+    if(n.kind==='reference'){
+      const targets=f.graph.edges.filter(e=>e.kind==='influences'&&e.from===n.id).map(e=>nodeLabels.get(e.to));
+      if(targets.length)item.append(make('p','Influences '+targets.join(', ')));
+    }
+    return item;
+  }));
+  at('receipts').hidden=!f.declaration.evidence.length;
+  at('references').replaceChildren(...f.declaration.evidence.map(e=>{
+    const item=make('li','');
+    if(e.selector.kind==='clip'&&e.asset.startsWith('media-source-')){
+      const source=make('a',e.label||'Play reference');
+      source.href='/api/beat-media/original?'+new URLSearchParams({...scope,id:e.asset})+
+        '#t='+e.selector.start/1000+','+e.selector.end/1000;
+      source.target='_blank';source.rel='noopener';item.append(source);
+    }else item.append(e.label||e.asset);
+    if(e.use==='preview')item.append(' · Preview only');
+    const cueRange=e.source_window_ms||[e.selector.start,e.selector.end];
+    if(e.selector.kind==='clip')item.append(' · '+(cueRange[0]/1000).toFixed(3)+'–'+(cueRange[1]/1000).toFixed(3)+' s');
+    if(e.observation)item.append(make('p',e.observation));
+    return item;
+  }));
+  status(result.needs_rebind?'The episode has changed. Update passage positions to keep this graph attached.':notice);
+  buttons();
+}
+async function state(){
+  if(!episode)throw new Error('Open an episode to use Scene Graphs.');
+  const res=await fetch('/api/state?episode='+encodeURIComponent(episode));
+  const payload=await res.json();if(!res.ok)throw new Error(payload.error||'Could not open this episode.');
+  timeline=payload.episode.head;
+  scope={project:payload.scope.project_id,universe:payload.scope.universe_id,branch:payload.episode.branch,episode};
+  at('title').textContent=payload.episode.title;
+  at('compose').href='/?episode='+encodeURIComponent(episode)+'&view=compose';
+  at('scene-clips').href='/scene-clips?episode='+encodeURIComponent(episode);
+}
+async function saved(selected){
+  const r=await command('list');at('saved').replaceChildren(new Option('Choose a saved graph',''),
+    ...r.fragments.map(f=>new Option(cleanTitle(f.title)+' · r'+f.revision,f.id)));
+  if(selected)at('saved').value=selected;
+  return r.fragments;
+}
+async function scenes(){const r=await command('scenes',{timeline_revision:timeline});
+  at('scenes').replaceChildren(...r.scenes.map(s=>new Option(cleanTitle(s.title),s.id)));}
+async function working(action){
+  if(closed)return;closed=true;buttons();
+  try{await action();}catch(e){status(e.message,true);}finally{closed=false;buttons();}
+}
+at('preview').onclick=()=>working(async()=>show(await command('preview',{timeline_revision:timeline,selection:{scene:at('scenes').value}}),'Preview ready.'));
+at('save').onclick=()=>working(async()=>{
+  const r=await command('import',{timeline_revision:timeline,selection:{scene:at('scenes').value}});
+  await saved(r.fragment.id);show(r,r.status==='REPLAYED'?'This graph is already saved.':'Scene graph saved.');
+});
+at('saved').onchange=()=>working(async()=>{
+  if(at('saved').value)show(await command('open',{fragment:at('saved').value}),'Saved graph opened.');
+  else{viewed=null;at('graph').hidden=true;status('Choose a scene to preview.');}
+});
+at('rebind').onclick=()=>working(async()=>{
+  await state();const r=await command('rebind',{fragment:viewed.fragment.id,fragment_revision:viewed.fragment_head,timeline_revision:timeline});
+  await scenes();await saved(r.fragment.id);show(r,'Passage positions updated.');
+});
+at('export').onclick=()=>working(async()=>{
+  const r=await command('export',{fragment:viewed.fragment.id,fragment_revision:viewed.fragment.revision});
+  const url=URL.createObjectURL(new Blob([JSON.stringify(r,null,2)],{type:'application/json'}));
+  const a=make('a','');a.href=url;a.download=r.fragment.id+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  status('Graph exported.');
+});
+working(async()=>{
+  await state();await scenes();const list=await saved();
+  const preferred=new URLSearchParams(location.search).get('fragment')||list[0]?.id;
+  if(preferred){at('saved').value=preferred;show(await command('open',{fragment:preferred}),'Saved graph opened.');}
+  else status('Choose a scene to preview.');
+});
+</script>
+</html>

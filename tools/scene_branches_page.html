@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Noir · Scene Branches</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;--ground:#121718;--panel:#202728;--edge:#414d4b;--cream:#f8ebd5;--mint:#abead8;--orange:#ffb675;--dim:#c3c9bf}*{box-sizing:border-box}body{margin:0;background:var(--ground);color:var(--cream)}header{border-bottom:2px solid var(--orange)}header div,main{max-width:84rem;margin:auto;padding:1.25rem clamp(1rem,3vw,2.5rem)}nav{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}nav strong{font-size:1.4rem;letter-spacing:.12em;font-style:italic}nav strong span,.eyebrow{color:var(--orange)}a{color:var(--mint)}h1{font:600 clamp(2rem,5vw,3.4rem) Georgia,serif;margin:.3rem 0}h2,h3{margin:0 0 .4rem}p{line-height:1.55;margin:.4rem 0}.eyebrow{font-size:.75rem;letter-spacing:.14em}.muted{color:var(--dim)}.panel,.fork{background:var(--panel);border:1px solid var(--edge);border-radius:.75rem;padding:1rem}.forks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(20rem,100%),1fr));gap:1rem;margin:1rem 0}.fork{text-align:left;color:inherit;cursor:pointer}.fork[aria-pressed=true]{border-color:var(--mint);box-shadow:inset 0 3px var(--mint)}.fork h2{font:600 1.35rem Georgia,serif}.layout{display:grid;grid-template-columns:minmax(13rem,1fr) minmax(18rem,2fr);gap:1rem}.frames{display:grid;gap:.4rem;align-content:start}.frames button{text-align:left}button{font:inherit;color:inherit;background:#151e20;border:1px solid var(--edge);border-radius:.4rem;padding:.55rem .75rem;cursor:pointer}button.primary,button[aria-current=true]{background:var(--mint);color:#14211e}button:disabled{opacity:.5;cursor:default}ul{padding-left:1.25rem}li{margin:.3rem 0}.actions{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin:.65rem 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:.65rem 0;font:1.08rem/1.55 Georgia,serif;background:#f8edd9;color:#211c16;border-radius:.5rem;padding:1rem}.error{color:#ffb7a5}:focus-visible{outline:2px solid var(--orange);outline-offset:3px}[hidden]{display:none!important}@media(max-width:46rem){.layout{grid-template-columns:1fr}.frames{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+<header><div><nav><strong><span>///</span> NOIR</strong><a id="compose" href="/">Compose</a><a id="replay" href="/">Replay</a><a id="clips" href="/">Scene Clips</a></nav></div></header>
+<main>
+<span class="eyebrow">FX06 / SCENE BRANCHES</span><h1>One scene, alternate endings</h1>
+<p class="muted">Trace each version, then write forward from its saved ending.</p>
+<p id="status" role="status">Opening saved branches…</p>
+<section id="choices" class="forks" aria-label="Saved branch endings"></section>
+<div id="workspace" class="layout" hidden>
+<section class="panel"><h2>Scene beats</h2><div id="frames" class="frames" aria-label="Replay beats"></div></section>
+<section class="panel"><h2 id="event"></h2><p id="beatNote" hidden></p><p id="current"></p><ul id="cast"></ul><p id="position" class="muted"></p>
+<hr><h3>Continue from the saved ending</h3><p class="muted">Looking at an earlier beat doesn’t change where the continuation starts.</p>
+<div class="actions"><button id="preview" type="button">Preview continuation</button><button id="run" type="button" class="primary" disabled>Generate one draft</button></div>
+<p id="basis" class="muted" aria-live="polite"></p><div id="drafts" class="actions"></div><pre id="text" hidden></pre></section>
+</div>
+</main>
+<script>
+'use strict';
+const at=id=>document.getElementById(id), query=new URLSearchParams(location.search), episode=query.get('episode');
+let home, results=[], branch, plan, busy=false, view;
+const label={entry:'Enter the hall','first-release':'Rainee’s first release','haley-notices':'Haley notices the perfume','haley-line':'Haley’s frozen line',split:'The first split','nurse-franny':'Nurse Franny arrives',reunion:'The three reunite','peter-transformation':'Rainee becomes Peter','francine-laughs':'Francine laughs at Peter','francine-asks-nurse':'Francine asks for the nurse form','peter-release':'Peter’s blast','haley-defeated':'Peter’s blast sends Haley away',destabilizes:'Peter destabilizes; the three return','group-release':'The three let loose','haley-blasted-again':'Haley is blasted again','group-roast':'The three roast Haley'};
+const form={rainee:'Rainee',francine:'Francine',haley:'Haley',split:'Three Rainees',peter_griffin_celestial_variant:'Rainee Peter',nurse_pamela_franny_anderson:'Nurse Franny'};
+const make=(tag,text)=>{const e=document.createElement(tag);e.textContent=text;return e;};
+const name=id=>form[id]||id.replace(/^rainee-split-/,'Rainee ');
+const title=frame=>frame.event==='voice-intervention'
+  ? name(frame.state.actors.francine?.form||'francine')+' calls them together'
+  : label[frame.event]||frame.event;
+function note(text,error=false){at('status').textContent=text;at('status').classList.toggle('error',error);}
+async function json(path,options){const r=await fetch(path,options), data=await r.json();if(!r.ok)throw new Error(data.error||'Could not open this branch.');return data;}
+const cmd=(action,args={},scope=branch?.scope||home)=>json('/api/episode-command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...scope,...args,action})});
+const ending=branch=>branch.frames.at(-1);
+function nav(){const ep=encodeURIComponent(branch?.scope.episode||episode);at('compose').href='/?view=compose&episode='+ep;
+  at('replay').href='/scene-replay?episode='+ep+(branch?'&receipt='+encodeURIComponent(branch.replay):'');at('clips').href='/scene-clips?episode='+encodeURIComponent(episode);}
+function sync(){at('preview').disabled=busy||!branch?.current;at('run').disabled=busy||!branch?.current||!plan;}
+function inspect(frame){view=frame;const s=frame.state;
+  at('event').textContent=title(frame);at('current').textContent='Active Rainee form: '+name(s.root_form);
+  at('beatNote').hidden=!frame.note;at('beatNote').textContent=frame.note||'';
+  at('cast').replaceChildren(...Object.values(s.actors).map(actor=>make('li',name(actor.form)+' · '+actor.location.replaceAll('-',' '))));
+  const position=s.actors.haley?.location;
+  at('position').textContent=position==='farther-down-hall'?'Haley landed farther down the hall.':
+    position==='far-hall'?'Haley landed at the far end of the hall.':'';
+  for(const button of at('frames').children)button.setAttribute('aria-current',String(button.dataset.event===view.event));
+}
+function showChoices(){at('choices').replaceChildren(...results.map(result=>{const b=make('button','');b.className='fork';b.type='button';
+  b.setAttribute('aria-pressed',String(result.id===branch?.id));b.append(make('h2',result.title),make('p',title(ending(result))));
+  b.onclick=()=>action(()=>choose(result));return b;}));}
+async function showDraft(id){const d=await cmd('draft.open',{draft:id});at('text').textContent=d.text||'No text returned for this attempt.';at('text').hidden=false;}
+async function draftList(){const model=await cmd('scene.branches.open');at('drafts').replaceChildren(...model.drafts.map(d=>{
+  const button=make('button',d.status==='PROPOSED'?'Read saved continuation':'Read '+d.status.toLowerCase()+' attempt');
+  button.type='button';button.onclick=()=>action(()=>showDraft(d.id));return button;}));return model.drafts;}
+async function choose(result){branch=result;plan=null;at('basis').textContent='';at('text').hidden=true;nav();showChoices();
+  at('workspace').hidden=false;at('frames').replaceChildren(...branch.frames.map(frame=>{const b=make('button',title(frame));b.type='button';
+    b.dataset.event=frame.event;b.onclick=()=>inspect(frame);return b;}));
+  inspect((branch.scope.branch===query.get('branch')&&branch.frames.find(frame=>frame.event===query.get('beat')))||ending(branch));
+  const drafts=await draftList(), requested=query.get('draft');
+  if(drafts.some(d=>d.id===requested))await showDraft(requested);
+  note(branch.current?'Saved result · '+title(ending(branch)):'Earlier saved result. The episode has changed.');
+}
+async function action(fn){if(busy)return;busy=true;sync();try{await fn();}catch(e){note(e.message,true);}finally{busy=false;sync();}}
+at('preview').onclick=()=>action(async()=>{
+  plan=null;const result=await cmd('scene.branches.preview',{result:branch.id});
+  plan=result.rhythm_guidance.fully_locked?null:result.plan;
+  at('basis').textContent='Next beat uses '+Object.values(result.scope.continuation.cast).join(', ')+'.';
+  note(plan?'Checked the saved ending. No writer call.':'The continuation slot is fully protected.');
+});
+at('run').onclick=()=>action(async()=>{
+  const ready=plan;plan=null;note('Writing one continuation…');
+  const data=await cmd('scene.branches.run',{result:branch.id,plan:ready});
+  await draftList();if(data.draft_id)await showDraft(data.draft_id);
+  note(data.status==='PROPOSED'?'Continuation saved as a draft. The scene is unchanged.':'Draft result: '+data.status.toLowerCase()+'.');
+});
+async function start(){
+  if(!episode)throw new Error('Open a saved episode to see its branches.');
+  const data=await json('/api/state?episode='+encodeURIComponent(episode));
+  home={project:data.scope.project_id,universe:data.scope.universe_id,episode,branch:data.episode.branch};nav();
+  results=(await cmd('scene.branches.open',{},home)).results;
+  if(!results.length){note('No saved forks from this scene yet.');return;}
+  await action(()=>choose(results.find(v=>v.scope.branch===query.get('branch'))||results[0]));
+}
+start().catch(e=>note(e.message,true));
+</script>
+</html>

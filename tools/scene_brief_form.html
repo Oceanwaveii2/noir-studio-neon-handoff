@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Scene brief</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; background:#0b1120; color:#e2e8f0; font-family:ui-sans-serif,system-ui; }
+  header { padding:16px 22px; border-bottom:1px solid #1e293b; }
+  h1 { font-size:16px; color:#fbbf24; margin:0 0 4px; }
+  .hint { font-size:12px; color:#94a3b8; }
+  main { display:grid; grid-template-columns: 1fr 1fr; gap:18px; padding:18px 22px; }
+  section { background:#0f172a; border:1px solid #1e293b; border-radius:10px; padding:14px; }
+  h2 { font-size:12px; color:#7dd3fc; text-transform:uppercase; letter-spacing:.06em; margin:0 0 10px; }
+  textarea, input[type=text] { width:100%; background:#0b1120; color:#e2e8f0; border:1px solid #253352;
+    border-radius:8px; padding:10px; font:13px/1.5 ui-monospace,Consolas; box-sizing:border-box; }
+  textarea { min-height:220px; resize:vertical; }
+  input[type=file] { color:#94a3b8; font-size:12px; }
+  button { background:#111c33; color:#e2e8f0; border:1px solid #253352; border-radius:8px;
+    padding:8px 12px; cursor:pointer; font-size:13px; }
+  button:hover { border-color:#38bdf8; color:#7dd3fc; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+  #dialogue { max-height:340px; overflow:auto; }
+  .line { display:flex; gap:10px; padding:7px 8px; border-radius:6px; }
+  .line:nth-child(odd) { background:#0b1120; }
+  .line input { margin-top:3px; }
+  .line span { font:12px/1.5 ui-monospace,Consolas; color:#cbd5e1; }
+  .line.off span { color:#64748b; text-decoration:line-through; }
+  .treatments label { display:inline-flex; gap:6px; margin-right:14px; font-size:12px; color:#cbd5e1; }
+  #status { font:12px ui-monospace; color:#4ade80; margin-top:8px; min-height:16px; }
+  .wide { grid-column:1 / -1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Scene brief</h1>
+  <div class="hint">Load or paste a scene, tick the dialogue you want kept, list the events, set the rewrite strength, export <code>brief.json</code>.</div>
+</header>
+<main>
+  <section>
+    <h2>Scene</h2>
+    <div class="row">
+      <input type="file" id="file" accept=".md,.txt"/>
+      <button id="parse">Parse dialogue</button>
+      <button id="loadBrief">Load brief.json</button>
+    </div>
+    <textarea id="scene" placeholder="Paste the scene here (markdown or screenplay)..."></textarea>
+  </section>
+
+  <section>
+    <h2>Dialogue to keep</h2>
+    <div id="dialogue"><div class="hint">Parse the scene to list dialogue lines.</div></div>
+  </section>
+
+  <section>
+    <h2>Events</h2>
+    <textarea id="events" placeholder="One event per line, e.g.&#10;Rainee farts&#10;nanites race to her hips&#10;the dress seams burst"></textarea>
+  </section>
+
+  <section>
+    <h2>Rewrite</h2>
+    <div class="row">
+      <label class="hint" for="strength">strength</label>
+      <input id="strength" type="range" min="0" max="1" step="0.05" value="0.85" style="flex:1"/>
+      <span id="strengthValue" class="hint">0.85</span>
+    </div>
+    <div class="row">
+      <input type="text" id="tone" placeholder="tone: dry camp comedy, specific, unimpressed" style="flex:1"/>
+    </div>
+    <div class="row">
+      <input type="text" id="tone" placeholder="tone: dry camp comedy, specific, unimpressed" style="flex:1"/>
+    </div>
+    <div class="treatments" id="treatments"></div>
+    <div class="row" style="margin-top:12px">
+      <input type="text" id="title" placeholder="scene title" value="scene" style="flex:1"/>
+      <button id="export">Export brief.json</button>
+    </div>
+    <div id="status"></div>
+  </section>
+</main>
+
+<script>
+const TREATMENTS = ["nanite_malfunction", "wish_gone_wrong", "curse", "medical", "dream", "staged", "inheritance"];
+const PREFIXES = ["-", "—", "“", '"'];
+let dialogue = [];
+
+const $ = (id) => document.getElementById(id);
+
+$("file").addEventListener("change", (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { $("scene").value = reader.result; parseDialogue(); };
+  reader.readAsText(file);
+});
+
+$("parse").addEventListener("click", parseDialogue);
+
+function parseDialogue() {
+  const paragraphs = $("scene").value.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
+  dialogue = paragraphs
+    .filter((part) => PREFIXES.some((prefix) => part.startsWith(prefix)))
+    .map((text) => ({ text, keep: true }));
+  renderDialogue();
+  setStatus(`found ${dialogue.length} dialogue line(s)`);
+}
+
+function renderDialogue() {
+  const host = $("dialogue");
+  host.innerHTML = "";
+  if (!dialogue.length) {
+    host.innerHTML = '<div class="hint">No dialogue found. Parse the scene first.</div>';
+    return;
+  }
+  dialogue.forEach((item, index) => {
+    const row = document.createElement("label");
+    row.className = "line" + (item.keep ? "" : " off");
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.checked = item.keep;
+    box.addEventListener("change", () => {
+      dialogue[index].keep = box.checked;
+      row.classList.toggle("off", !box.checked);
+    });
+    const span = document.createElement("span");
+    span.textContent = item.text;
+    row.appendChild(box);
+    row.appendChild(span);
+    host.appendChild(row);
+  });
+}
+
+function renderTreatments() {
+  const host = $("treatments");
+  host.innerHTML = "";
+  TREATMENTS.forEach((name) => {
+    const label = document.createElement("label");
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.value = name;
+    box.checked = ["curse", "staged"].includes(name);
+    const span = document.createElement("span");
+    span.textContent = name.replace(/_/g, " ");
+    label.appendChild(box);
+    label.appendChild(span);
+    host.appendChild(label);
+  });
+}
+
+$("strength").addEventListener("input", () => {
+  $("strengthValue").textContent = Number($("strength").value).toFixed(2);
+});
+
+$("export").addEventListener("click", () => {
+  const events = $("events").value.split("\n").map((line) => line.trim()).filter(Boolean);
+  const treatments = Array.from(document.querySelectorAll("#treatments input:checked")).map((box) => box.value);
+  const payload = {
+    title: $("title").value || "scene",
+    tone: $("tone").value,
+    events,
+    dialogue,
+    strength: Number($("strength").value),
+    treatments,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "brief.json";
+  link.click();
+  setStatus(`exported: ${dialogue.filter((d) => d.keep).length} kept, ${dialogue.filter((d) => !d.keep).length} dropped, ${events.length} events`);
+});
+
+$("loadBrief").addEventListener("click", () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json";
+  input.addEventListener("change", () => {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = JSON.parse(reader.result);
+      $("title").value = data.title || "scene";
+      $("tone").value = data.tone || "";
+      $("events").value = (data.events || []).join("\n");
+      $("strength").value = data.strength ?? 0.85;
+      $("strengthValue").textContent = Number($("strength").value).toFixed(2);
+      dialogue = (data.dialogue || []).map((item) => ({ text: item.text, keep: item.keep !== false }));
+      renderDialogue();
+      renderTreatments();
+      (data.treatments || []).forEach((name) => {
+        const box = Array.from(document.querySelectorAll("#treatments input")).find((b) => b.value === name);
+        if (box) box.checked = true;
+      });
+      setStatus("brief loaded");
+    };
+    reader.readAsText(file);
+  });
+  input.click();
+});
+
+function setStatus(message) { $("status").textContent = message; }
+
+renderTreatments();
+</script>
+</body>
+</html>

@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Noir · Mind inspector</title>
+<style>
+:root {
+  color-scheme: dark;
+  --base: #131817; --panel: #202826; --line: #46544d; --ink: #fbf1de;
+  --muted: #bdc9be; --mint: #b5ebd8; --amber: #ffc587;
+  font: 15px/1.55 system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--base); color: var(--ink); }
+header, .sheet { padding-inline: clamp(16px, 5vw, 70px); }
+header { border-bottom: 1px solid var(--line); background: #1b221f; }
+nav { display: flex; align-items: center; flex-wrap: wrap; gap: 1.3em; padding-block: .75em; }
+.brand { color: var(--amber); font: italic 800 1.45rem system-ui, sans-serif; letter-spacing: .065em; }
+a { color: var(--mint); text-underline-offset: .23em; }
+.sheet { max-width: 1390px; margin: auto; padding-block: clamp(18px, 4vw, 48px); }
+.heading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1rem 2rem; }
+h1 { margin: .12rem 0; font: 600 clamp(2.35rem, 5.4vw, 4.25rem)/1.05 Georgia, serif; }
+h2 { margin: .1rem 0 .7rem; font: 600 1.65rem/1.15 Georgia, serif; }
+h3 { margin: 1.3rem 0 .36rem; font-size: 1rem; }
+p { margin: .35em 0 .6em; }
+.muted, small { color: var(--muted); }
+.label, .tag { font-size: .75rem; font-weight: 680; color: var(--amber); letter-spacing: .08em; text-transform: uppercase; }
+.tag { color: var(--mint); display: block; }
+.tools { display: flex; flex-wrap: wrap; align-items: end; gap: .65rem; }
+label { display: grid; gap: .28rem; }
+select, button { font: inherit; color: var(--ink); background: #29322e; border: 1px solid var(--line); border-radius: 6px; }
+select { padding: .52em .65em; max-width: min(23rem, 75vw); }
+button { padding: .46em .8em; cursor: pointer; }
+button:hover { border-color: var(--mint); }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+#status { min-height: 1.3rem; margin-block: .9rem; color: var(--muted); }
+#status[data-error] { color: #ffb5a3; }
+#status[data-loading]::before { content: ""; display: inline-block; width: .75em; height: .75em; margin-right: .55em;
+  border: 2px solid #ffffff30; border-top-color: var(--mint); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { #status[data-loading]::before { animation: none; } }
+.layout { display: grid; grid-template-columns: minmax(10rem, 15rem) minmax(0, 1fr); gap: .9rem; align-items: start; }
+.panel { padding: clamp(.8rem, 2.3vw, 1.45rem); border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.cast button { width: 100%; text-align: left; margin-block: .18em; }
+.cast button[aria-pressed=true] { background: #324a40; color: var(--mint); border-color: #87b39f; }
+.cast small { display: block; }
+.content { display: grid; gap: .9rem; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr)); column-gap: 1.2rem; }
+.episode { margin: 0; color: var(--muted); }
+.scene-text { white-space: pre-wrap; margin: 1rem 0 0; padding: .85em 1em; border-left: 2px solid #ad8557; background: #181f1c; }
+ul { margin: .35em 0 .85em; padding-left: 1.25em; }
+li + li { margin-top: .3em; }
+code { overflow-wrap: anywhere; color: var(--mint); }
+details { margin-top: .8em; }
+summary { cursor: pointer; color: var(--mint); }
+.auditions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr)); gap: .7rem; }
+.auditions article { border-radius: 6px; padding: .85em; background: #171d1a; border: 1px solid var(--line); }
+.auditions h3 { margin-top: 0; }
+.dialogue { font: 1.16rem/1.45 Georgia, serif; }
+.action { color: var(--muted); }
+.rejected { color: #ffb5a3; }
+[hidden] { display: none !important; }
+@media (max-width: 640px) { .layout { grid-template-columns: 1fr; } .cast div { display: flex; flex-wrap: wrap; gap: .3em; } .cast button { width: auto; } }
+</style>
+<header>
+  <nav aria-label="Studio">
+    <span class="brand">NOIR</span>
+    <a id="compose" href="/v2">Compose</a>
+    <a id="graph" href="/v2?view=graph">Character graph</a>
+    <a id="story" href="/v2?view=timeline&amp;track=story">Story beats</a>
+    <a id="comparison" href="/" hidden>Mind drafts</a>
+  </nav>
+</header>
+<main class="sheet">
+  <div class="heading">
+    <div><p id="episode" class="episode"></p><h1>Mind inspector</h1></div>
+    <div class="tools">
+      <label>Beat <select id="beats" disabled></select></label>
+      <label id="perspective" hidden>Viewpoint <select id="viewpoint"></select></label>
+    </div>
+  </div>
+  <p id="status" role="status" data-loading>Opening the beat…</p>
+  <div id="layout" class="layout" hidden>
+    <section class="panel cast" aria-labelledby="cast-title"><h2 id="cast-title">Cast</h2><div id="cast"></div></section>
+    <div class="content">
+      <section id="mind" class="panel" aria-label="Selected Mind"></section>
+      <section id="auditions" class="panel" aria-label="Saved auditions" hidden></section>
+      <section id="beat-source" class="panel" aria-label="Beat source" hidden></section>
+    </div>
+  </div>
+</main>
+<script>
+'use strict';
+const at = id => document.getElementById(id);
+const query = new URLSearchParams(location.search);
+const episode = query.get('episode');
+const requestKeys = ['turn', 'character', 'form', 'source', 'draft', 'fragment', 'viewpoint'];
+let scope, model, loadNumber = 0;
+
+function el(tag, text, classes) {
+  const item = document.createElement(tag);
+  item.textContent = text || '';
+  if (classes) item.className = classes;
+  return item;
+}
+function link(text, path, params) {
+  const item = el('a', text);
+  item.href = path + '?' + new URLSearchParams(params);
+  return item;
+}
+function list(values) {
+  const item = el('ul');
+  item.append(...values.map(value => {
+    const row = el('li');
+    row.append(value);
+    return row;
+  }));
+  return item;
+}
+function normalize(value) {
+  return String(value || '').replaceAll('_', ' ').replaceAll('-', ' ');
+}
+function title(value) {
+  const text = normalize(value);
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+function section(parent, name, rows, empty) {
+  if (!rows.length && !empty) return;
+  parent.append(el('h3', name), rows.length ? list(rows) : el('p', empty, 'muted'));
+}
+function status(text, state) {
+  const node = at('status');
+  node.textContent = text;
+  node.toggleAttribute('data-loading', state === 'loading');
+  node.toggleAttribute('data-error', state === 'error');
+  at('layout').setAttribute('aria-busy', String(state === 'loading'));
+}
+function moment(ms) {
+  return Math.floor(ms / 60000) + ':' + ((ms % 60000) / 1000).toFixed(3).padStart(6, '0');
+}
+function evidence(tendency) {
+  const move = el('div');
+  move.append(el('strong', 'When ' + tendency.when), el('p', tendency.try));
+  const references = tendency.evidence.map(item =>
+    (item.source === 'mean-girls-2004' ? 'Mean Girls (2004)' : title(item.source)) +
+    ' · ' + item.span_ms.map(moment).join(' – '));
+  move.append(el('small', references.join(' • ') || 'Authored guidance'));
+  return move;
+}
+function relationship(edge, subjects) {
+  const detail = el('div');
+  const label = end => subjects.find(s => s.form === end.form && s.character === end.character)?.label || title(end.form);
+  detail.append(el('strong', label(edge.from) + ' → ' + label(edge.to) + ' · ' + edge.kind));
+  if (edge.override) detail.append(el('p', edge.override.guidance));
+  if (edge.in_turn_dialogue !== undefined)
+    detail.append(el('small', edge.in_turn_dialogue ? 'Included in dialogue direction' : 'Present in beat state'));
+  return detail;
+}
+function mediaRow(item) {
+  const row = el('div');
+  if (item.library) {
+    row.append(el('strong', item.title),
+      el('small', ' · ' + (item.writing_eligible ? 'Available for timing' : 'Audition reference')));
+    return row;
+  }
+  const use = item.use || item.purpose;
+  const cue = item.evidence || {};
+  const pause = cue.quiet_interval?.duration_ms;
+  row.append(el('strong', title(use)), ' · ', item.note || cue.observation ||
+    (pause != null ? pause + ' ms reference pause ' + item.position + ' the reply' : 'Pinned writer input'));
+  if (item.listener) row.append(el('small', ' · ' + item.listener.label + ' listens'));
+  return row;
+}
+function mindPanel(data) {
+  const node = at('mind'), s = data.selected;
+  node.replaceChildren();
+  if (!s) {
+    node.append(el('h2', data.beat.label),
+      el('p', data.retained ? 'The saved Roger scene resumes here.' : 'No character is resolved for this beat.', 'muted'));
+    return;
+  }
+  const stage = s.status === 'planning_only' ? 'Planning preview' :
+    (s.status === 'in_scope' ? 'In writing scope' : 'Active at this beat');
+  node.append(el('span', stage, 'tag'), el('h2', s.label));
+  if (s.speaker_allowed === true) node.append(el('p', 'Dialogue available at this beat', 'muted'));
+  if (s.speaker_allowed === false && s.status === 'active') node.append(el('p', 'Silent at this beat', 'muted'));
+  if (s.status === 'planning_only') {
+    node.append(el('p', 'This form is outside the selected beat.', 'muted'));
+  } else {
+    const facts = el('div', '', 'facts');
+    const guidance = el('div');
+    const card = s.card;
+    if (card?.role) guidance.append(el('h3', 'Personality role'), el('p', card.role));
+    if (card?.constraint) guidance.append(el('p', card.constraint, 'muted'));
+    section(guidance, ['replay','applied'].includes(data.beat.stage) ? 'Bound Mind tactics' : 'Tactics in writer input',
+      card?.tendencies?.map(evidence) || card?.guidance || []);
+    const profiles = s.profiles.flatMap(part => part.fields);
+    for (const [name, categories] of [['Voice', ['voice']], ['Goals and motives', ['goal','objective']],
+      ['Personality and behavior', ['personality','behavior']], ['Profile knowledge', ['knowledge']]]) {
+      section(guidance, name, profiles.filter(field => categories.includes(field.category)).map(field => {
+        const row = el('div', field.text);
+        row.append(el('small', ' · ' + (field.source?.evidence_source || field.source?.id || 'Saved profile')));
+        return row;
+      }));
+    }
+    const rules = el('div');
+    section(rules, 'Witnessed in this scene', s.knowledge.map(k =>
+      title(k.scent || k.id) + (k.observed_at ? ' · ' + title(k.observed_at) : '')), 'No witnessed facts in this input.');
+    section(rules, 'Relationships', s.relationships.map(edge => relationship(edge, data.subjects)));
+    section(rules, 'Local rules', s.local_rules.map(rule =>
+      title(rule.trigger) + ' · ' + rule.scent + (rule.perfume ? ' (' + rule.perfume + ')' : '')));
+    facts.append(guidance, rules);
+    node.append(facts);
+    const media = s.media.filter(item => !item.library);
+    section(node, 'Media cues in writer input', media.map(mediaRow));
+    const library = s.media.filter(item => item.library);
+    if (library.length) {
+      const timing = el('details');
+      timing.append(el('summary', 'Fart Media · ' + library.length + ' timing references'),
+        list(library.map(mediaRow)));
+      node.append(timing);
+    }
+    if (!card && !profiles.length) node.append(el('p', 'No Mind guidance stored in this input.', 'muted'));
+  }
+  const provenance = el('details');
+  provenance.append(el('summary', 'Mind port and sources'),
+    el('p', s.mind ? 'Linked Mind' : 'Empty Mind port'), el('code', s.mind || ''));
+  if (s.mind_revision) provenance.append(el('p', 'Mind revision'), el('code', s.mind_revision));
+  for (const source of s.sources)
+    provenance.append(el('p', title(source.type)), el('code', source.sha256));
+  node.append(provenance);
+}
+function savedPanel(data) {
+  const node = at('auditions');
+  const auditions = data.auditions || [];
+  const drafts = data.drafts || [];
+  node.hidden = !auditions.length && !drafts.length && !data.audition;
+  node.replaceChildren(el('h2', 'Saved auditions'));
+  if (data.audition) node.append(el('blockquote', data.audition, 'scene-text'));
+  const cards = el('div', '', 'auditions');
+  const selection = {episode, turn: data.beat.id};
+  if (data.selected) Object.assign(selection, {character: data.selected.character, form: data.selected.form});
+  for (const audition of auditions) {
+    const card = el('article');
+    card.append(el('h3', audition.label), el('span', title(audition.status) + ' · source r' +
+      audition.source_revision, audition.status === 'BLOCKED' ? 'tag rejected' : 'tag'));
+    card.append(el('p', audition.dialogue || 'No dialogue extracted for this Mind.', 'dialogue'));
+    if (audition.action) card.append(el('p', audition.action, 'action'));
+    if (!data.saved_draft) card.append(link('Inspect saved inputs', '/mind-inspector', {...selection, draft: audition.id}));
+    cards.append(card);
+  }
+  for (const [i, draft] of drafts.entries()) {
+    const card = el('article');
+    card.append(el('h3', draft.in_manuscript ? 'In manuscript' : 'Saved bridge ' + (i + 1)),
+      el('p', title(draft.status) + ' · source r' + draft.source_revision, 'muted'),
+      link('Open saved beat', '/mind-inspector', {...selection, draft: draft.id}));
+    cards.append(card);
+  }
+  node.append(cards);
+}
+function beatPanel(data) {
+  const node = at('beat-source');
+  const sources = data.cutaway || [];
+  const events = data.visible_events || [];
+  const laws = data.world_laws || [];
+  node.hidden = !(data.beat.text || sources.length || events.length || laws.length);
+  node.replaceChildren(el('h2', data.beat.label));
+  if (data.beat.text) node.append(el('blockquote', data.beat.text, 'scene-text'));
+  section(node, 'Cutaway connections', sources.map(edge => {
+    const range = edge.evidence.selector;
+    return edge.evidence.asset + ' · ' + title(edge.operator) +
+      (range.kind === 'clip' ? ' · ' + moment(range.start) + ' – ' + moment(range.end) : '');
+  }));
+  section(node, 'Visible timeline facts', events.map(event => event.content + ' · ' + event.source_id));
+  section(node, 'World laws in this input', laws.map(law => law.statement || law.name));
+}
+function render(data) {
+  at('layout').hidden = false;
+  const beats = at('beats');
+  beats.replaceChildren(...data.beats.map(beat => {
+    const option = el('option', beat.label);
+    option.value = beat.id;
+    return option;
+  }));
+  beats.value = data.beat.id;
+  beats.disabled = false;
+  at('perspective').hidden = data.kind !== 'passage';
+  const narrator = el('option', 'Narrator');
+  narrator.value = '';
+  at('viewpoint').replaceChildren(narrator, ...data.subjects.map(subject => {
+    const option = el('option', subject.label);
+    option.value = subject.character;
+    return option;
+  }));
+  at('viewpoint').value = data.viewpoint || '';
+  at('cast-title').textContent = data.kind === 'passage' ? 'In scope' : 'Cast';
+  const cast = at('cast');
+  const list = [...data.subjects];
+  if (data.selected?.status === 'planning_only') list.push(data.selected);
+  cast.replaceChildren(...list.map(subject => {
+    const button = el('button', subject.label);
+    button.type = 'button';
+    button.setAttribute('aria-pressed', String(subject.form === data.selected?.form &&
+      subject.character === data.selected?.character));
+    if (subject.status === 'planning_only' || subject.location)
+      button.append(el('small', subject.location ? title(subject.location) : 'Planning preview'));
+    button.addEventListener('click', () => navigate({character: subject.character, form: subject.form}, true));
+    return button;
+  }));
+  if (!list.length) cast.append(el('p', 'No cast at this boundary.', 'muted'));
+  const track = new URLSearchParams({episode, view: 'timeline', track: 'story', 'story-beat': data.beat.id});
+  if (data.fragment) track.set('story-fragment', data.fragment);
+  at('story').href = '/v2?' + track;
+  at('comparison').hidden = data.kind !== 'roast';
+  at('comparison').href = '/scene-minds?' + new URLSearchParams({episode});
+  mindPanel(data);
+  savedPanel(data);
+  beatPanel(data);
+}
+async function read(url, options) {
+  const response = await fetch(url, options);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'The Mind inspector could not open this beat.');
+  return data;
+}
+async function navigate(changes, focusCast = false) {
+  const url = new URL(location.href);
+  for (const [key, value] of Object.entries(changes))
+    if (value) url.searchParams.set(key, value); else url.searchParams.delete(key);
+  const input = {};
+  for (const key of requestKeys) if (url.searchParams.has(key)) input[key] = url.searchParams.get(key);
+  const number = ++loadNumber;
+  status('Opening the beat…', 'loading');
+  try {
+    const next = await read('/api/episode-command', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({...scope, ...input, action: 'mind.inspect'})});
+    if (number !== loadNumber) return;
+    model = next;
+    render(next);
+    if (focusCast) at('cast').querySelector('[aria-pressed=true]')?.focus();
+    history.replaceState({}, '', url);
+    const context = next.saved_draft ? 'Saved input · source r' + next.saved_draft.source_revision :
+      ({replay:'Saved scene replay', planned:'Planned writing turn', applied:'Applied bridge · current Mind data',
+        retained:'Retained source scene', roast:'Current roast inputs',
+        passage:'Timeline beat ' + next.beat.cutoff + ' · ' + title(next.beat.timing)})[next.beat.stage];
+    status(context || '');
+  } catch (error) {
+    if (number !== loadNumber) return;
+    if (model) render(model);
+    status(error.message, 'error');
+  }
+}
+at('beats').addEventListener('change', () => {
+  const turn = at('beats').value;
+  const carry = !model.saved_draft && model.kind === 'bridge' &&
+    model.beats.find(beat => beat.id === turn)?.stage !== 'retained' && model.selected;
+  navigate({turn, character: carry?.character, form: carry?.form});
+});
+at('viewpoint').addEventListener('change', () => navigate({viewpoint: at('viewpoint').value}));
+async function start() {
+  if (!episode) throw new Error('Choose a saved episode in Studio.');
+  const state = await read('/api/state?' + new URLSearchParams({episode}));
+  scope = {episode, project: state.scope.project_id, universe: state.scope.universe_id,
+    branch: state.episode.branch, timeline_revision: state.episode.head, scope_revision: state.scope.scope_revision};
+  at('episode').textContent = state.episode.title + ' · ' + title(state.episode.branch);
+  for (const view of ['compose', 'graph']) at(view).href = '/v2?' + new URLSearchParams({episode, view});
+  await navigate({});
+}
+start().catch(error => status(error.message, 'error'));
+</script>
+</html>

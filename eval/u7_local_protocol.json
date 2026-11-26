@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "id": "u7-spring-break-line-edits-v1",
+  "provenance": "Five new synthetic smoke cases and a frozen subset of the U5 local manuscript action spans. No named author preference evidence.",
+  "source": "work/americandad/foxy_mo2_hybrid_novel.md",
+  "source_sha256": "1e7372cebbcdae524b53e2b60a27550df3999ce2aada8aa19e593b567b6af70e",
+  "u5_spec": "eval/u5_pilot_spec.json",
+  "u5_spec_sha256": "754f49ee408cb5a1813f5023c8ba208cde24774a42d21eb3287d579037853719",
+  "u5_decision": "docs/acceptance/NE-U5-001.json",
+  "u5_decision_sha256": "1c9d37c44a5fe219d87b7de159152aaa4e69d896caf48853ce60e7a326fe8f93",
+  "world_sha256": "bcc130ee1cdac749d05121fd7655b3b11acfd0e22361851b5130d17b2084f2a7",
+  "held_out": {
+    "1": [
+      3,
+      4,
+      5,
+      7,
+      8,
+      11
+    ],
+    "3": [
+      33,
+      36,
+      37,
+      39,
+      40,
+      47,
+      50,
+      54
+    ],
+    "4": [
+      60,
+      61,
+      63,
+      72,
+      74,
+      82
+    ],
+    "5": [
+      88,
+      89,
+      93
+    ],
+    "7": [
+      104,
+      105,
+      112,
+      115,
+      120,
+      128,
+      136
+    ]
+  },
+  "held_out_direction": "Tighten the exact selected action phrase or keep it if there is no clear gain. Keep its boundary punctuation, story timing, concrete names, props and joke. Leave the rest of the paragraph alone. In this episode Haley's later fox form is unavailable.",
+  "settings": {
+    "retrieval": "off",
+    "context_tokens": 4096,
+    "max_output_tokens": 128,
+    "temperature": 0,
+    "seed": 70817
+  },
+  "smoke": [
+    {
+      "id": "smoke-clean-cut",
+      "scene": "smoke-clean-cut",
+      "source": "### Action\n\nFrancine stood by the hall door. She noticed the latch was closed.",
+      "paragraph": "Francine stood by the hall door. She noticed the latch was closed.",
+      "target": "She noticed the latch was closed.",
+      "direction": "Remove the filter phrase. Keep the latch closed.",
+      "baseline_replacement": "The latch was closed.",
+      "required": [
+        "latch",
+        "closed"
+      ]
+    },
+    {
+      "id": "smoke-frozen-dialogue",
+      "scene": "smoke-frozen-dialogue",
+      "source": "### Locked dialogue\n\n- My husband Jeff is waiting.",
+      "paragraph": "- My husband Jeff is waiting.",
+      "target": "- My husband Jeff is waiting.",
+      "direction": "The line conflicts with the story: Jeff is a boyfriend. The exact line is frozen, so use keep.",
+      "baseline_replacement": null,
+      "frozen": [
+        "- My husband Jeff is waiting."
+      ]
+    },
+    {
+      "id": "smoke-unknown-visitor",
+      "scene": "smoke-unknown-visitor",
+      "source": "Haley heard a knock. She waited for someone else to answer.",
+      "paragraph": "Haley heard a knock. She waited for someone else to answer.",
+      "target": "She waited for someone else to answer.",
+      "direction": "Tighten the reaction. Haley stays put; the knock's source and the visitor are still unknown.",
+      "baseline_replacement": "She waited for someone else to get it.",
+      "required": [
+        "Haley",
+        "knock"
+      ],
+      "forbidden": [
+        "\\b(?:Roger|Jeff|Stella|Rainee|Francine|delivery driver|neighbor)\\b"
+      ]
+    },
+    {
+      "id": "smoke-future-form",
+      "scene": "smoke-future-form",
+      "source": "Haley held a coffee cup in the living room. She did not get up.",
+      "paragraph": "Haley held a coffee cup in the living room. She did not get up.",
+      "target": "held a coffee cup in the living room",
+      "direction": "Keep Haley and the coffee cup in the living room. Her later fox awakening is unavailable. Remove only needless words.",
+      "baseline_replacement": null,
+      "required": [
+        "Haley",
+        "coffee",
+        "cup",
+        "living room"
+      ],
+      "forbidden": [
+        "\\b(?:tail|ears|fur|awakening|transformed)\\b"
+      ]
+    },
+    {
+      "id": "smoke-unicode-frozen",
+      "scene": "smoke-unicode-frozen",
+      "source": "“Hold there.”\r\n\r\nStella set the Étoile box by the door. She noticed the handle was cold.\r\n",
+      "paragraph": "Stella set the Étoile box by the door. She noticed the handle was cold.",
+      "target": "She noticed the handle was cold.",
+      "direction": "Remove the filter phrase. Keep the cold handle, the box label, and the frozen dialogue.",
+      "baseline_replacement": "The handle was cold.",
+      "frozen": [
+        "“Hold there.”"
+      ],
+      "required": [
+        "Étoile",
+        "handle",
+        "cold"
+      ]
+    }
+  ]
+}

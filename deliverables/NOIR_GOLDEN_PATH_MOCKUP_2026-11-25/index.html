@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fresh-project workflow · NOIR Studio simulation</title>
+<style>
+:root{color-scheme:dark;--void:#0b0e14;--panel:#151b26;--raised:#1e2736;--line:#333e51;--ink:#f2eee9;--muted:#a8b3c6;--gold:#ffc268;--cyan:#a6dee8;--green:#ade4c5;--red:#fcb1ac;--paper:#f5ede0;--dark:#251e19}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 87% 0,#202333 0,transparent 48%),var(--void);color:var(--ink);font:14px/1.5 "Segoe UI",sans-serif}h1,h2,h3,p{margin:0}h1{font-size:clamp(32px,4vw,51px);letter-spacing:-.05em;line-height:1.05}h2{font-size:19px}h3{font-size:15px}.muted{color:var(--muted)}
+header{background:#0d1119;border-bottom:1px solid var(--line)}.frame{max-width:1450px;margin:auto;padding-inline:clamp(15px,4vw,55px)}.brand{display:flex;justify-content:space-between;align-items:center;padding-block:14px;gap:12px}.brand strong{letter-spacing:.12em}.brand span{color:var(--gold)}
+main{padding-block:29px 41px}.intro{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:18px}.intro p{color:var(--muted);margin-top:8px}.status{color:var(--cyan);font-size:13px}.bar{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}.bar h2{margin-right:auto;overflow-wrap:anywhere}.notice{min-height:21px;margin:7px 0 3px;color:var(--cyan);font-size:13px}
+.grid{display:grid;grid-template-columns:minmax(200px,.7fr) minmax(355px,1.5fr) minmax(255px,1fr);gap:12px;align-items:start}.panel{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden;min-width:0}.head{padding:12px 15px;border-bottom:1px solid var(--line)}.head p{color:var(--muted);font-size:13px;margin-top:3px}.body{padding:14px 15px}.stack{display:grid;gap:9px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}.section{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}.empty{max-width:620px}.empty form{margin-top:12px}
+button,input,select,textarea{font:inherit;color:inherit;background:var(--raised);border:1px solid var(--line);border-radius:7px;padding:7px 9px;min-width:0;min-height:36px}button{cursor:pointer}button:hover:not(:disabled){border-color:var(--cyan)}button:disabled{opacity:.46;cursor:default}.primary{background:var(--gold);color:#261807;border-color:var(--gold);font-weight:700}label{display:grid;gap:4px;font-size:12px;color:var(--muted)}:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}input::placeholder,textarea::placeholder{color:#919db1}.nav button{text-align:left;display:flex;justify-content:space-between;align-items:center;gap:7px}.nav button[aria-current=step]{border-color:var(--cyan);background:#213342}.nav small{color:var(--muted)}.nav small.done{color:var(--green)}
+.entry{border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#151e2c;overflow-wrap:anywhere}.entry span{color:var(--muted);font-size:12px}.entry strong{display:block}.pass{display:flex;justify-content:space-between;gap:8px}.pass[data-status=running]{border-left:3px solid var(--gold)}.pass[data-status=running] span{color:var(--gold)}.pass[data-status=done] span{color:var(--green)}
+.paper{background:var(--paper);color:var(--dark);color-scheme:light}.paper .head,.paper .section{border-color:#d5c7b3}.paper .head p,.paper .muted{color:#5c5042}.paper summary{cursor:pointer}.paper pre{font:12px/1.45 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:#e8decc;padding:9px;border-radius:5px}.data{display:grid;grid-template-columns:minmax(85px,.8fr) 1.2fr;gap:5px 10px;margin:0}.data dt{color:#625546}.data dd{margin:0;text-align:right;overflow-wrap:anywhere}.preview{background:#e9deca;padding:9px;border-radius:6px;overflow-wrap:anywhere}.prose{font:17px/1.55 Georgia,serif;margin-top:5px;white-space:pre-wrap}.violation{color:var(--red);border-left:3px solid #cc6f67;padding:6px 9px;background:#30242a}.footer{color:var(--muted);font-size:13px;margin-top:14px}
+[hidden]{display:none}@media(max-width:990px){.grid{grid-template-columns:minmax(185px,.6fr) minmax(0,1.6fr)}.paper{grid-column:1/-1}}@media(max-width:610px){.grid,.two{grid-template-columns:1fr}.paper{grid-column:auto}.intro{align-items:start;flex-direction:column}.nav{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header><div class="frame brand"><strong>NOIR <span>STUDIO</span></strong><small class="muted">Sprint 5 · UI simulation</small></div></header>
+<main class="frame">
+  <div class="intro"><div><h1>Fresh-project workflow</h1><p>Build a scene from source evidence, test an alternate branch, and check a draft.</p></div><span class="status" id="completion"></span></div>
+  <section class="panel empty" id="start">
+    <div class="head"><h2>Create an empty project</h2><p>Add the media, cast, laws, and beats yourself.</p></div>
+    <div class="body"><form id="project-form" class="stack"><label>Project name<input name="name" maxlength="60" required placeholder="Night Station"></label><button class="primary" type="submit">Create project</button></form></div>
+  </section>
+  <section id="workspace" hidden>
+    <div class="bar" aria-label="Project controls"><h2 id="project-name"></h2><button type="button" id="undo">Undo</button><button type="button" id="redo">Redo</button></div>
+    <p class="notice" id="notice" role="status"></p>
+    <div class="grid">
+      <section class="panel"><div class="head"><h2>Workflow</h2></div><nav class="body stack nav" id="navigation" aria-label="Workflow"></nav></section>
+      <section class="panel" aria-labelledby="editor-title"><div class="head"><h2 id="editor-title"></h2><p id="editor-sub"></p></div><div class="body" id="editor"></div></section>
+      <aside class="panel paper" aria-labelledby="scene-title"><div class="head"><h2 id="scene-title">Scene evidence</h2><p>Saved data for the active branch.</p></div><div class="body stack" id="evidence"></div></aside>
+    </div>
+  </section>
+  <p class="footer">Offline fixture. The browser keeps project data and undo history. Media processing and Cook use simulated results.</p>
+</main>
+<script>
+'use strict';
+const el = id => document.getElementById(id);
+const storage = 'noir-s5-fresh-project-20261125-v1';
+const stageNames = ['Structure and protection','World graph and sockets','Bindings and replay','Passage realization','Polish and byte checks'];
+const pages = [
+  ['media','Media intake','Fingerprint a local source, then bind it to the scene.'],
+  ['cast','Characters & forms','Create two characters, an alternate form, and a directed relationship.'],
+  ['laws','World laws','Require an earlier fact before an action can succeed.'],
+  ['branches','Timeline & branches','Preview each edit against the active branch before saving.'],
+  ['cook','Five-pass Cook','Render a fixture draft from the active branch and inspect the exact dialogue check.']
+];
+const safe = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const key = value => value.trim().replace(/\s+/g,' ').toLowerCase();
+const uid = () => crypto.randomUUID();
+let local = {project:null,undo:[],redo:[],branch:'main'};
+let storageAvailable = true;
+try { local = JSON.parse(localStorage.getItem(storage) || 'null') || local; }
+catch { storageAvailable = false; }
+let page = 'media';
+let notice = '';
+let job = null;
+let busy = false;
+let incoming = null;
+const project = () => local.project;
+function activeBranch(model = project()) {
+  return model.branches.find(item => item.id === local.branch) || model.branches[0];
+}
+function persist() {
+  try { localStorage.setItem(storage,JSON.stringify(local)); }
+  catch { storageAvailable = false; }
+}
+function commit(label, mutation) {
+  if (busy) return;
+  const next = structuredClone(project());
+  const branch = local.branch;
+  mutation(next);
+  local.undo.push({label,model:project(),branch});
+  local.redo = [];
+  local.project = next;
+  job = null;
+  notice = label;
+  persist();
+  render();
+}
+function history(direction) {
+  if (busy || !local[direction].length) return;
+  const other = direction === 'undo' ? 'redo' : 'undo';
+  const entry = local[direction].pop();
+  local[other].push({label:entry.label,model:project(),branch:local.branch});
+  local.project = entry.model;
+  local.branch = entry.branch;
+  local.branch = activeBranch().id;
+  job = null;
+  notice = (direction === 'undo' ? 'Undid: ' : 'Redid: ') + entry.label;
+  persist();
+  render();
+}
+function replay(beats, laws) {
+  const facts = new Map();
+  const findings = [];
+  for (const beat of beats) {
+    const missing = laws.filter(law => key(beat.action) === key(law.action) && !facts.has(key(law.fact)));
+    for (const law of missing) findings.push({rule:law.id,beat:beat.title,fact:law.fact,severity:'blocking'});
+    if (!missing.length && beat.fact) facts.set(key(beat.fact),beat.fact);
+  }
+  return {facts:[...facts.values()],findings};
+}
+function branchBeats(branch) {
+  return [...branch.prefix,...branch.beats];
+}
+function value(data,name) {
+  return String(data.get(name) || '').trim();
+}
+function check(model) {
+  const active = activeBranch(model);
+  return {
+    media:model.assets.some(asset => asset.status === 'ready' && asset.binding),
+    cast:model.characters.some(character => character.form) && model.relationships.length > 0,
+    laws:model.laws.length > 0,
+    branches:Boolean(active.parent && active.beats.length && !replay(branchBeats(active),model.laws).findings.length),
+    cook:Boolean(active.draft)
+  };
+}
+function field(label,name,placeholder,optional=false) {
+  return '<label>' + label + '<input maxlength="72" name="' + name + '" placeholder="' + placeholder + '"' + (optional ? '' : ' required') + '></label>';
+}
+function option(value,label) {
+  return '<option value="' + safe(value) + '">' + safe(label) + '</option>';
+}
+function listRow(title,detail) {
+  return '<div class="entry"><strong>' + safe(title) + '</strong><span>' + safe(detail) + '</span></div>';
+}
+function media(model) {
+  const visibleAssets = incoming ? [...model.assets,incoming] : model.assets;
+  const rows = visibleAssets.map(asset => '<div class="entry row"><div style="margin-right:auto"><strong>' + safe(asset.name) +
+    '</strong><span>' + (asset.status === 'ready' ? 'Ready' : asset.status === 'queued' ? 'Queued' : 'Processing') +
+    (asset.binding ? ' · Rhythm timing bound' : '') + '</span></div>' +
+    (asset.status === 'ready' && !asset.binding ? '<button type="button" data-bind="' + asset.id + '">Bind source</button>' : '') + '</div>');
+  return '<div class="stack"><label>Choose a local media file<input type="file" id="file" accept="image/*,audio/*,video/*,.txt,.pdf,.docx"></label>' +
+    '<div>' + (rows.join('') || '<p class="muted">No sources in the vault.</p>') + '</div></div>';
+}
+function cast(model) {
+  const options = model.characters.map(character => option(character.id,character.name)).join('');
+  return '<div class="stack"><form data-action="character" class="stack">' +
+    '<div class="two">' + field('Character name','character','Mara') + field('Alternate form','form','Night courier',true) +
+    '</div><div><button class="primary">Add character</button></div></form>' +
+    (model.characters.length ? '<div class="stack section">' + model.characters.map(c => listRow(c.name,c.form || 'Base form')).join('') + '</div>' : '') +
+    '<form data-action="relationship" class="stack section"><h3>Directed relationship</h3><div class="two">' +
+    '<label>From<select name="from" required>' + options + '</select></label><label>To<select name="to" required>' + options + '</select></label></div>' +
+    field('Relationship','label','Trusts as a guide') + '<div><button' + (model.characters.length < 2 ? ' disabled' : '') + '>Add relationship</button></div></form>' +
+    model.relationships.map(relation => listRow(model.characters.find(c => c.id === relation.from).name + ' → ' +
+      model.characters.find(c => c.id === relation.to).name,relation.label)).join('') + '</div>';
+}
+function laws(model) {
+  return '<div class="stack"><form data-action="law" class="stack">' + field('Rule ID','rule','vault-access') +
+    field('Action','action','Open vault') + field('Required earlier fact','fact','Key recovered') +
+    '<div><button class="primary">Add law</button></div></form>' +
+    model.laws.map(law => listRow(law.id,law.action + ' requires ' + law.fact)).join('') + '</div>';
+}
+function branches(model) {
+  const current = activeBranch(model);
+  const prior = branchBeats(current);
+  const branchOptions = model.branches.map(branch => '<option value="' + branch.id + '"' + (branch.id === current.id ? ' selected' : '') + '>' + safe(branch.name) + '</option>').join('');
+  return '<div class="stack"><label>Active branch<select id="active-branch">' + branchOptions + '</select></label>' +
+    '<div class="stack">' + (prior.map((beat,index) => listRow(beat.title,
+      [index < current.prefix.length ? 'Inherited' : 'Saved',beat.action,beat.fact].filter(Boolean).join(' · '))).join('') ||
+      '<p class="muted">No saved beats on this branch.</p>') + '</div>' +
+    '<form data-action="beat" class="stack section"><h3>Add beat</h3>' + field('Beat title','title','Approach vault') +
+    '<div class="two">' + field('Attempted action','action','Open vault',true) + field('Fact established','fact','Key recovered',true) +
+    '</div><p class="violation" id="finding" role="status" hidden></p><div><button class="primary">Save beat</button></div></form>' +
+    '<form data-action="fork" class="stack section"><h3>Fork a saved beat</h3><label>Fork point<select name="point" required>' +
+      prior.map(beat => option(beat.id,beat.title)).join('') + '</select></label>' +
+      field('New branch name','name','Service stair') + '<div><button' + (prior.length ? '' : ' disabled') + '>Create fork</button></div></form></div>';
+}
+function cook(model) {
+  const coverage = check(model);
+  const required = ['media','cast','laws','branches'].filter(name => !coverage[name]);
+  const saved = activeBranch(model).draft;
+  const run = job || saved ? '<div class="stack section" id="passes">' + stageNames.map((name,index) => {
+    const status = job ? job.steps[index] : saved.events.findLast(event => event.pass === index + 1)?.status || 'pending';
+    return '<div class="entry pass" data-status="' + status + '"><strong>' + (index+1) + ' · ' + name + '</strong><span>' +
+      ({pending:'Pending',running:'Running',done:'Complete'}[status]) + '</span></div>';
+  }).join('') + '</div>' : '';
+  const draft = job?.result;
+  return '<div class="stack">' + (required.length ? '<p class="muted">Complete the missing workflow items to enable Cook.</p>' : '') +
+    '<form data-action="cook" class="stack"><label>Writable passage<textarea name="passage" required maxlength="520" rows="3" placeholder="The station clock stopped at six."></textarea></label>' +
+    field('Exact dialogue','dialogue','“Keep the clock still.”') + '<div><button class="primary"' +
+      (required.length || busy || draft ? ' disabled' : '') + '>Simulate Cook</button></div></form>' + run +
+    (draft ? '<p class="muted" id="quality">Fixture checks passed · exact dialogue preserved · writable passage changed</p>' +
+      '<div class="entry"><strong>Checked draft</strong><p class="prose">' + safe(draft.passage) + '</p><p class="prose">' +
+      safe(draft.dialogue) + '</p></div><div><button id="apply" class="primary">Apply draft</button></div>' : '') + '</div>';
+}
+const views = {media,cast,laws,branches,cook};
+function showEvidence(model) {
+  const branch = activeBranch(model);
+  const outcome = replay(branchBeats(branch),model.laws);
+  const data = {project:model.name,branch:branch.name,source_sockets:model.assets.filter(asset => asset.binding)
+    .map(asset => ({filename:asset.name,sha256:asset.sha256,socket:'rhythm_timing'})), characters:model.characters,
+    relationships:model.relationships.map(r => ({from:model.characters.find(c => c.id === r.from).name,
+      to:model.characters.find(c => c.id === r.to).name,label:r.label})),
+    world_facts:outcome.facts,beat_titles:branchBeats(branch).map(beat => beat.title),draft:branch.draft || null};
+  el('evidence').innerHTML = '<dl class="data"><dt>Branch</dt><dd>' + safe(data.branch) + '</dd><dt>Sources bound</dt><dd>' +
+    data.source_sockets.length + '</dd><dt>Characters</dt><dd>' + data.characters.length + '</dd><dt>Relationship links</dt><dd>' +
+    data.relationships.length + '</dd><dt>World facts</dt><dd>' + safe(data.world_facts.join(' · ') || 'None') +
+    '</dd><dt>Draft</dt><dd>' + (data.draft ? 'Applied' : 'None saved') + '</dd></dl>' +
+    (data.draft ? '<div class="preview"><h3>Applied passage</h3><p class="prose">' + safe(data.draft.passage) +
+      '</p><p class="prose">' + safe(data.draft.dialogue) + '</p></div>' : '') +
+    '<details><summary>View evidence payload</summary><pre id="payload">' + safe(JSON.stringify(data,null,2)) + '</pre></details>';
+}
+function render() {
+  const model = project();
+  el('start').hidden = Boolean(model);
+  el('workspace').hidden = !model;
+  if (!model) return;
+  const coverage = check(model);
+  const complete = Object.values(coverage).filter(Boolean).length;
+  el('completion').textContent = complete + ' / 5 workflow items complete';
+  el('project-name').textContent = model.name;
+  el('notice').textContent = [notice,storageAvailable ? '' : 'Browser storage unavailable.'].filter(Boolean).join(' ');
+  el('undo').disabled = busy || !local.undo.length;
+  el('redo').disabled = busy || !local.redo.length;
+  el('navigation').innerHTML = pages.map(([name,label]) => '<button type="button" data-page="' + name + '"' +
+    (page === name ? ' aria-current="step"' : '') + '>' + label + '<small class="' + (coverage[name] ? 'done' : '') + '">' +
+    (coverage[name] ? 'Done' : 'Open') + '</small></button>').join('');
+  const [,title,subtitle] = pages.find(([name]) => name === page);
+  el('editor-title').textContent = title;
+  el('editor-sub').textContent = subtitle;
+  el('editor').innerHTML = views[page](model);
+  if (busy) for (const control of el('editor').querySelectorAll('button,input,select,textarea')) control.disabled = true;
+  showEvidence(model);
+}
+async function intake(file) {
+  if (!file || busy) return;
+  if (!file.size || file.size > 32 * 1024 * 1024) {
+    notice = 'Choose a file from 1 byte to 32 MiB.';
+    render();
+    return;
+  }
+  busy = true;
+  notice = 'Fingerprinting the source.';
+  render();
+  try {
+    const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256',await file.arrayBuffer()));
+    const sha256 = Array.from(bytes,b => b.toString(16).padStart(2,'0')).join('');
+    if (project().assets.some(asset => asset.sha256 === sha256)) {
+      busy = false;
+      notice = 'Same content. The source is already in the vault.';
+      render();
+      return;
+    }
+    const asset = {id:uid(),name:file.name,sha256,status:'queued',binding:false};
+    // Temporary job display. Only a ready source enters the saved history.
+    incoming = asset;
+    notice = 'Source queued.';
+    render();
+    await new Promise(resolve => setTimeout(resolve,250));
+    asset.status = 'processing';
+    notice = 'Processing the fixture source.';
+    render();
+    await new Promise(resolve => setTimeout(resolve,500));
+    incoming = null;
+    asset.status = 'ready';
+    busy = false;
+    commit('Source ready', model => model.assets.push(asset));
+  } catch {
+    incoming = null;
+    busy = false;
+    notice = 'The browser could not fingerprint this source.';
+    render();
+  }
+}
+function validateBeat(form) {
+  const data = new FormData(form);
+  const current = activeBranch();
+  const beat = {title:value(data,'title'),action:value(data,'action'),fact:value(data,'fact')};
+  const result = replay([...branchBeats(current),beat],project().laws);
+  const alert = form.querySelector('#finding');
+  alert.hidden = !result.findings.length;
+  alert.textContent = result.findings.map(f => f.rule + ' · Blocking · ' + f.beat + ' requires an earlier fact: ' + f.fact).join(' ');
+  form.querySelector('button').disabled = Boolean(result.findings.length);
+  return result.findings.length ? null : beat;
+}
+async function runCook(passage,dialogue) {
+  const model = project();
+  const branch = activeBranch(model);
+  const coverage = check(model);
+  if (busy || !passage.trim() || !dialogue.trim() || !['media','cast','laws','branches'].every(name => coverage[name])) return;
+  const receipt = {branch:branch.name,media:model.assets.filter(asset=>asset.binding).map(asset=>asset.sha256),
+    cast:model.characters.map(({name,form})=>({name,form})),relationships:model.relationships,
+    laws:model.laws.map(law=>law.id), beats:branchBeats(branch).map(beat=>beat.title),
+    facts:replay(branchBeats(branch),model.laws).facts};
+  busy = true;
+  job = {steps:Array(5).fill('pending'),events:[],result:null};
+  function emit(index,status) {
+    job.steps[index] = status;
+    job.events.push({sequence:job.events.length+1,pass:index+1,status});
+    notice = stageNames[index] + ' · ' + (status === 'running' ? 'Running' : 'Complete');
+    render();
+  }
+  for (const [index] of stageNames.entries()) {
+    emit(index,'running');
+    await new Promise(resolve => setTimeout(resolve,index===3 ? 700 : 270));
+    emit(index,'done');
+  }
+  const checked = {passage:passage + '\nThe hush lingered for one breath.',dialogue};
+  job.result = {...checked,receipt,
+    checks:{exact_dialogue:checked.dialogue === dialogue,writable_text_changed:checked.passage !== passage},
+    events:job.events};
+  busy = false;
+  notice = 'Checked fixture draft is ready to apply.';
+  render();
+}
+el('project-form').addEventListener('submit',event => {
+  event.preventDefault();
+  const name = value(new FormData(event.target),'name');
+  if (!name) return;
+  local.project = {name,assets:[],characters:[],relationships:[],laws:[],
+    branches:[{id:'main',name:'Main',parent:null,prefix:[],beats:[],draft:null}]};
+  persist();
+  render();
+});
+el('undo').addEventListener('click',() => history('undo'));
+el('redo').addEventListener('click',() => history('redo'));
+document.addEventListener('keydown',event => {
+  if (!(event.ctrlKey || event.metaKey) || event.altKey || event.target.closest('input,select,textarea,[contenteditable]')) return;
+  const letter = event.key.toLowerCase();
+  if (letter !== 'z' && letter !== 'y') return;
+  event.preventDefault();
+  history(letter === 'y' || event.shiftKey ? 'redo' : 'undo');
+});
+el('navigation').addEventListener('click',event => {
+  const button = event.target.closest('[data-page]');
+  if (button) {
+    page = button.dataset.page;
+    render();
+    el('navigation').querySelector('[aria-current="step"]')?.focus();
+  }
+});
+el('editor').addEventListener('change',event => {
+  if (event.target.id === 'file') void intake(event.target.files[0]);
+  if (event.target.id === 'active-branch' && !busy) {
+    local.branch = event.target.value;
+    job = null;
+    persist();
+    render();
+  }
+});
+el('editor').addEventListener('input',event => {
+  const form = event.target.closest('[data-action="beat"]');
+  if (form) validateBeat(form);
+});
+el('editor').addEventListener('click',event => {
+  if (busy) return;
+  const asset = event.target.closest('[data-bind]')?.dataset.bind;
+  if (asset) commit('Bound source', model => { model.assets.find(item=>item.id===asset).binding=true; });
+  if (event.target.id === 'apply' && job?.result) {
+    const draft = job.result;
+    commit('Applied checked draft',model => {activeBranch(model).draft=draft;});
+  }
+});
+el('editor').addEventListener('submit',event => {
+  event.preventDefault();
+  if (busy) return;
+  const form = event.target;
+  const data = new FormData(form);
+  const model = project();
+  const current = activeBranch(model);
+  switch (form.dataset.action) {
+    case 'character': {
+      const name = value(data,'character');
+      if (!name || model.characters.some(c=>key(c.name)===key(name))) break;
+      commit('Added ' + name,next => next.characters.push({id:uid(),name,form:value(data,'form')}));
+      return;
+    }
+    case 'relationship': {
+      const from = value(data,'from'), to = value(data,'to'), label = value(data,'label');
+      if (!from || !to || !label || from===to || model.relationships.some(r=>r.from===from && r.to===to)) break;
+      commit('Added directed relationship',next=>next.relationships.push({from,to,label}));
+      return;
+    }
+    case 'law': {
+      const rule = {id:value(data,'rule'),action:value(data,'action'),fact:value(data,'fact')};
+      if (Object.values(rule).some(item=>!item) || model.laws.some(l=>key(l.id)===key(rule.id))) break;
+      if (model.branches.some(branch=>replay(branchBeats(branch),[...model.laws,rule]).findings.length)) break;
+      commit('Added ' + rule.id,next=>next.laws.push(rule));
+      return;
+    }
+    case 'beat': {
+      const beat = validateBeat(form);
+      if (!beat || !beat.title) return;
+      commit('Saved ' + beat.title,next=>activeBranch(next).beats.push({...beat,id:uid()}));
+      return;
+    }
+    case 'fork': {
+      const name = value(data,'name'), prior = branchBeats(current);
+      const index = prior.findIndex(beat=>beat.id===value(data,'point'));
+      if (!name || index<0 || model.branches.some(branch=>key(branch.name)===key(name))) break;
+      const branch = {id:uid(),name,parent:current.id,prefix:prior.slice(0,index+1),beats:[],draft:null};
+      commit('Created ' + name,next=>{next.branches.push(branch); local.branch=branch.id;});
+      return;
+    }
+    case 'cook': void runCook(String(data.get('passage')),String(data.get('dialogue'))); return;
+  }
+  notice = 'Check the values. Names and rules must be unique, and a relationship needs two different characters.';
+  el('notice').textContent = notice;
+});
+render();
+</script>
+</body>
+</html>

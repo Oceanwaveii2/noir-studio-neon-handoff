@@ -1,0 +1,271 @@
+/* Noir Fiction Studio v2 — Semantic Design Tokens
+ * Every surface token has a paired ink token. Components must declare both
+ * background and color from this contract to prevent contrast regressions. */
+
+:root {
+  --font-sans: 'Segoe UI', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Bahnschrift', 'Segoe UI Variable Display', 'Inter', system-ui, sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
+  --font-prose: 'Newsreader', Georgia, 'Cambria', 'Times New Roman', serif;
+  --font-mono: 'Cascadia Code', 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --text-mono-sm: 11px;
+  --text-mono-md: 12px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-prose: 15.5px;
+  --text-lg: 16.5px;
+  --text-xl: 20px;
+  --leading-tight: 1.25;
+  --leading-ui: 1.45;
+  --leading-prose: 1.68;
+  --measure-prose: 74ch;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  /* AAA Compose Highlight & Lock-State Palette */
+  --hl-lock-bg: #d7f3df;
+  --hl-lock-ink: #064e3b;
+  --hl-lock-border: #10b981;
+  --hl-25-bg: #dbeafe;
+  --hl-25-ink: #0c4a6e;
+  --hl-25-border: #38bdf8;
+  --hl-50-bg: #fef3c7;
+  --hl-50-ink: #78350f;
+  --hl-50-border: #f5a623;
+  --hl-75-bg: #ffedd5;
+  --hl-75-ink: #7c2d12;
+  --hl-75-border: #ff6b35;
+  --hl-100-bg: #f3e8ff;
+  --hl-100-ink: #581c87;
+  --hl-100-border: #a855f7;
+
+  /* Unified 5 Cross-View Port Tokens */
+  --port-lineage: #6cb4ee;
+  --port-mind: #b4a7e5;
+  --port-media: #f59e0b;
+  --port-rel: #fb7185;
+  --port-story: #90e9cd;
+
+  /* Unified 4 Canon Tag Tokens */
+  --canon-main: #10b981;
+  --canon-non: #94a3b8;
+  --canon-alt: #f5a623;
+  --canon-tt: #a855f7;
+
+  /* Unified Scrollbar Tokens */
+  --scroll-track: #0d1118;
+  --scroll-thumb: #334155;
+  --scroll-thumb-hover: #f2a65e;
+
+  /* Unified Grand Prix + Form Switchyard + Parchment Semantic Tokens */
+  --noir-canvas-dot: #475352;
+  --noir-mint-wire: #90e9cd;
+  --noir-copper-select: #ff9c38;
+  --noir-terracotta: #EA6A32;
+  --noir-marigold: #F5B841;
+  --noir-sky-execute: #6EC4E8;
+  --noir-danger: #d94b4b;
+  --noir-frozen-bg: #d7f3df;
+  --noir-frozen-edge: #8ed8b8;
+  --noir-desk-mat: #ead7bf;
+  --noir-cream: #F4EFE4;
+  --noir-cream-hi: #FCF9F2;
+  --noir-z-hud: 10;
+  --noir-z-popover: 20;
+  --noir-z-drawer: 60;
+
+  /* 3-Layer Grand Prix Parity Tokens */
+  --gp-glass-bg: rgba(18, 22, 32, 0.78);
+  --gp-glass-border: rgba(255, 255, 255, 0.12);
+  --gp-card-cream: #F8F5EE;
+  --gp-cyan-glow: #45D8E6;
+  --gp-gold-start: #FFC43D;
+  --gp-gold-end: #FF8C1A;
+  --gp-canopy-orange: #FF5A24;
+  --gp-checker-accent: repeating-conic-gradient(rgba(255, 196, 61, 0.28) 0% 25%, rgba(18, 22, 32, 0.2) 0% 50%) 0 0 / 10px 10px;
+}
+
+body[data-theme="noir-v4"] {
+  --font-display: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  /* DaVinci Resolve x ComfyUI x Linear Dark-Slate Hierarchy */
+  --surface-void: #070a10;
+  --surface-chrome: #0f141e;
+  --surface-chrome-elevated: #151c29;
+  --surface-chrome-hover: #1d2638;
+  --ink-on-chrome: #f1f5f9;
+  --ink-muted-on-chrome: #94a3b8;
+  --border-chrome: #283347;
+  --stripe-chrome: #38bdf8;
+
+  /* Unified Dark-Slate Panels & Manuscript Workspace */
+  --surface-canvas: #070a10;
+  --surface-paper: #151c29;
+  --surface-paper-alt: #0f141e;
+  --surface-paper-inset: #1d2638;
+  --ink-on-paper: #e2e8f0;
+  --ink-muted-on-paper: #94a3b8;
+  --border-paper: #283347;
+
+  /* Semantic Signal Accents */
+  --accent-primary: #38bdf8;
+  --accent-primary-strong: #0ea5e9;
+  --ink-on-accent: #070a10;
+  --accent-secondary: #ec4899;
+  --ink-on-secondary: #fdf2f8;
+  --accent-violet: #8b5cf6;
+  --focus-ring: #38bdf8;
+
+  /* Status & Alerts */
+  --status-ok-bg: rgba(16, 185, 129, 0.14);
+  --status-ok-ink: #34d399;
+  --status-warn-bg: rgba(245, 158, 11, 0.14);
+  --status-warn-ink: #fbbf24;
+  --status-err-bg: rgba(239, 68, 68, 0.16);
+  --status-err-ink: #f87171;
+  --status-unprocessed-bg: rgba(139, 92, 246, 0.16);
+  --status-unprocessed-ink: #c4b5fd;
+
+  /* Block Kind Badges */
+  --badge-narrator-bg: #1d2638;
+  --badge-narrator-ink: #e2e8f0;
+  --badge-scene-bg: rgba(56, 189, 248, 0.16);
+  --badge-scene-ink: #38bdf8;
+  --badge-char-bg: rgba(236, 72, 153, 0.16);
+  --badge-char-ink: #f472b6;
+  --badge-unresolved-bg: rgba(239, 68, 68, 0.18);
+  --badge-unresolved-ink: #fca5a5;
+}
+
+body[data-theme="racing"] {
+  --font-display: 'Bahnschrift', 'Inter', system-ui, sans-serif;
+
+  /* Chrome (Cool Obsidian Top bar, Left rail, Footer) */
+  --surface-chrome: #0f1218;
+  --surface-chrome-elevated: #151922;
+  --surface-chrome-hover: #1d2330;
+  --ink-on-chrome: #f1f5f9;
+  --ink-muted-on-chrome: #a9b6c8;
+  --border-chrome: #252c3b;
+  --border-chrome-strong: #343e52;
+  --stripe-chrome: #f2a65e;
+  --telemetry-mint-tint: rgba(144, 233, 205, 0.16);
+  --telemetry-copper-tint: rgba(242, 166, 94, 0.18);
+
+  /* Workspace Canvas & Scoped Manuscript Paper */
+  --surface-canvas: #0b0d12;
+  --surface-paper: #fff4e4;
+  --surface-paper-alt: #f8ead8;
+  --surface-paper-inset: #f3e3ce;
+  --ink-on-paper: #16181d;
+  --ink-muted-on-paper: #4f3e32;
+  --border-paper: #d7bda0;
+
+  /* Accents & Interactive (Copper active chrome, Scoped Mint status/wire) */
+  --accent-primary: #ffb07d;
+  --accent-primary-strong: #f2a65e;
+  --ink-on-accent: #0b0d12;
+  --accent-secondary: #90e9cd;
+  --ink-on-secondary: #101516;
+  --focus-ring: #90e9cd;
+
+  /* Status & Alerts */
+  --status-ok-bg: #1b3932;
+  --status-ok-ink: #90e9cd;
+  --status-warn-bg: #362717;
+  --status-warn-ink: #ffb07d;
+
+  /* Overdrive Motorsport Telemetry Tokens (Word Prep Racing Overhaul) */
+  --od-canvas-void: #0B0E14;
+  --od-panel-obsidian: #151922;
+  --od-panel-obsidian-hi: #1C2230;
+  --od-script-ivory: #F7F4EC;
+  --od-script-ivory-inset: #EFEAE0;
+  --od-ink-on-ivory: #12151C;
+  --od-ink-muted-ivory: #4A5262;
+  --od-ink-on-obsidian: #F1F5F9;
+  --od-carbon-grid: rgba(255, 255, 255, 0.035);
+  --od-spine-rail: #1E2534;
+  --od-spine-border: #334155;
+  --od-spine-tick-idle: rgba(92, 225, 230, 0.34);
+  --od-spine-tick-live: #5CE1E6;
+  --od-spine-pulse-gold: #FFB830;
+  --od-stage: #38BDF8;
+  --od-stage-hi: #5CE1E6;
+  --od-narrator: #F5A623;
+  --od-narrator-hi: #FFB830;
+  --od-char: #10B981;
+  --od-char-hi: #2DD4BF;
+  --od-law: #FF4D4F;
+  --od-law-hi: #FF6B35;
+  --od-mind: #A855F7;
+  --od-mind-hi: #E879F9;
+  --od-turn: #FF7A18;
+  --od-turn-hi: #FFB830;
+  --status-err-bg: #3d1b19;
+  --status-err-ink: #f87171;
+  --status-unprocessed-bg: #3b2618;
+  --status-unprocessed-ink: #ffb07d;
+
+  /* Block Kind Badges */
+  --badge-narrator-bg: #252c2e;
+  --badge-narrator-ink: #f1e8d9;
+  --badge-scene-bg: #3a2a1c;
+  --badge-scene-ink: #ffb07d;
+  --badge-char-bg: #1b3932;
+  --badge-char-ink: #90e9cd;
+  --badge-unresolved-bg: #3d1b19;
+  --badge-unresolved-ink: #fca5a5;
+}
+
+body[data-theme="classic"] {
+  --font-display: var(--font-serif);
+
+  /* Chrome (Top bar, Left rail, Footer) */
+  --surface-chrome: #101113;
+  --surface-chrome-elevated: #1a1c20;
+  --surface-chrome-hover: #262930;
+  --ink-on-chrome: #eeeae3;
+  --ink-muted-on-chrome: #a4abb5;
+  --border-chrome: #2c3038;
+  --stripe-chrome: #c49a67;
+
+  /* Workspace Canvas & Script Paper */
+  --surface-canvas: #141619;
+  --surface-paper: #f4f0e8;
+  --surface-paper-alt: #eae4d8;
+  --surface-paper-inset: #e2dacb;
+  --ink-on-paper: #22201d;
+  --ink-muted-on-paper: #61584b;
+  --border-paper: #c9bfa9;
+
+  /* Accents & Interactive */
+  --accent-primary: #c49a67;
+  --accent-primary-strong: #e2b478;
+  --ink-on-accent: #14110c;
+  --accent-secondary: #574838;
+  --ink-on-secondary: #fff6e8;
+  --focus-ring: #e2b478;
+
+  /* Status & Alerts */
+  --status-ok-bg: #163329;
+  --status-ok-ink: #b8f2dc;
+  --status-warn-bg: #362814;
+  --status-warn-ink: #f7d99c;
+  --status-err-bg: #3d1b19;
+  --status-err-ink: #fbc5bf;
+  --status-unprocessed-bg: #2e241b;
+  --status-unprocessed-ink: #e2b478;
+
+  /* Block Kind Badges */
+  --badge-narrator-bg: #ded8cb;
+  --badge-narrator-ink: #22201d;
+  --badge-scene-bg: #e2b478;
+  --badge-scene-ink: #221a0e;
+  --badge-char-bg: #8ec5b5;
+  --badge-char-ink: #12241f;
+  --badge-unresolved-bg: #3b3228;
+  --badge-unresolved-ink: #f0dfc2;
+}

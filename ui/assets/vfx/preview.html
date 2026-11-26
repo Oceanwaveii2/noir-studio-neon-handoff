@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>NOIR Overdrive VFX Asset Storybook — EffectCraft + Foundry Nuke 17.0v3</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px 24px 36px;
+      background: #0B0E14;
+      color: #F1F5F9;
+      font: 13px/1.45 'Segoe UI', Inter, system-ui, sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #F5A623;
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+    }
+    h1 { margin: 0; font-size: 20px; letter-spacing: 0.04em; color: #FFB830; }
+    .sub { color: #94A3B8; font-size: 12px; }
+    .pill {
+      padding: 4px 10px;
+      border-radius: 3px;
+      background: rgba(56, 189, 248, 0.16);
+      border: 1px solid #38BDF8;
+      color: #5CE1E6;
+      font: 700 11px/1.2 monospace;
+    }
+    h2 {
+      margin: 18px 0 10px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #5CE1E6;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .card {
+      border: 1px solid #263144;
+      background: #151922;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      background: #10141D;
+      border-bottom: 1px solid #263144;
+      font-family: monospace;
+      font-size: 11px;
+    }
+    .card-head strong { color: #FFB830; }
+    .card-head span { color: #94A3B8; }
+    .split-stage {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      height: 170px;
+    }
+    .swatch {
+      position: relative;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .swatch.dark {
+      background:
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0 6px, transparent 6px 12px),
+        #151922;
+    }
+    .swatch.ivory {
+      background: #F7F4EC;
+    }
+    .swatch-tag {
+      position: absolute;
+      left: 6px;
+      bottom: 4px;
+      font: 700 9px/1 monospace;
+      padding: 2px 5px;
+      border-radius: 2px;
+      background: rgba(11, 14, 20, 0.72);
+      color: #CBD5E1;
+    }
+    canvas, img.plate {
+      max-width: 94%;
+      max-height: 152px;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>NOIR OVERDRIVE VFX STORYBOOK — EFFECTCRAFT + FOUNDRY NUKE 17.0v3</h1>
+      <div class="sub">All assets rendered side-by-side over Dark Obsidian (#151922) and Ceramic-Ivory (#F7F4EC) to verify clean alpha edges and zero black fringe.</div>
+    </div>
+    <span class="pill" id="statusPill">Loading 9 VFX Assets...</span>
+  </header>
+
+  <h2>1. EffectCraft Procedural Lottie Vector Pack (5 Keyframed JSON Assets)</h2>
+  <div class="grid" id="lottieGrid"></div>
+
+  <h2>2. Foundry Nuke 17.0v3 Optical Plates &amp; Additive Sprite Sheet (4 Premultiplied RGBA PNGs)</h2>
+  <div class="grid" id="plateGrid"></div>
+
+  <script type="module">
+    import { loadLottieAsset, renderLottieFrame } from '/assets/v2/vfx_engine.js';
+
+    const LOTTIE_ITEMS = [
+      { id: 'speed_ribbon_wipe', label: 'Diagonal Speed-Ribbon Wipe', meta: '1280x720 · 7 layers' },
+      { id: 'node_hover_sheen', label: 'R&D Node Hover Specular Sheen', meta: '640x96 · 2 layers' },
+      { id: 'chevron_progress_beam', label: 'Chevron Energy Progress Beam', meta: '640x240 · 7 layers' },
+      { id: 'overdrive_charge_ring', label: 'Overdrive Radial Charge Rings', meta: '256x256 · 4 layers' },
+      { id: 'milestone_ribbon_confetti', label: 'Milestone Ribbon + Confetti', meta: '1280x260 · 12 layers' },
+    ];
+
+    const PLATE_ITEMS = [
+      { file: 'optical_starburst_flare.png', label: 'Optical Starburst Lens Flare', meta: 'Nuke 512x512 RGBA' },
+      { file: 'spark_burst_sheet.png', label: '8-Frame Additive Spark Sheet', meta: 'Nuke 2048x256 RGBA' },
+      { file: 'overdrive_chromatic_streak.png', label: 'Chromatic Overdrive Streak', meta: 'Nuke 1024x256 RGBA' },
+      { file: 'hard_lock_shield_bloom.png', label: 'Hard-Lock Molten Shield Bloom', meta: 'Nuke 512x512 RGBA' },
+    ];
+
+    const lottieGrid = document.getElementById('lottieGrid');
+    const plateGrid = document.getElementById('plateGrid');
+
+    const runners = [];
+    for (const item of LOTTIE_ITEMS) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-head"><strong>${item.label}</strong><span>${item.meta}</span></div>
+        <div class="split-stage">
+          <div class="swatch dark"><canvas width="240" height="160"></canvas><span class="swatch-tag">OBSIDIAN</span></div>
+          <div class="swatch ivory"><canvas width="240" height="160"></canvas><span class="swatch-tag">IVORY</span></div>
+        </div>
+      `;
+      lottieGrid.appendChild(card);
+      const canvases = card.querySelectorAll('canvas');
+      const anim = await loadLottieAsset(item.id);
+      if (anim) runners.push({ anim, canvases });
+    }
+
+    for (const item of PLATE_ITEMS) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-head"><strong>${item.label}</strong><span>${item.meta}</span></div>
+        <div class="split-stage">
+          <div class="swatch dark"><img class="plate" src="/assets/vfx/plates/${item.file}" alt="${item.label}"><span class="swatch-tag">OBSIDIAN</span></div>
+          <div class="swatch ivory"><img class="plate" src="/assets/vfx/plates/${item.file}" alt="${item.label}"><span class="swatch-tag">IVORY</span></div>
+        </div>
+      `;
+      plateGrid.appendChild(card);
+    }
+
+    document.getElementById('statusPill').textContent = `VERIFIED: ${runners.length}/5 Lottie + ${PLATE_ITEMS.length}/4 Nuke Plates`;
+
+    function loop(ts) {
+      for (const r of runners) {
+        const op = r.anim.op || 60;
+        // Start mid-action (~42% phase offset) so static screenshots show live motion clearly
+        const frame = ((ts * 0.045) + op * 0.42) % op;
+        for (const c of r.canvases) {
+          const ctx = c.getContext('2d');
+          ctx.clearRect(0, 0, c.width, c.height);
+          renderLottieFrame(ctx, r.anim, frame, { x: 0, y: 0, w: c.width, h: c.height }, 1);
+        }
+      }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

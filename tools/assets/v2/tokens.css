@@ -1,0 +1,130 @@
+/* Noir Fiction Studio v2 — Semantic Design Tokens
+ * Every surface token has a paired ink token. Components must declare both
+ * background and color from this contract to prevent contrast regressions. */
+
+:root {
+  --font-sans: 'Segoe UI', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
+  --font-prose: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-mono: 'Cascadia Code', 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  /* Unified Grand Prix + Form Switchyard + Parchment Semantic Tokens */
+  --noir-canvas-dot: #475352;
+  --noir-mint-wire: #90e9cd;
+  --noir-copper-select: #ff9c38;
+  --noir-terracotta: #EA6A32;
+  --noir-marigold: #F5B841;
+  --noir-sky-execute: #6EC4E8;
+  --noir-danger: #d94b4b;
+  --noir-frozen-bg: #d7f3df;
+  --noir-frozen-edge: #8ed8b8;
+  --noir-desk-mat: #ead7bf;
+  --noir-cream: #F4EFE4;
+  --noir-cream-hi: #FCF9F2;
+  --noir-z-hud: 10;
+  --noir-z-popover: 20;
+  --noir-z-drawer: 60;
+}
+
+body[data-theme="racing"] {
+  --font-display: 'Bahnschrift', 'Inter', system-ui, sans-serif;
+
+  /* Chrome (Obsidian Top bar, Left rail, Footer) */
+  --surface-chrome: #111719;
+  --surface-chrome-elevated: #171c1d;
+  --surface-chrome-hover: #21282a;
+  --ink-on-chrome: #f1e8d9;
+  --ink-muted-on-chrome: #b6b1aa;
+  --border-chrome: #2b3437;
+  --stripe-chrome: #f2a65e;
+
+  /* Workspace Canvas & Scoped Manuscript Paper */
+  --surface-canvas: #14191a;
+  --surface-paper: #fff4e4;
+  --surface-paper-alt: #f8ead8;
+  --surface-paper-inset: #f3e3ce;
+  --ink-on-paper: #201b19;
+  --ink-muted-on-paper: #634938;
+  --border-paper: #d7bda0;
+
+  /* Accents & Interactive (Copper active chrome, Scoped Mint status/wire) */
+  --accent-primary: #ffb07d;
+  --accent-primary-strong: #f2a65e;
+  --ink-on-accent: #14191a;
+  --accent-secondary: #90e9cd;
+  --ink-on-secondary: #101516;
+  --focus-ring: #90e9cd;
+
+  /* Status & Alerts */
+  --status-ok-bg: #1b3932;
+  --status-ok-ink: #90e9cd;
+  --status-warn-bg: #362717;
+  --status-warn-ink: #ffb07d;
+  --status-err-bg: #3d1b19;
+  --status-err-ink: #f87171;
+  --status-unprocessed-bg: #3b2618;
+  --status-unprocessed-ink: #ffb07d;
+
+  /* Block Kind Badges */
+  --badge-narrator-bg: #252c2e;
+  --badge-narrator-ink: #f1e8d9;
+  --badge-scene-bg: #3a2a1c;
+  --badge-scene-ink: #ffb07d;
+  --badge-char-bg: #1b3932;
+  --badge-char-ink: #90e9cd;
+  --badge-unresolved-bg: #3d1b19;
+  --badge-unresolved-ink: #fca5a5;
+}
+
+body[data-theme="classic"] {
+  --font-display: var(--font-serif);
+
+  /* Chrome (Top bar, Left rail, Footer) */
+  --surface-chrome: #101113;
+  --surface-chrome-elevated: #1a1c20;
+  --surface-chrome-hover: #262930;
+  --ink-on-chrome: #eeeae3;
+  --ink-muted-on-chrome: #a4abb5;
+  --border-chrome: #2c3038;
+  --stripe-chrome: #c49a67;
+
+  /* Workspace Canvas & Script Paper */
+  --surface-canvas: #141619;
+  --surface-paper: #f4f0e8;
+  --surface-paper-alt: #eae4d8;
+  --surface-paper-inset: #e2dacb;
+  --ink-on-paper: #22201d;
+  --ink-muted-on-paper: #61584b;
+  --border-paper: #c9bfa9;
+
+  /* Accents & Interactive */
+  --accent-primary: #c49a67;
+  --accent-primary-strong: #e2b478;
+  --ink-on-accent: #14110c;
+  --accent-secondary: #574838;
+  --ink-on-secondary: #fff6e8;
+  --focus-ring: #e2b478;
+
+  /* Status & Alerts */
+  --status-ok-bg: #163329;
+  --status-ok-ink: #b8f2dc;
+  --status-warn-bg: #362814;
+  --status-warn-ink: #f7d99c;
+  --status-err-bg: #3d1b19;
+  --status-err-ink: #fbc5bf;
+  --status-unprocessed-bg: #2e241b;
+  --status-unprocessed-ink: #e2b478;
+
+  /* Block Kind Badges */
+  --badge-narrator-bg: #ded8cb;
+  --badge-narrator-ink: #22201d;
+  --badge-scene-bg: #e2b478;
+  --badge-scene-ink: #221a0e;
+  --badge-char-bg: #8ec5b5;
+  --badge-char-ink: #12241f;
+  --badge-unresolved-bg: #3b3228;
+  --badge-unresolved-ink: #f0dfc2;
+}

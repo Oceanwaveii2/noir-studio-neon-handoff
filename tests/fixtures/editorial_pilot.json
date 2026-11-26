@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "fixture_id": "editorial-pilot-v1",
+  "status": "BASELINE_AND_PROPOSED_EXPECTATIONS",
+  "provenance": {
+    "kind": "synthetic",
+    "note": "Written for local regression work using existing AFM relationship and name rules. Contains no copied manuscript lines or reference book passages. The active master is a separate read-only check."
+  },
+  "scenario": "AFM-inspired synthetic pilot",
+  "canon": "books/world_state.json",
+  "encoding": "utf-8",
+  "newline": "LF",
+  "document": "### Dialogue\n\n- My husband Jeff is waiting.\n\n### Action\n\nFrancine stood by the hall door. She noticed the latch was closed.\n\n### Variation\n\nHaley heard a knock. She waited for someone else to answer.\n",
+  "beats": [
+    {
+      "id": "pilot.locked-dialogue",
+      "kind": "dialogue",
+      "expected_text": "- My husband Jeff is waiting.",
+      "lock": "verbatim",
+      "baseline_issue": {
+        "id": "pilot.relationship.baseline",
+        "meaning": "Jeff is described as a husband; AFM canon says boyfriend."
+      },
+      "proposals": [
+        {
+          "id": "locked-auto-repair",
+          "op": "replace_span",
+          "replacement": "- My boyfriend Jeff is waiting.",
+          "expected": "BLOCKED_FROZEN_SPAN"
+        }
+      ],
+      "assertions": [
+        "Keep the exact dialogue bytes.",
+        "Expose the known conflict even when all other candidates are safe."
+      ]
+    },
+    {
+      "id": "pilot.action",
+      "kind": "action",
+      "expected_text": "Francine stood by the hall door. She noticed the latch was closed.",
+      "proposals": [
+        {
+          "id": "action-safe-cut",
+          "op": "replace_span",
+          "replacement": "Francine stood by the hall door. The latch was closed.",
+          "expected": "ELIGIBLE_FOR_REVIEW"
+        },
+        {
+          "id": "action-invented-canon",
+          "op": "replace_span",
+          "replacement": "Mrs. Smith stood by the hall door. The latch was closed.",
+          "expected": "BLOCKED_NEW_CANON_ISSUE",
+          "probe": "Inject as already proposal-eligible to exercise the final apply boundary, separate from front-end filtering."
+        }
+      ],
+      "assertions": [
+        "Allow the clean control to reach review.",
+        "No new canon issue can be committed or exported as an approved revision."
+      ]
+    },
+    {
+      "id": "pilot.variation",
+      "kind": "variation",
+      "expected_text": "Haley heard a knock. She waited for someone else to answer.",
+      "direction": "Let Haley try to preserve her dignity after the knock. Keep the visitor unidentified and delay her reaction.",
+      "proposals": [
+        {
+          "id": "take-deadpan",
+          "op": "replace_span",
+          "replacement": "The knock came again. Haley took a slow sip and waited for someone else to answer.",
+          "mechanism": "deliberate non-reaction",
+          "expected": "ELIGIBLE_FOR_REVIEW"
+        },
+        {
+          "id": "take-deflection",
+          "op": "replace_span",
+          "replacement": "At the knock, Haley lifted a finger toward the hall, as if she'd already put somebody else in charge.",
+          "mechanism": "delegating the embarrassment",
+          "expected": "ELIGIBLE_FOR_REVIEW"
+        },
+        {
+          "id": "take-repeated",
+          "op": "replace_span",
+          "replacement": "The knock came again. Haley took a slow sip and waited for someone else to answer.",
+          "mechanism": "same as take-deadpan",
+          "expected": "BLOCKED_DUPLICATE"
+        }
+      ],
+      "assertions": [
+        "Preserve the unknown visitor and direction.",
+        "Show two eligible mechanisms at most for this candidate set; no padded count.",
+        "This variant list is prerecorded, not evidence of model or author preference."
+      ]
+    }
+  ],
+  "automation_note": "Expected outcomes describe the proposed shared service. The U0 probes verify only the currently reachable CLI apply and Studio demo boundaries. Use a separate file and adapter fixture for CRLF, UTF-16 browser offsets, stale revision and crash recovery in U1–U2."
+}

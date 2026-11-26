@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Noir Studio V7 — Parallel Analysis & Counterfactual Blueprint Simulation</title>
+  <style>
+    :root {
+      --bg: #070a10;
+      --chrome: #0f141e;
+      --panel: #151c29;
+      --panel-hi: #1d2638;
+      --line: #283347;
+      --ink: #eef2f8;
+      --muted: #94a3b8;
+      --blue: #38bdf8;
+      --blue-soft: rgba(56, 189, 248, 0.14);
+      --mint: #90e9cd;
+      --mint-soft: rgba(144, 233, 205, 0.14);
+      --copper: #f2a65e;
+      --copper-soft: rgba(242, 166, 94, 0.16);
+      --violet: #a78bfa;
+      --red: #f87171;
+      --red-soft: rgba(248, 113, 113, 0.16);
+      --font-sans: 'Segoe UI', Inter, system-ui, sans-serif;
+      --font-mono: 'Cascadia Code', 'JetBrains Mono', ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 12% 0%, rgba(56, 189, 248, 0.12), transparent 34%),
+                  radial-gradient(circle at 92% 0%, rgba(167, 139, 250, 0.1), transparent 30%),
+                  var(--bg);
+      color: var(--ink);
+      font: 13px/1.5 var(--font-sans);
+    }
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+      padding: 10px 18px;
+      background: rgba(15, 20, 30, 0.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 2px solid var(--blue);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .badge {
+      padding: 4px 9px; border-radius: 7px;
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+      color: #070a10; font: 900 12px/1 var(--font-mono); letter-spacing: 0.04em;
+    }
+    .brand h1 { margin: 0; font-size: 16px; letter-spacing: -0.01em; }
+    .brand small { display: block; color: var(--muted); font-size: 11px; }
+    .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 8px; border-radius: 999px;
+      border: 1px solid var(--line); background: var(--panel);
+      font: 700 10.5px/1.1 var(--font-mono); color: var(--muted);
+    }
+    .pill.blue { border-color: rgba(56, 189, 248, 0.5); color: var(--blue); background: var(--blue-soft); }
+    .pill.mint { border-color: rgba(144, 233, 205, 0.5); color: var(--mint); background: var(--mint-soft); }
+    .pill.copper { border-color: rgba(242, 166, 94, 0.5); color: var(--copper); background: var(--copper-soft); }
+    .pill.red { border-color: rgba(248, 113, 113, 0.5); color: var(--red); background: var(--red-soft); }
+    .btn {
+      padding: 6px 10px; border-radius: 7px; border: 1px solid var(--line);
+      background: var(--panel-hi); color: var(--ink); font-weight: 600; font-size: 12px;
+      cursor: pointer; transition: border-color 120ms ease, background-color 120ms ease;
+    }
+    .btn:hover { border-color: var(--blue); }
+    .btn.primary { background: var(--blue); color: #070a10; border-color: var(--blue); font-weight: 800; }
+    .btn.copper { background: var(--copper); color: #070a10; border-color: var(--copper); font-weight: 800; }
+    .btn.active { border-color: var(--mint); box-shadow: inset 0 0 0 1px var(--mint); color: var(--mint); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 290px minmax(0, 1fr) 360px;
+      gap: 12px;
+      max-width: 1760px;
+      margin: 0 auto;
+      padding: 12px 16px 28px;
+    }
+    @media (max-width: 1220px) { .layout { grid-template-columns: 1fr; } }
+    .col { display: grid; gap: 12px; align-content: start; }
+    .card {
+      background: linear-gradient(180deg, var(--panel), var(--chrome));
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .card-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      border-bottom: 1px solid var(--line); padding-bottom: 8px;
+    }
+    .card-head h2 {
+      margin: 0; font: 800 12px/1.2 var(--font-mono); letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--blue);
+    }
+    .sub { margin: 0; font-size: 12px; color: var(--muted); }
+
+    /* Media Ingest Pipeline */
+    .ingest-box {
+      padding: 10px; border-radius: 9px; border: 1px dashed rgba(56, 189, 248, 0.55);
+      background: rgba(56, 189, 248, 0.06); display: grid; gap: 6px;
+    }
+    .ingest-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+    .step {
+      padding: 6px; border-radius: 7px; border: 1px solid var(--line); background: var(--bg);
+      font-size: 10.5px; text-align: center;
+    }
+    .step b { display: block; color: var(--mint); font-family: var(--font-mono); }
+
+    /* Branch Tree */
+    .branch-item {
+      display: grid; gap: 4px; padding: 9px 10px; border-radius: 9px;
+      border: 1px solid var(--line); background: var(--bg); cursor: pointer; text-align: left; color: var(--ink);
+    }
+    .branch-item.active { border-color: var(--blue); border-left: 4px solid var(--mint); background: rgba(56, 189, 248, 0.09); }
+    .branch-item strong { font-size: 12.5px; }
+    .branch-item small { color: var(--muted); font-size: 11px; }
+
+    /* World Laws Grid */
+    .law-row {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+      padding: 8px 9px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg);
+    }
+    .law-row strong { display: block; font-size: 11.5px; color: var(--ink); }
+    .law-row small { display: block; font-size: 10.5px; color: var(--muted); }
+    .law-row.off { opacity: 0.52; border-style: dashed; }
+
+    /* Causal Recompute & MAP-Elites */
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .flow-grid { display: grid; gap: 8px; }
+    .beat-row {
+      display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+      padding: 9px 11px; border-radius: 9px; border: 1px solid var(--line); background: var(--bg);
+      border-left: 4px solid var(--blue);
+    }
+    .beat-row.broken { border-left-color: var(--red); background: rgba(248, 113, 113, 0.07); }
+    .beat-row.new { border-left-color: var(--mint); background: rgba(144, 233, 205, 0.07); }
+    .beat-row.conflict { border-left-color: var(--copper); background: rgba(242, 166, 94, 0.09); }
+    .beat-id { font: 800 11px/1.2 var(--font-mono); color: var(--blue); }
+    .beat-row.broken .beat-id { color: var(--red); text-decoration: line-through; }
+    .beat-row.new .beat-id { color: var(--mint); }
+
+    .qd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    @media (max-width: 820px) { .qd-grid { grid-template-columns: 1fr; } }
+    .qd-cell {
+      display: grid; gap: 6px; padding: 10px; border-radius: 10px;
+      border: 1px solid var(--line); background: var(--bg);
+    }
+    .qd-cell:hover { border-color: var(--blue); }
+    .qd-axis { font: 800 10px/1.1 var(--font-mono); color: var(--copper); text-transform: uppercase; letter-spacing: 0.06em; }
+    .bar-row { display: grid; grid-template-columns: 82px 1fr 34px; gap: 6px; align-items: center; font-size: 10.5px; color: var(--muted); }
+    .bar { height: 5px; border-radius: 999px; background: var(--panel-hi); overflow: hidden; }
+    .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--blue), var(--mint)); }
+
+    /* Code Nodes & Agent Spec */
+    .code-node {
+      display: grid; gap: 5px; padding: 9px 10px; border-radius: 9px;
+      border: 1px solid rgba(56, 189, 248, 0.35); background: #090d14;
+      cursor: pointer;
+    }
+    .code-node.selected { border-color: var(--mint); box-shadow: 0 0 0 1px var(--mint); }
+    .code-node-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+    .code-node-head strong { font: 700 11.5px/1.2 var(--font-mono); color: var(--blue); }
+    .code-pre {
+      margin: 0; padding: 10px; border-radius: 8px; border: 1px solid var(--line);
+      background: #05070c; color: #dbeafe; font: 11px/1.45 var(--font-mono);
+      white-space: pre-wrap; overflow-x: auto; max-height: 280px;
+    }
+    .guard-list { margin: 0; padding-left: 16px; display: grid; gap: 5px; font-size: 11.5px; color: #cbd5e1; }
+    .guard-list b { color: var(--copper); }
+    .toast {
+      position: fixed; bottom: 16px; right: 16px; z-index: 90;
+      padding: 9px 14px; border-radius: 9px; border: 1px solid var(--mint);
+      background: rgba(15, 20, 30, 0.96); color: var(--mint); font: 700 12px/1.3 var(--font-mono);
+      display: none;
+    }
+    .toast.show { display: block; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="badge">BLUEPRINT V7</span>
+      <div>
+        <h1>Noir Parallel Analysis &amp; Counterfactual Recompute Blueprint</h1>
+        <small>Media Ingest → Chained What-If Branches → Live World-Laws Grid → MAP-Elites Ideas → Agent-Proof Code Nodes</small>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="pill blue">SCHEMA v7.0</span>
+      <span class="pill mint">IMMUTABLE BRANCH DAG</span>
+      <span class="pill copper">ASTRA / CLAUDE SAFE</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- LEFT COLUMN: Media Ingest + Chained Branches + Live World Laws -->
+    <div class="col">
+      <section class="card">
+        <div class="card-head">
+          <h2>01 · Media &amp; Movie Ingest</h2>
+          <span class="pill mint">READY</span>
+        </div>
+        <div class="ingest-box">
+          <strong>American Dad! - S04E16 - Spring Breakup - HDTV-1080ph265 AAC.mp4</strong>
+          <small class="sub">Supports MP4, MKV, SRT, PDF, DOCX, TXT → Auto-extracts Baseline Causal Graph (G₀)</small>
+          <div class="ingest-steps">
+            <div class="step"><b>01 · ASR/SRT</b>286 lines</div>
+            <div class="step"><b>02 · Diarize</b>14 speakers</div>
+            <div class="step"><b>03 · Base DAG</b>26 beats</div>
+          </div>
+          <button class="btn primary" id="btnSimulateIngest">▶ Inspect Extracted G₀ Packet</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>02 · Chained What-If Branches</h2>
+          <span class="pill blue" id="branchDepthPill">Depth 2</span>
+        </div>
+        <p class="sub">Click any branch to see how Q2 forks cleanly off Q1's output without mutating G₀:</p>
+        <div id="branchList" style="display:grid;gap:7px"></div>
+        <button class="btn copper" id="btnForkNext">+ Fork New What-If Question off Active Branch</button>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>03 · Live World-Laws Grid</h2>
+          <select id="universePreset" class="btn" style="padding:3px 6px;font-size:11px">
+            <option value="afm_canon">AFM Main Canon</option>
+            <option value="parallel_human">Parallel World: No-Morph AU</option>
+            <option value="plastics_split">Plastics Split Override</option>
+          </select>
+        </div>
+        <p class="sub">Toggle any World Law to re-run causal validators on the active branch in real time:</p>
+        <div id="lawList" style="display:grid;gap:6px"></div>
+      </section>
+    </div>
+
+    <!-- CENTER COLUMN: Counterfactual Impact Graph + MAP-Elites + Epistemic -->
+    <div class="col">
+      <section class="card">
+        <div class="card-head">
+          <h2 id="activeBranchTitle">Active Branch Analysis</h2>
+          <div class="tabs">
+            <button class="btn active" data-tab="causal">Causal Ripple (DAG)</button>
+            <button class="btn" data-tab="qd">MAP-Elites Ideas (2×2)</button>
+            <button class="btn" data-tab="epistemic">Epistemic Minds (ToM)</button>
+          </div>
+        </div>
+        <p class="sub" id="activeBranchQuestion"></p>
+
+        <div id="tab-causal" class="flow-grid"></div>
+        <div id="tab-qd" class="qd-grid" style="display:none"></div>
+        <div id="tab-epistemic" class="flow-grid" style="display:none"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Handoff Bridge → Word Prep Connected Gutter-Nodes</h2>
+          <span class="pill mint">1-CLICK COMPILE</span>
+        </div>
+        <p class="sub">When you pick a winning MAP-Elites scene or lock a branch, it compiles directly into typed Gutter-Nodes (`STAGE DIRECTION`, `CHARACTER`, `MIND/FORM`, `WORLD LAW`) for `Word Prep` without touching prose.</p>
+        <pre class="code-pre" id="gutterPreview"></pre>
+      </section>
+    </div>
+
+    <!-- RIGHT COLUMN: Code Nodes & Agentic Coder Guardrails -->
+    <div class="col">
+      <section class="card">
+        <div class="card-head">
+          <h2>04 · Implementation Code Nodes (1-to-1 Fence)</h2>
+          <button class="btn primary" id="btnRunSims" style="padding:4px 8px;font-size:11px">▶ Run SIM-15..18</button>
+        </div>
+        <p class="sub">Click any Code Node to inspect its exact Allowed/Forbidden file fence, typed JSON contract, and copy a single-task prompt for Astra / Claude:</p>
+        <div id="codeNodeList" style="display:grid;gap:7px"></div>
+        <div id="codeNodeFence" style="display:grid;gap:5px;font-size:11px"></div>
+        <pre class="code-pre" id="codeNodeSpec"></pre>
+        <button class="btn copper" id="btnCopyAgentPrompt">📋 Copy Single-Task Prompt for Astra / Claude</button>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>05 · Agentic Coder Anti-Confusion Spec</h2>
+          <span class="pill copper">ASTRA / CLAUDE</span>
+        </div>
+        <ul class="guard-list">
+          <li><b>Immutable Branch Rule:</b> NEVER mutate baseline <code>G₀</code> in place. Every What-If creates <code>branch_id</code> + <code>parent_branch_id</code>.</li>
+          <li><b>No Prose in Graph Engine:</b> <code>story_graph/recompute.py</code> outputs typed JSON beats/edges ONLY; prose stays in <code>prose_engine/</code>.</li>
+          <li><b>Executable Acceptance Floor:</b> Every Code Node ships with golden test IDs (<code>SIM-15..SIM-18</code>) + <code>py -B tools/ci.py --core</code> (&ge;572 pass).</li>
+          <li><b>World-Law Single Source:</b> Read laws ONLY from <code>universe_laws_v2</code> / <code>WORLD_LAWS.noir</code> — never hardcode character facts inside prompts.</li>
+          <li><b>MAP-Elites Diversity Lock:</b> Return 4 distinct quadrant bins (never collapse to 1 single "best" suggestion).</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const WORLD_LAWS_BY_UNIVERSE = {
+      afm_canon: [
+        { id: 'LAW_ZERO_SMITH', title: 'Zero Smith Household (Ling Canon)', desc: 'Francine is married to Rainee Ling; Stan lives next door with Christmas family.', active: true, hard: true },
+        { id: 'LAW_SHAPESHIFT', title: 'Rainee Celestial Fox Shapeshifting', desc: 'Rainee can morph into Peter-Rainee or split forms; gas emits French floral perfume.', active: true, hard: true },
+        { id: 'LAW_HALEY_PRE_FOX', title: 'Haley Pre-Activation (S04E16)', desc: 'Haley is human and dating boyfriend Jeff (not married yet).', active: true, hard: true },
+        { id: 'LAW_NO_IMPLANT_DEATH', title: 'Stella Likes Carmen Aesthetic', desc: 'Breaks original Steve implant-objection -> Carmen death dependency.', active: true, hard: false }
+      ],
+      parallel_human: [
+        { id: 'LAW_ZERO_SMITH', title: 'Zero Smith Household (Ling Canon)', desc: 'Francine is married to Rainee Ling; Stan lives next door.', active: true, hard: true },
+        { id: 'LAW_SHAPESHIFT', title: 'Rainee Celestial Fox Shapeshifting', desc: 'DISABLED in No-Morph Parallel World — physical morph beats fail validation!', active: false, hard: true },
+        { id: 'LAW_HALEY_PRE_FOX', title: 'Haley Pre-Activation (S04E16)', desc: 'Haley is human and dating boyfriend Jeff.', active: true, hard: true },
+        { id: 'LAW_NO_IMPLANT_DEATH', title: 'Stella Likes Carmen Aesthetic', desc: 'Carmen keeps implants and survives stage collapse.', active: true, hard: false }
+      ],
+      plastics_split: [
+        { id: 'LAW_ZERO_SMITH', title: 'Zero Smith Household (Ling Canon)', desc: 'Francine is married to Rainee Ling.', active: true, hard: true },
+        { id: 'LAW_SHAPESHIFT', title: 'Rainee Tri-Split Instability Law', desc: 'Unstable Peter-Rainee gas blast splits Rainee into 3 Mean Girls facets (Sade, Becky, Clarie).', active: true, hard: true },
+        { id: 'LAW_HALEY_PRE_FOX', title: 'Haley Pre-Activation (S04E16)', desc: 'Haley reacts to 3 clones in the hallway.', active: true, hard: true },
+        { id: 'LAW_NO_IMPLANT_DEATH', title: 'Stella Likes Carmen Aesthetic', desc: 'Plastics clones amplify Spring Break social hierarchy chaos.', active: true, hard: false }
+      ]
+    };
+
+    const BRANCHES = [
+      {
+        id: 'G0', parent: null, label: 'G₀ · Source Baseline (S04E16)',
+        question: 'Ingested directly from American Dad! - S04E16 - Spring Breakup - HDTV-1080ph265 AAC.mp4',
+        beats: [
+          { id: 'E01', status: 'base', text: 'Francine leaves to care for Bah-Bah; Stan stays home with Roger.', requires: [] },
+          { id: 'E02', status: 'base', text: 'Roger turns the house into MTV Spring Break HQ with Carmen Selectra.', requires: [] },
+          { id: 'E03', status: 'base', text: 'Steve objects to Carmen\'s implants -> Carmen removes them -> dies in stage collapse.', requires: [] }
+        ],
+        qd: [
+          { axis: 'Baseline Canon', title: 'Original S04E16 Spine', pitch: 'No AU intervention applied yet. Fork G₁ to remove Stan and add Rainee.', scores: [95, 20, 99] },
+          { axis: 'Suggested Swap', title: 'Swap Spouse: Stan -> Rainee', pitch: 'Remove Stan from domestic opening and test Peter-Rainee B-plot.', scores: [92, 85, 96] }
+        ],
+        epistemic: [
+          { holder: 'ROGER', belief: 'Believes the house is empty enough to host MTV Spring Break.' },
+          { holder: 'STEVE', belief: 'Believes Carmen will love him more without implants.' }
+        ]
+      },
+      {
+        id: 'G1', parent: 'G0', label: 'G₁ · Q1: Remove Stan + Peter-Rainee Morph',
+        question: 'Q1: "What happens if we remove Stan from the house, add Rainee as Francine\'s wife, and Rainee becomes Peter Griffin?"',
+        beats: [
+          { id: 'E01*', status: 'new', text: 'Francine & Rainee Ling open in the kitchen; Stan is moved next door with his Porsche Christmas family.', requires: ['LAW_ZERO_SMITH'] },
+          { id: 'E02*', status: 'new', text: 'Rainee\'s gas blast triggers Peter-Rainee morph (Quahog baritone + giant rear); Francine takes her to Ma Ma & Bah-Bah\'s as second patient.', requires: ['LAW_SHAPESHIFT'] },
+          { id: 'E03×', status: 'broken', text: 'PRUNED: Steve anti-implant arc & Carmen death chain invalidated by Stella Siren Field inversion.', requires: ['LAW_NO_IMPLANT_DEATH'] },
+          { id: 'E04*', status: 'new', text: 'Roger\'s daisy-chain portal spills onto Neighbor Stan\'s lawn -> Stan\'s shutdown attempt creates legendary climax.', requires: ['LAW_ZERO_SMITH'] }
+        ],
+        qd: [
+          { axis: 'Domestic Farce × B-Plot', title: 'Shared-Patient Rivalry', pitch: 'Peter-Rainee and Bah-Bah form an alliance trying to sneak out of Nurse Francine\'s care.', scores: [94, 82, 97] },
+          { axis: 'Surreal Escalation × A-Plot', title: 'Portal Border War', pitch: 'Neighbor Stan builds a CIA perimeter fence; Roger daisy-chains portals through Stan\'s garage.', scores: [91, 88, 95] },
+          { axis: 'Mind-Game × Youth Plot', title: 'Ruth Fixation Cascade', pitch: 'Stan\'s daughter Ruth stares at Stella\'s Carmen-energy shift; Stan walks in at the worst moment.', scores: [89, 86, 94] },
+          { axis: 'Wild Mutation (100% Noise)', title: 'Peter-Rainee Calls Quahog', pitch: 'Peter-Rainee accidentally dials the Drunken Clam on speakerphone while Francine lectures Bah-Bah.', scores: [80, 96, 84] }
+        ],
+        epistemic: [
+          { holder: 'NEIGHBOR STAN', belief: 'Falsely believes Roger is intentionally corrupting his perfect family.' },
+          { holder: 'BAH-BAH', belief: 'Thinks Peter-Rainee is a weirdly tall Rhode Island cousin until Francine sighs.' },
+          { holder: 'MARY (STAN\'S WIFE)', belief: 'Believes Stan is overreacting and the kids are just having normal fun.' }
+        ]
+      },
+      {
+        id: 'G2', parent: 'G1', label: 'G₂ · Q2 (Chained off G₁): Fart Splits into The Plastics',
+        question: 'Q2 on G₁: "What if the Peter Griffin morph doesn\'t stick — she farts and splits into The Plastics (Rainee Sade, Rainee Becky, Rainee Clarie)?"',
+        beats: [
+          { id: 'E02×', status: 'broken', text: 'PRUNED FROM G₁: Peter-Rainee stays at Ma Ma\'s house — morph destabilizes before leaving the driveway!', requires: ['LAW_SHAPESHIFT'] },
+          { id: 'E05*', status: 'new', text: 'Second tuberose/orange/sandalwood blast splits Rainee into 3 Mean Girls facets (Sade, Becky, Clarie) stealing the red sedan.', requires: ['LAW_SHAPESHIFT'] },
+          { id: 'E06*', status: 'new', text: 'The Plastics hijack Roger\'s Spring Break VIP deck, instantly dethroning Roger\'s "King of Spring Break" status.', requires: ['LAW_ZERO_SMITH'] },
+          { id: 'E07*', status: 'new', text: 'Nurse Francine arrives mid-party trying to re-merge all three clones before Ma Ma & Bah-Bah notice.', requires: ['LAW_SHAPESHIFT'] }
+        ],
+        qd: [
+          { axis: 'Social Warfare × A-Plot', title: 'Plastics Coup on MTV Stage', pitch: 'Sade, Becky, and Clarie rate Roger\'s outfit a 4/10 on live MTV, forcing Roger into desperate persona swaps.', scores: [96, 93, 98] },
+          { axis: 'Domestic Chaos × B-Plot', title: 'Red Sedan Escape', pitch: 'All three clones argue over aux cord & mirror space while Francine chases them in Nurse scrubs.', scores: [92, 87, 95] },
+          { axis: 'Epistemic Comedy × Neighbor', title: 'Stan Meets Three Wives', pitch: 'Neighbor Stan sees three identical glamorous Rainees walk past his fence and assumes CIA cloning.', scores: [90, 94, 93] },
+          { axis: 'Wild Mutation (100% Noise)', title: 'Burn Book of Spring Break', pitch: 'Becky & Clarie start an instant Burn Book on every Spring Break contestant, turning Carmen into an ally.', scores: [88, 97, 91] }
+        ],
+        epistemic: [
+          { holder: 'RAINEE SADE (ALPHA)', belief: 'Believes she is the "original" Rainee and Becky/Clarie are backup dancers.' },
+          { holder: 'ROGER', belief: 'Thinks the three clones are rival influencers hired by MTV to ruin his coronation.' },
+          { holder: 'NEIGHBOR STAN', belief: 'Convinced the CIA is running an illegal cloning op next door.' }
+        ]
+      }
+    ];
+
+    const CODE_NODES = [
+      {
+        id: 'CN-1', title: 'tools/media_ingest.py', role: 'Media -> Baseline G₀',
+        allowed: ['tools/media_ingest.py', 'tests/test_media_ingest.py'],
+        forbidden: ['prose_engine/*', 'story_graph/*', 'tools/studio_ui.py', 'ui/*'],
+        sims: ['SIM-15'],
+        prompt: 'Implement ONLY CN-1 (tools/media_ingest.py + tests/test_media_ingest.py) per docs/v7_blueprint/V7_AGENT_EXECUTION_SPEC.md. Do NOT touch prose_engine/, story_graph/, tools/studio_ui.py, or ui/. Verify with py -B docs/v7_blueprint/verify_v7_contracts.py and py -B tools/ci.py --core (>=572).',
+        spec: `# MODULE: tools/media_ingest.py
+# OWNERSHIP: Media extraction ONLY (never writes prose or edits active canon)
+def ingest_media_to_baseline_graph(media_path: Path, srt_path: Path | None) -> dict:
+    """
+    INPUT:  {"media_path": "mp4/mkv/srt/pdf/docx/txt", "srt_path": "str|None"}
+    RETURN: {"schema_version":"7.0","branch_id":"G0","parent_branch_id":None,
+             "immutable":True,"source_sha256":"...","scenes":[...],"causal_edges":[...]}
+    BAN:    Output G0 is READ-ONLY immutable baseline.
+    """`
+      },
+      {
+        id: 'CN-2', title: 'story_graph/counterfactual.py', role: 'Chained What-If Engine',
+        allowed: ['story_graph/counterfactual.py', 'tests/test_counterfactual.py'],
+        forbidden: ['prose_engine/*', 'tools/studio_ui.py', 'ui/*'],
+        sims: ['SIM-15', 'SIM-16'],
+        prompt: 'Implement ONLY CN-2 (story_graph/counterfactual.py + tests/test_counterfactual.py) passing SIM-15 (immutable G0->G1->G2 fork) and SIM-16 (pre-LLM LAW_SHAPESHIFT conflict). Do NOT touch prose_engine/ or ui/. Verify with py -B tools/ci.py --core (>=572).',
+        spec: `# MODULE: story_graph/counterfactual.py
+# OWNERSHIP: Pure graph math (Abduction -> Intervention -> Propagation)
+def fork_counterfactual_branch(parent_branch: dict, intervention: dict, active_world_laws: list[dict]) -> dict:
+    """
+    RETURN: {"schema_version":"7.0","branch_id":"G1","parent_branch_id":"G0",
+             "question":"...","beats":[...],"world_law_conflicts":0}
+    BAN 1:  NEVER mutate parent_branch in place.
+    BAN 2:  NEVER emit prose inside story_graph/.
+    SIM-16: Disabling LAW_SHAPESHIFT flags E02* status="CONFLICT" before any LLM call.
+    """`
+      },
+      {
+        id: 'CN-3', title: 'story_graph/qd_brainstorm.py', role: 'MAP-Elites Candidate Lab',
+        allowed: ['story_graph/qd_brainstorm.py', 'tests/test_qd_brainstorm.py'],
+        forbidden: ['prose_engine/*', 'tools/studio_ui.py', 'ui/*'],
+        sims: ['SIM-17'],
+        prompt: 'Implement ONLY CN-3 (story_graph/qd_brainstorm.py + tests/test_qd_brainstorm.py) passing SIM-17 (4 unique quadrant bins, bounded 0..100 scores). Do NOT collapse to a single reply. Verify with py -B tools/ci.py --core (>=572).',
+        spec: `# MODULE: story_graph/qd_brainstorm.py
+# OWNERSHIP: Quality-Diversity 2x2 Contrast Archive
+def generate_map_elites_grid(branch: dict, epistemic_states: list[dict], axes: tuple[str, str]) -> dict:
+    """
+    RETURN: {"schema_version":"7.0","branch_id":"G2","axes":[...],"cells":[4 unique bins]}
+    BAN:    NEVER collapse candidates into one prose suggestion.
+    SIM-17: len(cells)==4, 4 unique quadrant labels, scores in [0,100].
+    """`
+      },
+      {
+        id: 'CN-4', title: 'ui/analysis_lab.js -> ui/shelf.js', role: '1-Click Gutter-Node Bridge',
+        allowed: ['ui/analysis_lab.js', 'ui/analysis_lab.css', 'ui/app.js', 'tools/studio_canon_routes.py'],
+        forbidden: ['prose_engine/*', 'story_graph/*'],
+        sims: ['SIM-18'],
+        prompt: 'Implement ONLY CN-4 (ui/analysis_lab.js, ui/analysis_lab.css, ui/app.js, tools/studio_canon_routes.py) passing SIM-18 and py -B -m unittest tests.test_studio_v2_ui (7/7) + py -B tools/ci.py --core (>=572).',
+        spec: `// MODULE: ui/analysis_lab.js -> ui/shelf.js
+export function promoteCandidateToPrepNodes(candidate, branchId, activeLawIds) {
+  // RETURN: { source_branch_id: branchId, nodes: [{kind:'scene-heading'|'stage-direction'|'character'|'world-law'|'beat-turn', ...}] }
+  // SIM-18: Preserves source_branch_id provenance & valid Gutter-Node kinds.
+}`
+      }
+    ];
+
+    let state = {
+      branchId: 'G2',
+      universe: 'afm_canon',
+      laws: JSON.parse(JSON.stringify(WORLD_LAWS_BY_UNIVERSE.afm_canon)),
+      tab: 'causal',
+      codeNodeId: 'CN-2'
+    };
+
+    const showToast = (msg) => {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(window._t);
+      window._t = setTimeout(() => t.classList.remove('show'), 2600);
+    };
+
+    function render() {
+      const branch = BRANCHES.find(b => b.id === state.branchId) || BRANCHES[0];
+      const activeLawIds = new Set(state.laws.filter(l => l.active).map(l => l.id));
+
+      // Branches
+      document.getElementById('branchList').innerHTML = BRANCHES.map(b => `
+        <button class="branch-item ${b.id === state.branchId ? 'active' : ''}" data-branch="${b.id}">
+          <strong>${b.label}</strong>
+          <small>${b.parent ? `Forked from ${b.parent}` : 'Immutable Source Root'}</small>
+        </button>
+      `).join('');
+
+      // World Laws
+      document.getElementById('lawList').innerHTML = state.laws.map(l => `
+        <label class="law-row ${l.active ? '' : 'off'}">
+          <div>
+            <strong>${l.title}</strong>
+            <small>${l.desc}</small>
+          </div>
+          <input type="checkbox" data-law-toggle="${l.id}" ${l.active ? 'checked' : ''}>
+        </label>
+      `).join('');
+
+      // Center header
+      document.getElementById('activeBranchTitle').textContent = `${branch.label} — Analysis Grid`;
+      document.getElementById('activeBranchQuestion').textContent = branch.question;
+
+      // Tab 1: Causal Beats with Live World-Law Validation
+      document.getElementById('tab-causal').innerHTML = branch.beats.map(bt => {
+        const missingLaws = (bt.requires || []).filter(id => !activeLawIds.has(id));
+        const cls = missingLaws.length ? 'conflict' : bt.status;
+        const badge = missingLaws.length
+          ? `<span class="pill copper">LAW CONFLICT: ${missingLaws.join(', ')}</span>`
+          : bt.status === 'broken' ? '<span class="pill red">PRUNED CANON</span>'
+          : bt.status === 'new' ? '<span class="pill mint">RECOMPUTED BEAT</span>'
+          : '<span class="pill blue">SOURCE G₀</span>';
+        return `
+          <div class="beat-row ${cls}">
+            <div class="beat-id">${bt.id}</div>
+            <div>${bt.text}</div>
+            <div>${badge}</div>
+          </div>
+        `;
+      }).join('');
+
+      // Tab 2: MAP-Elites 2x2
+      document.getElementById('tab-qd').innerHTML = branch.qd.map((c, idx) => `
+        <div class="qd-cell">
+          <div class="qd-axis">${c.axis}</div>
+          <strong>${c.title}</strong>
+          <p class="sub">${c.pitch}</p>
+          <div class="bar-row"><span>Coherence</span><div class="bar"><i style="width:${c.scores[0]}%"></i></div><b>${c.scores[0]}</b></div>
+          <div class="bar-row"><span>Novelty</span><div class="bar"><i style="width:${c.scores[1]}%"></i></div><b>${c.scores[1]}</b></div>
+          <div class="bar-row"><span>Canon Fit</span><div class="bar"><i style="width:${c.scores[2]}%"></i></div><b>${c.scores[2]}</b></div>
+          <button class="btn primary" data-promote="${idx}">+ Inject into Word Prep Nodes</button>
+        </div>
+      `).join('');
+
+      // Tab 3: Epistemic Minds
+      document.getElementById('tab-epistemic').innerHTML = branch.epistemic.map(ep => `
+        <div class="beat-row new">
+          <div class="beat-id">${ep.holder}</div>
+          <div>${ep.belief}</div>
+          <span class="pill blue">BELIEF STATE</span>
+        </div>
+      `).join('');
+
+      // Tab visibility
+      ['causal', 'qd', 'epistemic'].forEach(t => {
+        document.getElementById(`tab-${t}`).style.display = state.tab === t ? (t === 'qd' ? 'grid' : 'grid') : 'none';
+      });
+      document.querySelectorAll('[data-tab]').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === state.tab));
+
+      // Gutter-Node Preview
+      const topIdea = branch.qd[0];
+      document.getElementById('gutterPreview').textContent =
+`[SCENE: INT. LING HOUSE / SPRING BREAK DECK - NIGHT]   // Branch ${branch.id}
+[STAGE] ${topIdea.pitch}
+[WORLD_LAW: ${Array.from(activeLawIds).join(', ') || 'NONE_ACTIVE'}]
+[BEAT_TURN] Promoted from MAP-Elites (${topIdea.axis}) -> Ready for Word Prep Gutter-Nodes`;
+
+      // Code Nodes
+      document.getElementById('codeNodeList').innerHTML = CODE_NODES.map(cn => `
+        <div class="code-node ${cn.id === state.codeNodeId ? 'selected' : ''}" data-cn="${cn.id}">
+          <div class="code-node-head">
+            <strong>${cn.id} · ${cn.title}</strong>
+            <span class="pill blue">${cn.role}</span>
+          </div>
+        </div>
+      `).join('');
+      const activeCN = CODE_NODES.find(c => c.id === state.codeNodeId) || CODE_NODES[0];
+      document.getElementById('codeNodeFence').innerHTML = `
+        <div><span class="pill mint">ALLOWED</span> <code>${activeCN.allowed.join(', ')}</code></div>
+        <div><span class="pill red">FORBIDDEN</span> <code>${activeCN.forbidden.join(', ')}</code></div>
+        <div><span class="pill copper">GOLDEN TESTS</span> <code>${activeCN.sims.join(', ')} + tools/ci.py --core (&ge;572)</code></div>
+      `;
+      document.getElementById('codeNodeSpec').textContent = activeCN.spec;
+
+      // Bindings
+      document.querySelectorAll('[data-branch]').forEach(el => {
+        el.onclick = () => { state.branchId = el.dataset.branch; render(); };
+      });
+      document.querySelectorAll('[data-law-toggle]').forEach(el => {
+        el.onchange = () => {
+          state.laws = state.laws.map(l => l.id === el.dataset.lawToggle ? { ...l, active: el.checked } : l);
+          render();
+          showToast(`World Law ${el.dataset.lawToggle} -> ${el.checked ? 'ACTIVE' : 'DISABLED'} (Validators re-run)`);
+        };
+      });
+      document.querySelectorAll('[data-cn]').forEach(el => {
+        el.onclick = () => { state.codeNodeId = el.dataset.cn; render(); };
+      });
+      document.querySelectorAll('[data-promote]').forEach(el => {
+        el.onclick = () => showToast(`Promoted "${branch.qd[Number(el.dataset.promote)].title}" to Word Prep Gutter-Nodes!`);
+      });
+    }
+
+    document.querySelectorAll('[data-tab]').forEach(btn => {
+      btn.onclick = () => { state.tab = btn.dataset.tab; render(); };
+    });
+    document.getElementById('universePreset').onchange = (e) => {
+      state.universe = e.target.value;
+      state.laws = JSON.parse(JSON.stringify(WORLD_LAWS_BY_UNIVERSE[state.universe]));
+      render();
+      showToast(`Switched Parallel World Rules -> ${e.target.options[e.target.selectedIndex].text}`);
+    };
+    document.getElementById('btnSimulateIngest').onclick = () => {
+      state.branchId = 'G0'; state.codeNodeId = 'CN-1'; render();
+      showToast('Loaded immutable G₀ baseline from S04E16 media ingest packet.');
+    };
+    document.getElementById('btnForkNext').onclick = () => {
+      const next = state.branchId === 'G0' ? 'G1' : state.branchId === 'G1' ? 'G2' : 'G1';
+      state.branchId = next; state.tab = 'qd'; render();
+      showToast(`Switched to chained branch ${next} — MAP-Elites contrast grid ready.`);
+    };
+    document.getElementById('btnRunSims').onclick = () => {
+      showToast('PASS: SIM-15 (Immutable G0->G1->G2) · SIM-16 (Law Conflict) · SIM-17 (4-Bin QD) · SIM-18 (Gutter Provenance)');
+    };
+    document.getElementById('btnCopyAgentPrompt').onclick = () => {
+      const activeCN = CODE_NODES.find(c => c.id === state.codeNodeId) || CODE_NODES[0];
+      navigator.clipboard?.writeText(activeCN.prompt).catch(() => {});
+      showToast(`Copied bounded ${activeCN.id} prompt for Astra / Claude!`);
+    };
+
+    render();
+  </script>
+</body>
+</html>

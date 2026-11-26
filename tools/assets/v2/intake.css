@@ -1,0 +1,41 @@
+.v2-intake { max-width: 1060px; margin: 0 auto; display: grid; gap: 18px; color: var(--ink-on-paper); }
+.v2-intake-hero { padding: 26px 30px; color: var(--ink-on-chrome); background: var(--surface-chrome); border-radius: 14px; border-top: 3px solid var(--stripe-chrome); }
+body[data-theme="racing"] .v2-intake-hero {
+  background: linear-gradient(90deg, rgba(17, 23, 25, 0.94), rgba(17, 23, 25, 0.78) 48%, rgba(17, 23, 25, 0.25)),
+    url("/assets/v2/game-garage-entry.webp") 68% 55% / cover, var(--surface-chrome);
+}
+.v2-intake-hero small { color: var(--accent-secondary); font-weight: 700; letter-spacing: .13em; }
+.v2-intake-hero small span { display: inline-block; width: 18px; border-top: 2px solid currentColor; vertical-align: middle; margin: 0 6px; }
+.v2-intake-hero h1 { font: 750 clamp(26px,4vw,48px)/1.1 var(--font-display); margin: 9px 0; }
+.v2-intake-hero p { max-width: 58ch; color: var(--ink-muted-on-chrome); margin: 0; }
+.v2-intake-grid { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); gap: 18px; }
+.v2-intake-panel { min-width: 0; padding: 18px; background: var(--surface-paper); border: 1px solid var(--border-paper); border-radius: 12px; }
+.v2-intake-panel h2 { font: 760 20px var(--font-display); margin: 0 0 12px; }
+.v2-intake-panel h2 span { color: var(--ink-muted-on-paper); font: 600 13px var(--font-mono); margin-right: .4rem; }
+.v2-intake-drop { min-height: 168px; display: grid; place-content: center; justify-items: center; gap: 6px; padding: 14px; border-radius: 10px; border: 1px dashed var(--ink-muted-on-paper); text-align: center; overflow-wrap: anywhere; background: var(--surface-paper-alt); }
+.v2-intake-drop.is-over { border: 2px solid var(--focus-ring); }
+.v2-intake-drop svg { width: 28px; height: 28px; }
+.v2-intake-drop button { margin-top: 5px; }
+.v2-intake-status { min-height: 1.5em; color: var(--ink-muted-on-paper); margin-bottom: 0; }
+.v2-intake-status[data-error="true"] { color: #8a2a25; }
+.v2-intake-preview { margin-top: 12px; }
+.v2-intake-preview pre { background: var(--surface-paper-inset); max-height: 260px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px; border-radius: 6px; font: 14px/1.5 var(--font-mono); }
+.v2-intake-form fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 10px; }
+.v2-intake-form label { display: grid; gap: 3px; font-weight: 650; min-width: 0; }
+.v2-intake-form input,.v2-intake-form select,.v2-intake-form textarea { width: 100%; min-height: 35px; color: var(--ink-on-paper); background: var(--surface-paper-alt); border-radius: 6px; border: 1px solid var(--border-paper); padding: 6px 8px; font-weight: 400; }
+.v2-intake-form label.v2-intake-run-check { display: flex; align-items: center; gap: 10px; font-weight: 550; cursor: pointer; }
+.v2-intake-form label.v2-intake-run-check input[type="checkbox"] { width: 18px; min-height: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--accent-primary); }
+.v2-intake-placement { display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; }
+.v2-director-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.v2-director-badge { font: 600 11px var(--font-mono); padding: 2px 6px; border-radius: 4px; background: var(--surface-paper-alt); border: 1px solid var(--border-paper); color: var(--ink-on-paper); }
+.v2-director-sub { margin: 4px 0 8px; font-size: 12px; color: var(--ink-muted-on-chrome); }
+.v2-director-thread { display: grid; gap: 8px; max-height: 220px; overflow-y: auto; margin-bottom: 8px; }
+.v2-director-turn { padding: 8px; border-radius: 6px; background: var(--surface-paper-alt); color: var(--ink-on-paper); border: 1px solid var(--border-paper); font-size: 12px; display: grid; gap: 4px; }
+.v2-director-msg, .v2-director-turn strong { color: var(--ink-on-paper); }
+.v2-director-turn[data-ok="false"] { border-color: #8a2a25; }
+.v2-director-steps { margin: 0; padding-left: 16px; color: var(--ink-muted-on-paper); font-size: 11px; }
+.v2-director-drop { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 8px; border: 1px dashed var(--border-paper); border-radius: 6px; font-size: 11px; margin-bottom: 8px; color: var(--ink-on-chrome); }
+.v2-director-drop.is-over { border-color: var(--focus-ring); }
+.v2-director-form { display: grid; gap: 6px; }
+.v2-director-form select, .v2-director-form textarea { width: 100%; font-size: 12px; padding: 5px 7px; border-radius: 5px; border: 1px solid var(--border-paper); background: var(--surface-paper-alt); color: var(--ink-on-paper); }
+@media (max-width: 1023px) { .v2-intake-grid { grid-template-columns: 1fr; } }

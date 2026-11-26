@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Five-pass compositor · NOIR Studio mockup</title>
+<style>
+  :root{color-scheme:dark;--bg:#0b0e14;--surface:#121722;--raised:#191f2d;--stroke:#30394a;--text:#f4f3ef;--muted:#a5afbf;--amber:#ffc261;--cyan:#84d6e1;--green:#a8e3c6;--pink:#ffb1aa;--paper:#f5eee0;--ink:#231e19}
+  *{box-sizing:border-box} body{margin:0;background:radial-gradient(ellipse at 75% 0,#21202d 0,transparent 45%),var(--bg);color:var(--text);font:15px/1.5 "Segoe UI",sans-serif}
+  h1,h2,h3,p{margin:0} h1{font-size:clamp(30px,4vw,48px);line-height:1.05;letter-spacing:-.045em} h2{font-size:17px;letter-spacing:-.015em} h3{font-size:16px}
+  header{border-bottom:1px solid var(--stroke);background:#0c1017}.frame{max-width:1440px;margin:auto;padding-inline:clamp(16px,4vw,58px)}
+  .brand{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:15px;font-size:14px}.brand strong{letter-spacing:.12em}.brand strong span{color:var(--amber)}.brand small{color:var(--muted)}
+  main{padding-block:34px 42px}.intro{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:23px}.intro p{color:var(--muted);margin-top:10px}
+  .state{border:1px solid var(--stroke);border-radius:999px;padding:5px 12px;color:var(--cyan);background:var(--surface);white-space:nowrap;font-size:13px}
+  .controls{display:flex;gap:10px;align-items:end;flex-wrap:wrap;padding:13px;background:var(--surface);border:1px solid var(--stroke);border-radius:12px;margin-bottom:14px}
+  .control-label{display:grid;gap:4px;font-size:12px;color:var(--muted)}button,select{font:inherit;color:inherit;border:1px solid var(--stroke);background:var(--raised);border-radius:7px}
+  button,select{min-height:38px;padding:7px 12px}button{cursor:pointer}button:hover:not(:disabled),select:hover:not(:disabled){border-color:var(--cyan)}button:disabled,select:disabled{cursor:default;opacity:.48}
+  button.primary{background:var(--amber);color:#23180a;border-color:var(--amber);font-weight:700}button:focus-visible,select:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+  .progress{height:4px;border-radius:3px;background:var(--stroke);overflow:hidden;margin-bottom:14px}.progress div{background:linear-gradient(90deg,var(--amber),var(--cyan));height:100%;width:0;transition:width .25s}
+  .grid{display:grid;grid-template-columns:minmax(255px, .85fr) minmax(380px,1.65fr) minmax(212px,.68fr);gap:13px;align-items:start}
+  .panel{background:var(--surface);border:1px solid var(--stroke);border-radius:12px;overflow:hidden;min-width:0}.panel-head{padding:15px 16px;border-bottom:1px solid var(--stroke)}.panel-head p{color:var(--muted);font-size:13px;margin-top:3px}
+  .passes{display:grid;gap:7px;padding:10px}.pass{display:grid;grid-template-columns:29px 1fr;gap:9px;text-align:left;width:100%;padding:10px;background:#151b27}.pass[aria-pressed=true]{border-color:var(--cyan);background:#1c2836}.pass[data-status=running]{border-left:3px solid var(--amber)}.pass[data-status=done] .tag{color:var(--green)}.pass[data-status=running] .tag{color:var(--amber)}.pass[data-status=failed] .tag{color:var(--pink)}.num{color:var(--muted);font:13px Consolas,monospace;padding-top:3px}.pass strong,.tag{display:block}.pass strong{font-size:14px}.tag{font-size:12px;color:var(--muted)}
+  .inspect{padding:14px 16px;min-height:132px;border-top:1px solid var(--stroke)}.inspect p{font-size:13px;color:var(--muted);margin-top:7px}.inspect strong{font-weight:600;color:var(--text)}
+  .document{color-scheme:light;background:var(--paper);color:var(--ink)}.document .panel-head{border-color:#d4c9b6}.document .panel-head p{color:#62584b}.prose{padding:22px clamp(16px,3vw,34px);min-height:319px}.scene{font:700 13px Consolas,monospace;letter-spacing:.08em;margin-bottom:16px}.page-label{color:#645745;text-transform:uppercase;letter-spacing:.08em;font:700 11px "Segoe UI",sans-serif;margin-bottom:6px}.passage{font:clamp(17px,1.6vw,22px)/1.55 Georgia,serif;margin-bottom:17px}
+  .candidate{border-left:3px solid #9c6825;padding-left:12px}.candidate p{margin-bottom:8px}.candidate small{font:13px "Segoe UI",sans-serif;color:#594b3c}blockquote{margin:20px 0 0;padding:12px 14px;background:#e9dfcc;border-radius:7px;font:18px Georgia,serif}blockquote span{display:block;margin-top:7px;font:700 11px "Segoe UI",sans-serif;letter-spacing:.07em;color:#594b3c}.document button{background:#26221e;color:#fff;border-color:#26221e;margin-top:17px}
+  .events{padding:6px 14px 11px;min-height:251px}.events ol{list-style:none;padding:0;margin:0;max-height:365px;overflow:auto}.events li{border-bottom:1px solid #283140;padding:8px 0;font-size:13px}.events time{color:var(--muted);font:12px Consolas,monospace;margin-right:8px}.events p{color:var(--muted);font-size:13px;padding:8px 0}.footnote{color:var(--muted);font-size:13px;margin-top:15px}
+  [hidden]{display:none} @media(max-width:1050px){.grid{grid-template-columns:minmax(234px,.75fr) minmax(0,1.4fr)}.event-panel{grid-column:1 / -1}.events{min-height:0}.events ol{max-height:170px}}@media(max-width:660px){.grid{grid-template-columns:1fr}.intro{align-items:start;flex-direction:column}.event-panel{grid-column:auto}.prose{min-height:0}main{padding-top:23px}}
+  @media(prefers-reduced-motion:reduce){.progress div{transition:none}}
+</style>
+</head>
+<body>
+<header><div class="frame brand"><strong>NOIR <span>STUDIO</span></strong><small>Sprint 2 · UI simulation</small></div></header>
+<main class="frame">
+  <div class="intro"><div><h1>Five-pass compositor</h1><p>Follow a saved passage from its first read to a checked draft.</p></div><span class="state" id="state" role="status">Ready</span></div>
+  <div class="controls" aria-label="Simulation controls">
+    <label class="control-label">Scenario<select id="scenario"><option value="normal">Complete run</option><option value="disconnect">Stream disconnect</option><option value="failure">Writer fails once</option><option value="locked">Fully protected passage</option></select></label>
+    <button type="button" class="primary" id="start">Simulate Cook</button>
+    <button type="button" id="recover" hidden>Reconnect</button>
+    <button type="button" id="reset" disabled>Reset</button>
+  </div>
+  <div class="progress" id="progress" role="progressbar" aria-label="Compositor progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"><div></div></div>
+  <div class="grid">
+    <section class="panel" aria-labelledby="passes-heading">
+      <div class="panel-head"><h2 id="passes-heading">Compositor passes</h2><p>Select a pass to inspect it.</p></div>
+      <div class="passes" id="passes"></div>
+      <div class="inspect"><h3 id="pass-title"></h3><p id="pass-detail"></p></div>
+    </section>
+    <section class="panel document" aria-labelledby="draft-heading">
+      <div class="panel-head"><h2 id="draft-heading">Passage preview</h2><p>Drafts stay separate until applied.</p></div>
+      <div class="prose">
+        <div class="scene">INT. NIGHT STATION</div>
+        <div class="page-label" id="source-label">Saved passage</div>
+        <p class="passage" id="source">The station clock stopped at six. Mara waited by the ticket window.</p>
+        <div class="candidate" id="candidate" hidden>
+          <div class="page-label" id="candidate-label">Checked draft</div>
+          <p class="passage" id="candidate-text"></p>
+          <small id="candidate-detail"></small>
+        </div>
+        <blockquote>“Keep the clock still.”<span>PROTECTED DIALOGUE</span></blockquote>
+        <button type="button" id="apply" hidden>Apply draft to preview</button>
+      </div>
+    </section>
+    <section class="panel event-panel" aria-labelledby="event-heading">
+      <div class="panel-head"><h2 id="event-heading">Stream events</h2><p id="stream-info">Waiting for a simulation.</p></div>
+      <div class="events"><p id="empty">Events appear in arrival order.</p><ol id="events" aria-label="Pass events"></ol></div>
+    </section>
+  </div>
+  <p class="footnote">Fixture only. This simulation uses local sample text and simulated events.</p>
+</main>
+<script>
+  'use strict';
+  const steps = [
+    {name:'Structure and protection', short:'Structure', ready:'Typed two blocks and recorded the exact dialogue lock.'},
+    {name:'World graph and sockets', short:'World graph', ready:'Resolved Mara, her form socket, and the station scene.'},
+    {name:'Bindings and replay', short:'Binding', ready:'Bound the clock cue and restored the saved timing target.'},
+    {name:'Passage realization', short:'Writer', ready:'The fixture writer returned a rough draft and a sample receipt.'},
+    {name:'Polish and byte checks', short:'Polish', ready:'Polished the candidate and checked the exact dialogue bytes.'}
+  ];
+  const fixture = {
+    original: 'The station clock stopped at six. Mara waited by the ticket window.',
+    rough: 'The station clock stopped at six. Mara waited at the empty ticket window, and the lights hummed overhead.',
+    final: 'The station clock stopped at six. At the shuttered ticket window, Mara listened to the fluorescent hum.'
+  };
+  const el = id => document.getElementById(id);
+  let timer;
+  let run;
+  let selected = 0;
+  let follow = true;
+  const labels = {pending:'Pending', running:'Running', done:'Complete', failed:'Failed', skipped:'Skipped'};
+  const buttons = steps.map((step, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pass';
+    const number = document.createElement('span');
+    number.className = 'num';
+    number.textContent = String(index + 1).padStart(2, '0');
+    const body = document.createElement('span');
+    const name = document.createElement('strong');
+    name.textContent = step.name;
+    const state = document.createElement('span');
+    state.className = 'tag';
+    body.append(name, state);
+    button.append(number, body);
+    button.addEventListener('click', () => {
+      selected = index;
+      follow = false;
+      render();
+    });
+    el('passes').append(button);
+    return {button,state};
+  });
+  function render() {
+    const {states, mode, phase, events, connected, sequence, applied} = run;
+    buttons.forEach(({button,state}, index) => {
+      button.dataset.status = states[index];
+      button.setAttribute('aria-pressed', String(index === selected));
+      state.textContent = labels[states[index]];
+    });
+    el('pass-title').textContent = steps[selected].name;
+    const last = events.findLast(event => event.pass === selected);
+    el('pass-detail').textContent = last ? last.detail : 'Waiting for this pass to start.';
+    el('state').textContent = phase;
+    el('scenario').disabled = mode !== 'idle';
+    el('start').disabled = mode !== 'idle';
+    el('reset').disabled = mode === 'idle';
+    el('recover').hidden = mode !== 'failure' && connected;
+    el('recover').textContent = connected ? 'Retry writer' : 'Reconnect';
+    el('stream-info').textContent = mode === 'idle' ? 'Waiting for a simulation.' :
+      'Fixture run ' + sequence + ' · ' + (connected ? mode === 'active' ? 'Connected' : 'Ended' : 'Disconnected') + ' · ' + events.length + ' events';
+    const progress = states.filter(status => status === 'done' || status === 'skipped').length * 20;
+    el('progress').setAttribute('aria-valuenow', progress);
+    el('progress').firstElementChild.style.width = progress + '%';
+    const rough = states[3] === 'done';
+    const complete = states[4] === 'done';
+    el('source-label').textContent = applied ? 'Applied preview' : 'Saved passage';
+    el('source').textContent = applied ? fixture.final : fixture.original;
+    el('candidate').hidden = !rough || applied;
+    el('candidate-label').textContent = complete ? 'Checked draft' : 'Rough draft';
+    el('candidate-text').textContent = complete ? fixture.final : fixture.rough;
+    el('candidate-detail').textContent = complete ? 'Sample slop score 18 → 11 · Exact dialogue check passed' : 'Awaiting polish and exact dialogue check.';
+    el('apply').hidden = !complete || applied;
+    el('empty').hidden = events.length > 0;
+  }
+  function log(event) {
+    run.events.push({...event, id:run.events.length + 1});
+    const li = document.createElement('li');
+    const time = document.createElement('time');
+    time.textContent = '#' + String(run.events.length).padStart(2, '0');
+    li.append(time, event.message);
+    el('events').append(li);
+    li.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant',container:'nearest'});
+  }
+  function pass(index, status, detail) {
+    run.states[index] = status;
+    if (follow) selected = index;
+    log({pass:index, detail, message:steps[index].short + ' · ' + labels[status]});
+    render();
+  }
+  function schedule(action, delay = 620) {
+    clearTimeout(timer);
+    timer = setTimeout(action, delay);
+  }
+  function runPass(index) {
+    const step = steps[index];
+    if (index === 3 && run.scenario === 'locked') {
+      pass(3, 'skipped', 'The whole passage is protected. The writer was skipped.');
+      pass(4, 'skipped', 'The original passage was preserved exactly.');
+      finish('Passage preserved');
+      return;
+    }
+    run.phase = step.name;
+    pass(index, 'running', 'Executing ' + step.name.toLowerCase() + ' in the fixture.');
+    if (index === 3 && run.scenario === 'disconnect' && !run.recovered) {
+      schedule(() => {
+        run.connected = false;
+        run.phase = 'Stream disconnected';
+        render();
+        // The worker finishes its current pass while the event view is disconnected.
+        schedule(() => { run.writerFinished = true; }, 850);
+      }, 370);
+      return;
+    }
+    schedule(() => finishPass(index), index === 3 ? 1400 : 700);
+  }
+  function finishPass(index) {
+    if (index === 3 && run.scenario === 'failure' && !run.recovered) {
+      run.mode = 'failure';
+      run.phase = 'Writer failed';
+      pass(3, 'failed', 'Fixture writer returned a definite failure before saving a draft. Retry is available.');
+      return;
+    }
+    pass(index, 'done', steps[index].ready);
+    if (index === 4) finish('Draft ready');
+    else schedule(() => runPass(index + 1), 220);
+  }
+  function finish(phase) {
+    run.mode = 'finished';
+    run.phase = phase;
+    log({message:phase});
+    render();
+  }
+  function reset() {
+    clearTimeout(timer);
+    run = {states:Array(5).fill('pending'), mode:'idle', phase:'Ready', events:[], connected:true,
+      sequence:run?.sequence || 0, applied:false, recovered:false, writerFinished:false};
+    selected = 0;
+    follow = true;
+    el('events').replaceChildren();
+    render();
+  }
+  el('start').addEventListener('click', () => {
+    run.scenario = el('scenario').value;
+    run.mode = 'active';
+    run.sequence += 1;
+    log({message:'Simulation started'});
+    runPass(0);
+  });
+  el('recover').addEventListener('click', () => {
+    const wasDisconnected = !run.connected;
+    run.connected = true;
+    run.recovered = true;
+    run.mode = 'active';
+    log({message:wasDisconnected ? 'Reconnected to the same run' : 'Retrying the failed writer'});
+    if (wasDisconnected) {
+      run.phase = steps[3].name;
+      render();
+      schedule(() => finishPass(3), run.writerFinished ? 0 : 680);
+    } else runPass(3);
+  });
+  el('reset').addEventListener('click', reset);
+  el('apply').addEventListener('click', () => {
+    run.applied = true;
+    log({message:'Draft applied to the preview'});
+    render();
+  });
+  reset();
+</script>
+</body>
+</html>

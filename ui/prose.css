@@ -1,0 +1,391 @@
+/* Noir Fiction Studio v2 — M6 Prose Engine, Drafts, Book Policy & World Laws */
+
+.v2-prose-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.v2-prose-card {
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-paper);
+  color: var(--ink-on-paper);
+  border: 1px solid var(--border-paper);
+  display: grid;
+  gap: 12px;
+}
+
+.v2-prose-card h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--ink-on-paper);
+}
+
+.v2-prose-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.v2-prose-field {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-muted-on-paper);
+}
+
+.v2-prose-field input,
+.v2-prose-field select,
+.v2-prose-field textarea {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-paper);
+  background: var(--surface-paper-inset);
+  color: var(--ink-on-paper);
+  font-size: 13px;
+}
+
+.v2-prose-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.v2-prose-output {
+  margin: 0;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-paper);
+  background: var(--surface-paper-inset);
+  color: var(--ink-on-paper);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.v2-policy-list,
+.v2-laws-list,
+.v2-drafts-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.v2-policy-item,
+.v2-law-card,
+.v2-draft-card {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-paper);
+  background: var(--surface-paper-alt);
+  color: var(--ink-on-paper);
+  display: grid;
+  gap: 8px;
+}
+
+.v2-policy-head,
+.v2-law-head,
+.v2-draft-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.v2-policy-perms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--ink-on-paper);
+}
+
+.v2-policy-perms label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.v2-canon-panel {
+  background: var(--surface-chrome-elevated);
+  color: var(--ink-on-chrome);
+  border-color: var(--border-chrome);
+}
+
+body[data-theme="racing"] .v2-canon-panel {
+  background: linear-gradient(90deg, rgba(11, 13, 18, 0.95), rgba(15, 18, 24, 0.88) 58%, rgba(21, 25, 34, 0.65)),
+    url("/assets/v2/game-rule-marshal.webp") center 40% / cover, var(--surface-chrome-elevated);
+}
+
+.v2-canon-group-title {
+  color: var(--ink-on-paper);
+  font-size: 13px;
+}
+
+.v2-canon-panel h2,
+.v2-canon-panel .v2-canon-group-title {
+  color: var(--ink-on-chrome);
+}
+
+.v2-canon-panel .v2-muted {
+  color: var(--ink-muted-on-chrome);
+}
+
+.v2-canon-finding .v2-law-statement,
+.v2-proposal-card .v2-law-statement {
+  margin: 0;
+  color: inherit;
+}
+
+.v2-law-card .v2-tl-details,
+.v2-prose-card .v2-tl-details {
+  border-top-color: var(--border-paper);
+}
+
+.v2-law-card .v2-tl-details > summary,
+.v2-prose-card .v2-tl-details > summary {
+  color: var(--ink-on-paper);
+}
+
+.v2-canon-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-muted-on-chrome);
+  cursor: pointer;
+}
+
+.v2-canon-chips,
+.v2-canon-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.v2-canon-chip {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--status-ok-bg);
+  color: var(--status-ok-ink);
+  border: 1px solid var(--border-chrome);
+}
+
+.v2-canon-group {
+  display: grid;
+  gap: 8px;
+}
+
+.v2-canon-finding,
+.v2-proposal-card {
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface-chrome);
+  color: var(--ink-on-chrome);
+  border: 1px solid var(--border-chrome);
+  display: grid;
+  gap: 6px;
+}
+
+.v2-canon-finding.is-conflict {
+  background: var(--status-err-bg);
+  color: var(--status-err-ink);
+  border-color: var(--status-err-ink);
+}
+
+.v2-canon-finding.is-warning {
+  background: var(--status-warn-bg);
+  color: var(--status-warn-ink);
+  border-color: var(--status-warn-ink);
+}
+
+.v2-canon-finding.is-advisory {
+  background: var(--status-ok-bg);
+  color: var(--status-ok-ink);
+  border-color: var(--status-ok-ink);
+}
+
+.v2-canon-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.v2-canon-excerpt {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  opacity: 0.9;
+}
+
+.v2-slot-list,
+.v2-epic5-stack {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.v2-slot-card {
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-chrome);
+  background: var(--surface-chrome);
+  color: var(--ink-on-chrome);
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.v2-slot-card.is-locked {
+  border-color: var(--accent-primary, #ffb07d);
+}
+
+.v2-slot-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--ink-muted-on-chrome);
+}
+
+.v2-slot-fill-input {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-chrome);
+  background: var(--surface-chrome-elevated);
+  color: var(--ink-on-chrome);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 6px 8px;
+}
+
+.v2-craft-pre {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface-chrome);
+  color: var(--ink-on-chrome);
+  border: 1px solid var(--border-chrome);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.v2-scoped-validation {
+  margin-top: 8px;
+}
+
+.v2-correction-diff {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.v2-corr-before,
+.v2-corr-after {
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-chrome);
+}
+
+.v2-corr-before {
+  background: var(--status-err-bg);
+  color: var(--status-err-ink);
+}
+
+.v2-corr-after {
+  background: var(--status-ok-bg);
+  color: var(--status-ok-ink);
+  text-decoration: none;
+}
+
+/* Milestone 5: 190-Book Star Rail Prose Telemetry Bars */
+.v2-prose-telemetry {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-chrome);
+  background: var(--surface-chrome);
+  color: var(--ink-on-chrome);
+}
+
+.v2-prose-telemetry-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  font: 800 11px/1.2 var(--font-mono);
+  letter-spacing: 0.06em;
+  color: var(--stripe-chrome);
+}
+
+.v2-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px 12px;
+}
+
+.v2-telemetry-meter {
+  display: grid;
+  gap: 4px;
+}
+
+.v2-telemetry-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.v2-telemetry-label span {
+  color: var(--ink-muted-on-chrome);
+}
+
+.v2-telemetry-label strong {
+  font-family: var(--font-mono);
+  color: var(--ink-on-chrome);
+}
+
+.v2-telemetry-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-chrome-elevated);
+  border: 1px solid var(--border-chrome);
+  overflow: hidden;
+}
+
+.v2-telemetry-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--stripe-chrome), var(--accent-primary));
+  transition: width 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.v2-telemetry-fill.is-mint {
+  background: linear-gradient(90deg, #4cc9a6, var(--accent-secondary));
+}

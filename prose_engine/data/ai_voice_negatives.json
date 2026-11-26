@@ -1,0 +1,32 @@
+[
+  {
+    "tic": "simile pileup",
+    "why": "three or more stacked comparisons in one paragraph; replace all but one with literal detail",
+    "text": "The nanites shimmered like liquid mercury. The seams popped like popcorn. Her backside swelled like a parade float until it looked like marshmallows."
+  },
+  {
+    "tic": "beat cue",
+    "why": "the word 'Beat.' as a pause marker; stage direction leaking into prose",
+    "text": "Beat. She sets the lipstick down. Beat. \"That was the sushi.\" A beat passes. Then, finally, she speaks."
+  },
+  {
+    "tic": "filter words",
+    "why": "observer verbs (noticed, felt, saw, heard) standing between the reader and the sensation",
+    "text": "She noticed the door was open. She felt a chill. She saw the table. She heard the wind and realized she was afraid."
+  },
+  {
+    "tic": "emotion label",
+    "why": "naming the feeling instead of showing the body doing it",
+    "text": "\"Absolutely not,\" she said, reasonably. \"That was a mouse,\" she said, quietly, betrayed, a note of hurt in her voice."
+  },
+  {
+    "tic": "cliche comparison",
+    "why": "a comparison the reader has read a thousand times; it does no work",
+    "text": "The silence stretched between them, thick and heavy, a living thing. Her heart hammered like a drum. Time stood still."
+  },
+  {
+    "tic": "summary narration",
+    "why": "telling the reader what a scene meant instead of staging it",
+    "text": "It was an awkward moment for everyone involved. The tension was palpable. They all knew things would never be the same after that night."
+  }
+]

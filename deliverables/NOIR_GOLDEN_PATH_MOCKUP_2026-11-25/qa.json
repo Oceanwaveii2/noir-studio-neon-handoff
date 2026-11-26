@@ -1,0 +1,157 @@
+{
+  "browser": "Microsoft Edge 158.0.4370.33",
+  "scope": "Standalone browser fixture",
+  "source_sha256": "9cea113b7c9d075f2291de56b08bbd7245269b6fadc47bfbdcb04891e2434af1",
+  "checks": [
+    "The standalone page declares no HTTP transport, external script, or legacy runtime dependency.",
+    "Created a new project with no source, cast, rule, or beat records.",
+    "The source passed through queued, processing, and ready, then bound by actual SHA-256.",
+    "Created two characters, an alternate form, and a directed relationship.",
+    "A law blocked an invalid save. A fork inherited only its saved prefix and preserved isolated world facts.",
+    "Observed running states before completion, verified ten ordered pass events and scoped inputs, and checked exact UTF-8 dialogue after apply.",
+    "Global Undo and Redo crossed tabs and reloads. Text input retained its native shortcut.",
+    "Edge verified desktop and 390 px layouts, zero browser errors, and zero HTTP or WebSocket requests."
+  ],
+  "counts": {
+    "passed": 8,
+    "failed": 0
+  },
+  "final_evidence": {
+    "project": "Night Station",
+    "branch": "Service stair",
+    "source_sockets": [
+      {
+        "filename": "clock-cue.txt",
+        "sha256": "fc75bf93eb071524801ed1740c8e0a283cb5f33629b92103954ec814dd191868",
+        "socket": "rhythm_timing"
+      }
+    ],
+    "characters": [
+      {
+        "id": "3da1d66a-59a4-4084-8359-c4cd4f9d257d",
+        "name": "Mara",
+        "form": "Night courier"
+      },
+      {
+        "id": "0e8abea1-9867-4aa5-a86a-09e717f44fd1",
+        "name": "Jules",
+        "form": ""
+      }
+    ],
+    "relationships": [
+      {
+        "from": "Mara",
+        "to": "Jules",
+        "label": "Trusts as a guide"
+      }
+    ],
+    "world_facts": [
+      "Key recovered",
+      "Alternate vault open"
+    ],
+    "beat_titles": [
+      "Recover key",
+      "Open the alternate vault"
+    ],
+    "draft": {
+      "passage": "The station clock stopped at six.\nThe hush lingered for one breath.",
+      "dialogue": "\u201cKeep  the clock still.\u201d ",
+      "receipt": {
+        "branch": "Service stair",
+        "media": [
+          "fc75bf93eb071524801ed1740c8e0a283cb5f33629b92103954ec814dd191868"
+        ],
+        "cast": [
+          {
+            "name": "Mara",
+            "form": "Night courier"
+          },
+          {
+            "name": "Jules",
+            "form": ""
+          }
+        ],
+        "relationships": [
+          {
+            "from": "3da1d66a-59a4-4084-8359-c4cd4f9d257d",
+            "to": "0e8abea1-9867-4aa5-a86a-09e717f44fd1",
+            "label": "Trusts as a guide"
+          }
+        ],
+        "laws": [
+          "vault-access"
+        ],
+        "beats": [
+          "Recover key",
+          "Open the alternate vault"
+        ],
+        "facts": [
+          "Key recovered",
+          "Alternate vault open"
+        ]
+      },
+      "checks": {
+        "exact_dialogue": true,
+        "writable_text_changed": true
+      },
+      "events": [
+        {
+          "sequence": 1,
+          "pass": 1,
+          "status": "running"
+        },
+        {
+          "sequence": 2,
+          "pass": 1,
+          "status": "done"
+        },
+        {
+          "sequence": 3,
+          "pass": 2,
+          "status": "running"
+        },
+        {
+          "sequence": 4,
+          "pass": 2,
+          "status": "done"
+        },
+        {
+          "sequence": 5,
+          "pass": 3,
+          "status": "running"
+        },
+        {
+          "sequence": 6,
+          "pass": 3,
+          "status": "done"
+        },
+        {
+          "sequence": 7,
+          "pass": 4,
+          "status": "running"
+        },
+        {
+          "sequence": 8,
+          "pass": 4,
+          "status": "done"
+        },
+        {
+          "sequence": 9,
+          "pass": 5,
+          "status": "running"
+        },
+        {
+          "sequence": 10,
+          "pass": 5,
+          "status": "done"
+        }
+      ]
+    }
+  },
+  "files": {
+    "index.html": "9cea113b7c9d075f2291de56b08bbd7245269b6fadc47bfbdcb04891e2434af1",
+    "verify_mockup.py": "709a9c39646353a25de40db40fda766282f0c48a97d20af2110636f0f0f99074",
+    "NEON_HANDOFF.md": "bb80f1c11153c8c18de973fa87582d55bafe86a6b65f22eb4541767a1fb7cbdc",
+    "completed-workflow.png": "767c88b386e6c4a1b90d5c339867383b73d4dfb427a1d85fb8cd635360d1eb1a"
+  }
+}

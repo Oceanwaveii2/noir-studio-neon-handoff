@@ -1,0 +1,15 @@
+{
+  "browser": "Microsoft Edge via Playwright",
+  "source": "deliverables/NOIR_5_PASS_STREAM_MOCKUP_2026-11-25/index.html",
+  "checks": [
+    "All five passes streamed in order. Applying the preview preserved exact dialogue.",
+    "Reconnect recovered the same run with one writer start.",
+    "A definite writer failure exposed an explicit retry and preserved completed preparation.",
+    "A fully protected passage skipped realization and polish.",
+    "At 390 px, no horizontal overflow. Reset stopped queued events. No page errors or HTTP requests."
+  ],
+  "files": {
+    "index.html": "3efc5b7a6c18edfd7a7d367974d6c79af230ae1e693591c867e5b98a664651b9",
+    "BLUEPRINT.md": "471f97c944102db88c1ec7bfe257acc78ae17b32776deccda6eb1afc8fffa3e9"
+  }
+}
